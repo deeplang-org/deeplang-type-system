@@ -1,0 +1,1 @@
+bnfc --ocaml -m deeplang.cf && make && cat deeplang.testcase | ./TestDeeplang

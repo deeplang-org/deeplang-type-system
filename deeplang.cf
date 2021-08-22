@@ -1,0 +1,123 @@
+comment "//";
+comment "/*" "*/";
+(:). [Code] ::= Code ";" [Code];
+[]. [Code] ::= ;
+
+Type. Type ::= Ident;
+
+Dec. Code ::= Dec;
+Def. Code ::= Def;
+Exp. Code ::= Exp;
+Sta. Code ::= Sta;
+Rec. Code ::= "return" Exp;
+
+DecVar. Dec ::= Var;
+DecCst. Var ::= "let" VarIdent ":" VarType ;
+DecMut. Var ::= "let" "mut" VarIdent ":" VarType ;
+
+DecFun. Dec ::= "fun" FunIdent "(" [FunArg] ")" RecType "{" "}";
+DecItf. Dec ::= "interface" ItfIdent ItfExtend "{" [AcsDec] "}"; 
+
+AcsDec. AcsDec ::= Access Dec;
+(:). [AcsDec] ::= AcsDec ";" [AcsDec];
+[]. [AcsDec] ::= ;
+AcsPub. Access ::= "public";
+AcsPri. Access ::= "private";
+
+Var. VarIdent ::=  Ident;
+VarType. VarType ::= Type;
+
+
+FunIdent. FunIdent ::= Ident;
+FunArg. FunArg ::= FunArgIdent ":" Type;
+(:[]). [FunArg] ::= FunArg;
+(:). [FunArg] ::= FunArg "," [FunArg];
+[]. [FunArg] ::= ;
+
+FunArgIdent. FunArgIdent ::= Ident;
+FunArgIdentEmpty. FunArgIdent ::= ;
+
+FunVoid. RecType ::= ;
+FunRecType. RecType ::= "->" Type;
+
+
+DefVar0. Def ::= Var;
+DefVar1. Def ::= Var "=" Exp;
+DefFun. Def ::= "fun" FunIdent "(" [FunArg] ")" RecType "{" [Code] "}";
+DefCls. Def ::= "class" ClsIdent ClsExtend ItfImpl "{" [ClsBody] "}"; 
+
+Itf. ItfIdent ::= Ident;
+(:[]). [ItfIdent] ::= ItfIdent; 
+(:). [ItfIdent] ::= ItfIdent "," [ItfIdent];
+[]. [ItfIdent] ::= ;
+ItfBase. ItfExtend ::= ;
+ItfDeri. ItfExtend ::= "extends" ItfIdent;
+
+ClsIdent. ClsIdent ::= Ident;
+ClsBase. ClsExtend ::= ;
+ClsDeri. ClsExtend ::= "extends" ClsIdent;
+ItfNone. ItfImpl ::= ;
+ItfImpl. ItfImpl ::= "impl" [ItfIdent];
+ClsCtor. ClsBody ::= "constructor" "(" [FunArg] ")" "{" [Code] "}";
+ClsDec. ClsBody ::= AcsDef;
+(:). [ClsBody] ::= ClsBody ";" [ClsBody];
+[]. [ClsBody] ::= ;
+
+AcsDef. AcsDef ::= Access Def;
+(:). [AcsDef] ::= AcsDef ";" [AcsDef];
+[]. [AcsDef] ::= ;
+
+
+ExpArith. Exp ::= Arith;
+ExpBool. Exp ::= Bool;
+ExpStr. Exp ::= String;
+ExpAssign. Exp ::= VarIdent "=" Exp;
+
+ExpIdent. Exp ::= VarIdent;
+ExpFunCall. Exp ::= FunCall;
+FunCall. FunCall ::= FunIdent "(" [FunCallArg] ")";
+FunCallArg. FunCallArg ::= Exp;
+(:[]). [FunCallArg] ::= FunCallArg; 
+(:). [FunCallArg] ::= FunCallArg "," [FunCallArg];
+[]. [FunCallArg] ::= ;
+ExpInstant. Exp ::= "new" ClsIdent "(" [FunCallArg] ")";
+ExpMember. Exp ::= VarIdent "." Member;
+MemberVar. Member ::= VarIdent;
+MemberFun. Member ::= FunCall;
+
+coercions Arith 4;
+ExpIncreFront. Arith ::= "++" VarIdent ;
+ExpIncreBack. Arith ::= VarIdent "++";
+ExpDecreFront. Arith ::= "--" VarIdent;
+ExpDecreBack. Arith ::= VarIdent "--";
+ExpLls. Arith1 ::= Arith1 "<<" Arith1;
+ExpLrs. Arith1 ::= Arith1 ">>" Arith1;
+ExpAdd. Arith2 ::= Arith2 "+" Arith2;
+ExpSub. Arith2 ::= Arith2 "-" Arith2;
+ExpMul. Arith3 ::= Arith3 "*" Arith3;
+ExpDiv. Arith3 ::= Arith3 "/" Arith3;
+ExpArithInt. Arith4 ::= Integer;
+ExpArithIdent. Arith4 ::= VarIdent;
+ExpArithFunCall. Arith4 ::= FunCall;
+
+
+
+Lt. Bool ::= Arith "<" Arith;
+Leq. Bool ::= Arith "<=" Arith;
+Gt. Bool ::= Arith ">" Arith;
+Geq. Bool ::= Arith ">=" Arith;
+Equiv. Bool ::= Arith "==" Arith;
+Is0 . Bool ::= Bool "==" Bool;
+Is1. Bool ::= VarIdent "==" Bool;
+Is2. Bool ::= Bool "==" VarIdent;
+NOT. Bool ::= "!" Bool;
+AND. Bool ::= Bool "&&" Bool;
+OR. Bool ::= Bool "||" Bool;
+TRUE. Bool ::= "true";
+FALSE. Bool ::= "false";
+
+StaCdn. Sta ::= "if" "(" Exp ")" "{" [Code] "}" "else" "{" [Code] "}";
+StaFor. Sta ::= "for" "(" ForInit ";" ForCdn ";" ForStep ")" "{" [Code] "}";
+ForInit. ForInit ::= "{" Def "}";
+ForCdn. ForCdn ::= Exp;
+ForStep. ForStep ::= Exp;

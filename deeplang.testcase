@@ -1,0 +1,61 @@
+/*   Comment   */
+// This is a single line comment
+/*
+    this is a block comment
+*/
+/*   Comment   */
+/* Declaration */
+let i1 : Int;
+let s1 : String;
+fun foo (){};
+fun bar (str : String)-> Int {};
+let mut flag : Bool;
+/* Declaration */
+/*  Statement  */
+if (flag)
+{
+    foo();
+}
+else
+{
+    bar();
+};
+for({let i : Int = 0};i<10;i++)
+{
+    foo();
+};
+/*  Statement  */
+/* Definition  */
+interface move {
+    public fun move(){};
+};
+interface vector2d extends move{
+    private let mut x : Double;
+    private let mut y : Double;
+    public fun length() ->  Double {};
+};
+class Foo extends Bar impl Foo1, Foo2 {
+    constructor() {};
+
+    private fun foo1(bar: Bar, foo: Foo){
+    };
+
+    public let foo2: i32;
+    public fun fib(n : i32) -> i32
+    {
+        let mut i : Int = 4 / 3 + (1<<1) * 1 << 1; /* useless */
+        if (n<2)
+        {
+            return n;
+        }
+        else
+        {
+            return fib(n-1) + fib(n-2);
+        };
+    };
+};
+/* Definition  */
+fun main () {
+    let foo : Foo = new Foo();
+    foo.fib(10);
+};
