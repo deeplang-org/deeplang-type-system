@@ -1,10 +1,28 @@
-## Deeplang-lbnf
-### 运行
+## Deeplang Type System
+
+We are learning TAPL and developing some interesting projects as follow:
+
+- [untyped-lambda-calculus](http://mepy.net/untyped-lambda-calculus/) based on javascript
+- [Dart-Lambda-Calculus](https://github.com/sorrowfulT-Rex/Dart-Lambda-Calculus) based on Dart
+
+**Todo list:**
+
+- Deeplang parser/lexer based on bnfc
+- Deeeplang typing rules
+- Deeplang symbol table
+- Deeplang type checker and then type infer
+- Deeplang wasm codegen
+
+### LBNF
+
+We use bnfc to generate deeplang parser and lexer. There is a file named `deeplang.cf` in repo. The file is a labelled bnf file.
+
+#### Build
 ```bash
 # !bnfc required!
 bash ./BASHME.sh
 ```
-### 简介
+#### Meta Data
 ```json
 {
   "vertsion": "alpha",
@@ -12,7 +30,7 @@ bash ./BASHME.sh
   "date":"20210810"
 }
 ```
-### 实现解析(parse)的部分
+#### 实现解析(parse)的部分
 - 注释 comment
 - 声明 Dec
   - 变量(可变与否，类型)
@@ -41,7 +59,7 @@ bash ./BASHME.sh
   - 条件 Cdn
     if else，必须加括号，没有else-if
   - 循环 For
-### 缺陷
+#### 缺陷
 ```return Exp;```语句是出现在可以出现在所有地方
 
 数组还没有实现。
