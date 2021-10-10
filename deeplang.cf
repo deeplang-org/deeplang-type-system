@@ -3,121 +3,176 @@ comment "/*" "*/";
 (:). [Code] ::= Code ";" [Code];
 []. [Code] ::= ;
 
-Type. Type ::= Ident;
+Declare. Code ::= Declare;
+Define. Code ::= Define;
+Statement. Code ::= Statement;
+Expression. Code ::= Expression;
+Unit. Code ::= ;
 
-Dec. Code ::= Dec;
-Def. Code ::= Def;
-Exp. Code ::= Exp;
-Sta. Code ::= Sta;
-Rec. Code ::= "return" Exp;
+-- Type 
+-- none-primitive type begins with an UPPER CAPTICAL
+token TypeId ( upper (letter|digit|'_')* );
+coercions Type 2;
+TypeArray. Type ::= "[" Type ";" Integer "]";
+TypeList. Type ::= "[" Type "]";
+TypeArrow. Type ::= Type "->" Type;
+TypeBool. Type1 ::= "bool"; -- bool 还是 Bool？
+TypeTuple. Type1 ::= "tuple";
+TypeUnit. Type1 ::= "()";
+TypeI8. Type1 ::= "i8";
+TypeI16. Type1 ::= "i16";
+TypeI32. Type1 ::= "i32";
+TypeI64. Type1 ::= "i64";
+TypeU8. Type1 ::= "u8";
+TypeU16. Type1 ::= "u16";
+TypeU32. Type1 ::= "u32";
+TypeU64. Type1 ::= "u64";
+TypeF32. Type1 ::= "f32";
+TypeF64. Type1 ::= "f64";
+TypeChar. Type1 ::= "char";
+TypeThis. Type1 ::= "This";
+TypeX. Type2 ::= TypeId;
 
-DecVar. Dec ::= Var;
-DecCst. Var ::= "let" VarIdent ":" VarType ;
-DecMut. Var ::= "let" "mut" VarIdent ":" VarType ;
+-- VarId
+token VarId ( (lower | '_' )(letter|digit|'_')* );
+-- Variable
+Variable. Variable ::= VarId;
+(:[]). [Variable] ::= Variable;
+(:). [Variable] ::= Variable "," [Variable] ;
 
-DecFun. Dec ::= "fun" FunIdent "(" [FunArg] ")" RecType "{" "}";
-DecItf. Dec ::= "interface" ItfIdent ItfExtend "{" [AcsDec] "}"; 
+-- Declare
+DecImmut. Declare ::= "let" VarId ":" Type;
+DecMut. Declare ::= "let" "mut" VarId ":" Type;
+DecFunc. Declare ::= "fun" VarId Args RetType "{" "}";
+Interface. Declare ::= "type" InterfaceName Methods; 
 
-AcsDec. AcsDec ::= Access Dec;
-(:). [AcsDec] ::= AcsDec ";" [AcsDec];
-[]. [AcsDec] ::= ;
-AcsPub. Access ::= "public";
-AcsPri. Access ::= "private";
+-- Function
+ArgUnit. Args ::= "(" ")"; -- Must write as ( ), or "()" -> must write as () 
+ArgExist. Args ::= "(" [Arg] ")";
+Arg. Arg ::= VarId ":" Type;
+(:[]). [Arg] ::= Arg;
+(:). [Arg] ::= Arg "," [Arg]; -- Warning here but no need to worry
+RetUnit. RetType ::= ;
+RetExist. RetType ::= "->" Type;
 
-Var. VarIdent ::=  Ident;
-VarType. VarType ::= Type;
+-- Interface
+InterfaceName. InterfaceName ::= TypeId;
+(:[]). [InterfaceName] ::= InterfaceName;
+(:). [InterfaceName] ::= InterfaceName "," [InterfaceName]; -- Warning here but no need to worry
+InterfaceMethodUnit. Methods ::= "{" "}";
+InterfaceMethodExist. Methods ::= "{" [Method] "}";
+InterfaceMethod. Method ::=  VarId ":" Type "->" Type ;
+(:[]). [Method] ::= Method;
+(:). [Method] ::= Method ";" [Method]; -- Warning here but no need to worry
+
+-- Define
+DefFunc. Define ::= "fun" VarId Args RetType "{" Body "}";
+Body. Body ::= [Code];
+
+ADT. Define ::= "type" TypeId "[" [Constructor] "]" Methods;
+ADTMethod. Method ::=  "fun" VarId Args RetType "{" [Code] "}";
+
+Constructor. Constructor ::= TypeId Fields;
+(:[]). [Constructor] ::= Constructor;
+(:). [Constructor] ::= Constructor "," [Constructor]; -- Warning here but no need to worry
+FieldUnit. Fields ::= "(" ")";
+FieldExist. Fields ::= "(" [Field] ")";
+
+Delegate. Arg ::= "as" VarId ":" Type;
+Field. Field ::=  VarId ":" Type;
+(:[]). [Field] ::= Field;
+(:). [Field] ::= Field "," [Field]; -- Warning here but no need to worry
+
+Struct. Define ::= "type" TypeId Args Impl Methods; -- TypeId Args success, while Constructor error, Why?
+ImplUnit. Impl ::= ;
+ImplInterface. Impl ::= "impl" [InterfaceName] ;
+
+DefImmut. Define ::= "let" VarId ":" Type "=" Expression;
+DefMut. Define ::= "let" "mut" VarId ":" Type "=" Expression;
+DefType. Define ::= "type" TypeId Args;
+
+-- impl是用在ADT层级还是interface层级（SOS）？？？还是Struct
+
+-- readme里 let i : Int=0，还能i++，需要修正
+
+-- Statement
+If. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}" "else" "{" [Code] "}";
+IfCondtion. IfCondtion ::= Expression;
+For. Statement ::= "for" "(" ForInit ";" ForCondition ";" ForFinal ")" "{" [Code] "}";
+ForInitUnit. ForInit ::= ;
+ForInitDef. ForInit ::= "{" "let" "mut" VarId ":" Type "=" Expression "}";
+ForCondition. ForCondition ::= Expression;
+ForFinal. ForFinal ::= Expression;
+
+Return. Statement ::= "return" Expression;
+Match. Statement ::= "match" "(" VarId ")" "{" MatchBody "}";
+
+MatchBody. MatchBody ::= [MatchCase];
+MatchCase. MatchCase ::= TypeId "(" [Variable] ")" "{" [Code] "}";
+[]. [MatchCase] ::= ;
+(:). [MatchCase] ::= MatchCase [MatchCase]; -- Warning here but no need to worry
+
+-- Expression
+
+{-
+表达式有哪些、优先级、结合性表格不明确
+比如for循环里面使用了后置++，但是 ## 算术，逻辑，一元表达式中没有写到
+假定有以下运算，其优先级与结合性参考C
+assignment      exp0
+< array_builtin_macro exp1 而且也不知道有哪些macro，
+< || 左结合
+< && 左结合
+< ! 左结合
+< \lt = \leq = \gt = \geq 
+< \eq = \noteq
+< << = >> 
+< + = - 
+< * = / = % exp9
+< ++ = -- = ++ = -- exp10
+< new Constructor() = application operator() = var.method exp11
+< var = literal exp12
+< () exp13
+-}
+coercions Expression 13;
+[]. [Expression] ::= ;
+(:[]). [Expression] ::= Expression;
+(:). [Expression] ::= Expression "," [Expression] ;
+ExpAssignment. Expression ::= Variable "=" Expression;
+ExpMacro. Expression1 ::= Variable "@" Macro;
+ArrayMatch. Macro ::= "match" "(" [Code] ")"; -- 暂时这么写着吧
+ExpLogicalOr. Expression2 ::= Expression2 "||" Expression3 ; -- 注意是左结合的
+ExpLogicalAnd. Expression3 ::= Expression3 "&&" Expression4 ;
+ExpLogicalNot. Expression4 ::= "!" Expression4 ;
+ExpLt. Expression5 ::= Expression7 "<" Expression7; -- 不能隐形转bool为int
+ExpLeq. Expression5 ::= Expression7 "<=" Expression7;
+ExpGt. Expression5 ::= Expression7 ">" Expression7;
+ExpGeq. Expression5 ::= Expression7 ">=" Expression7;
+ExpEq. Expression6 ::= Expression7 "==" Expression7;
+ExpNoteq. Expression6 ::= Expression7 "!=" Expression7;
+
+ExpLeftShift. Expression7 ::= Expression7 "<<" Expression8; -- 注意左结合
+ExpRightShift. Expression7 ::= Expression7 ">>" Expression8;
+ExpAdd. Expression8 ::= Expression8 "+" Expression9;
+ExpSub. Expression8 ::= Expression8 "-" Expression9;
+ExpMul. Expression9 ::= Expression9 "*" Expression10;
+ExpDiv. Expression9 ::= Expression9 "\\" Expression10;
+ExpMod. Expression9 ::= Expression9 "%" Expression10;
+
+ExpPreIncre. Expression10 ::= "++" Expression10; -- 这里的右结合倒是没错啦
+ExpSufIncre. Expression10 ::= Expression10 "++"; -- 算是右结合么？
+ExpPreDecre. Expression10 ::= "--" Expression10; -- 这里的右结合倒是没错啦
+ExpSufDecre. Expression10 ::= Expression10 "--"; -- 算是右结合么？
 
 
-FunIdent. FunIdent ::= Ident;
-FunArg. FunArg ::= FunArgIdent ":" Type;
-(:[]). [FunArg] ::= FunArg;
-(:). [FunArg] ::= FunArg "," [FunArg];
-[]. [FunArg] ::= ;
+ExpApp. Expression11 ::= Expression11 "(" [Expression] ")";
+ExpNewObj. Expression11 ::= "new" TypeId "(" [Expression]  ")";
+ExpMethod. Expression11 ::= Expression11 "." Variable ;
 
-FunArgIdent. FunArgIdent ::= Ident;
-FunArgIdentEmpty. FunArgIdent ::= ;
+ExpVar. Expression12 ::= Variable;
+Literal. Expression12 ::= Literal; -- 字面量
+String. Literal ::= String;
+Integer. Literal ::= Integer;
+True. Literal ::= "true";
+False. Literal ::= "false";
 
-FunVoid. RecType ::= ;
-FunRecType. RecType ::= "->" Type;
-
-
-DefVar0. Def ::= Var;
-DefVar1. Def ::= Var "=" Exp;
-DefFun. Def ::= "fun" FunIdent "(" [FunArg] ")" RecType "{" [Code] "}";
-DefCls. Def ::= "class" ClsIdent ClsExtend ItfImpl "{" [ClsBody] "}"; 
-
-Itf. ItfIdent ::= Ident;
-(:[]). [ItfIdent] ::= ItfIdent; 
-(:). [ItfIdent] ::= ItfIdent "," [ItfIdent];
-[]. [ItfIdent] ::= ;
-ItfBase. ItfExtend ::= ;
-ItfDeri. ItfExtend ::= "extends" ItfIdent;
-
-ClsIdent. ClsIdent ::= Ident;
-ClsBase. ClsExtend ::= ;
-ClsDeri. ClsExtend ::= "extends" ClsIdent;
-ItfNone. ItfImpl ::= ;
-ItfImpl. ItfImpl ::= "impl" [ItfIdent];
-ClsCtor. ClsBody ::= "constructor" "(" [FunArg] ")" "{" [Code] "}";
-ClsDec. ClsBody ::= AcsDef;
-(:). [ClsBody] ::= ClsBody ";" [ClsBody];
-[]. [ClsBody] ::= ;
-
-AcsDef. AcsDef ::= Access Def;
-(:). [AcsDef] ::= AcsDef ";" [AcsDef];
-[]. [AcsDef] ::= ;
-
-
-ExpArith. Exp ::= Arith;
-ExpBool. Exp ::= Bool;
-ExpStr. Exp ::= String;
-ExpAssign. Exp ::= VarIdent "=" Exp;
-
-ExpIdent. Exp ::= VarIdent;
-ExpFunCall. Exp ::= FunCall;
-FunCall. FunCall ::= FunIdent "(" [FunCallArg] ")";
-FunCallArg. FunCallArg ::= Exp;
-(:[]). [FunCallArg] ::= FunCallArg; 
-(:). [FunCallArg] ::= FunCallArg "," [FunCallArg];
-[]. [FunCallArg] ::= ;
-ExpInstant. Exp ::= "new" ClsIdent "(" [FunCallArg] ")";
-ExpMember. Exp ::= VarIdent "." Member;
-MemberVar. Member ::= VarIdent;
-MemberFun. Member ::= FunCall;
-
-coercions Arith 4;
-ExpIncreFront. Arith ::= "++" VarIdent ;
-ExpIncreBack. Arith ::= VarIdent "++";
-ExpDecreFront. Arith ::= "--" VarIdent;
-ExpDecreBack. Arith ::= VarIdent "--";
-ExpLls. Arith1 ::= Arith1 "<<" Arith1;
-ExpLrs. Arith1 ::= Arith1 ">>" Arith1;
-ExpAdd. Arith2 ::= Arith2 "+" Arith2;
-ExpSub. Arith2 ::= Arith2 "-" Arith2;
-ExpMul. Arith3 ::= Arith3 "*" Arith3;
-ExpDiv. Arith3 ::= Arith3 "/" Arith3;
-ExpArithInt. Arith4 ::= Integer;
-ExpArithIdent. Arith4 ::= VarIdent;
-ExpArithFunCall. Arith4 ::= FunCall;
-
-
-
-Lt. Bool ::= Arith "<" Arith;
-Leq. Bool ::= Arith "<=" Arith;
-Gt. Bool ::= Arith ">" Arith;
-Geq. Bool ::= Arith ">=" Arith;
-Equiv. Bool ::= Arith "==" Arith;
-Is0 . Bool ::= Bool "==" Bool;
-Is1. Bool ::= VarIdent "==" Bool;
-Is2. Bool ::= Bool "==" VarIdent;
-NOT. Bool ::= "!" Bool;
-AND. Bool ::= Bool "&&" Bool;
-OR. Bool ::= Bool "||" Bool;
-TRUE. Bool ::= "true";
-FALSE. Bool ::= "false";
-
-StaCdn. Sta ::= "if" "(" Exp ")" "{" [Code] "}" "else" "{" [Code] "}";
-StaFor. Sta ::= "for" "(" ForInit ";" ForCdn ";" ForStep ")" "{" [Code] "}";
-ForInit. ForInit ::= "{" Def "}";
-ForCdn. ForCdn ::= Exp;
-ForStep. ForStep ::= Exp;
+ExpBracket. Expression13 ::= "(" Expression ")";

@@ -7,55 +7,83 @@
 /* Declaration */
 let i1 : Int;
 let s1 : String;
-fun foo (){};
+fun foo ( ){};
 fun bar (str : String)-> Int {};
 let mut flag : Bool;
 /* Declaration */
 /*  Statement  */
 if (flag)
 {
-    foo();
+    foo( );
 }
 else
 {
-    bar();
+    bar( );
 };
-for({let i : Int = 0};i<10;i++)
+for({let mut i : Int = 0};i<10;++i) // must mutable
 {
-    foo();
+    foo( );
 };
 /*  Statement  */
 /* Definition  */
-interface move {
-    public fun move(){};
-};
-interface vector2d extends move{
-    private let mut x : Double;
-    private let mut y : Double;
-    public fun length() ->  Double {};
-};
-class Foo extends Bar impl Foo1, Foo2 {
-    constructor() {};
-
-    private fun foo1(bar: Bar, foo: Foo){
-    };
-
-    public let foo2: i32;
-    public fun fib(n : i32) -> i32
-    {
-        let mut i : Int = 4 / 3 + (1<<1) * 1 << 1; /* useless */
-        if (n<2)
-        {
-            return n;
-        }
-        else
-        {
-            return fib(n-1) + fib(n-2);
-        };
-    };
-};
-/* Definition  */
-fun main () {
-    let foo : Foo = new Foo();
+fun main( ) 
+{
+    let foo : Foo = new Foo ( );
     foo.fib(10);
 };
+let mut b : i32;
+fun foo( a : u32 )->In{ };
+type Show {
+    show : This->String
+};
+
+fun bar( a: u32)->String{
+    let mut str : String;
+};
+
+type Shape [
+	Rectangle(width: i32, height: i32),
+	Circle(radius: i32)
+]{};
+type Shape [
+	Rectangle(width: i32, height: i32),
+	Circle(radius: i32)
+] {
+	fun area(this: This) -> i32 {
+		match(this) {
+			Rectangle(width, height) {
+				;
+			}
+			Circle(radius) {
+				;
+			}
+		};
+        return "daw";
+	}
+};
+// Interface
+type Show {
+    show: This -> String
+};
+
+// Implement
+type Sigma(string : String, as an :An) impl Show
+{
+    fun show(this:This) -> String
+    {
+        return string;
+    }
+};
+
+// Delegate
+type Animal (weight: i32) {};
+type Person (
+    age: i32, name: String,
+    as animal: Animal // delegate
+){};
+
+// expression
+let a : Int = times((--b<<2) +3*1, 6*7) == 3 && true;
+
+// operator. operator()
+main.test( ); // 需要额外地打空格，这里不是很能理解，可能是分开的lexer"(" ")"
