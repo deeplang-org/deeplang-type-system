@@ -162,8 +162,8 @@ let rec type_check env expr =
         end
     | If(cond, conseq, alter) ->
         let cond' = type_check env cond in
-        let conseq' = type_check env conseq' in
-        let alter'  = type_check env alter'  in
+        let conseq' = type_check env conseq in
+        let alter'  = type_check env alter  in
         
         if cond'.extra <> Ty_Bool then
             raise(Type_Error("type mismatch: 'if' only accepts boolean as condition", expr.loc));
@@ -191,4 +191,259 @@ let rec type_check env expr =
         { shape = Let(name, rhs', body')
         ; loc   = expr.loc
         ; extra = body'.extra }
+```
+
+## 代码生成
+下面我们尝试把这门语言编译成字节码。
+我们的目标语言是一门简单的、只有整数的栈式虚拟机：
+```
+type instruction =
+   (* 将一个整数字面量推到栈顶 *)
+   | I_Push of int
+   (* 从栈顶弹出两个元素，将它们的和推回栈顶 *)
+   | I_Add
+   (* 从栈顶弹出两个元素，
+    * 如果它们相等，将1推到栈顶。
+    * 否则将0推到栈顶 *)
+   | I_Eq
+   (* 弹出栈顶的元素，把它作为地址。
+    * 读取该地址中的元素，并将它推到栈顶 *)
+   | I_Load
+   (* 弹出栈顶的元素，把它作为地址。
+    * 再从栈中弹出第二个元素，存储到该地址中*)
+   | I_Store
+   (* 一个字节码中用于跳转的标签，
+    * 用一个整数作为标识符 *)
+   | I_Label of int
+   (* 无条件地跳转到给定的标签 *)
+   | I_Jmp of int
+   (* 弹出栈顶的元素，如果它为0,
+    * 跳转到给定的标签 *)
+   | I_JmpIfZero of int
+```
+为了编译我们的语言，
+我们需要给每个变量分配一个地址。
+因此，生成目标代码的过程，我们需要一个变量名字到地址的映射：
+```
+type env = int VarMap.t
+```
+此外，我们还需要生成新的地址和标签。
+这里，简单起见，我们直接使用可变状态来实现这两项功能
+（但这意味着编译两段不同的程序时需要手动重设状态）：
+```
+let current_loc = ref (-1)
+let gen_loc () =
+    current_loc := 1 + !current_loc;
+    !current_loc
+    
+let current_label = ref (-1)
+let gen_label () =
+    current_label := 1 + !current_label;
+    !current_label
+```
+现在，编译的目的就是生成一串虚拟机指令。
+所以我们可以写出编译函数的类型签名：
+```
+val compile : env -> typ expr -> instruction list
+```
+这里我们使用了带类型信息的AST作为输入。
+在我们考虑的这门语言中，类型信息对编译没有太大帮助。
+但对于更复杂的语言来说，类型信息对生成高效的代码是非常重要的。
+`compile`函数生成一段指令。
+在一个栈`s`上执行这段指令后，
+栈应当变成`s`加上被编译的表达式计算的结果。
+也就是说，执行这段指令只会往栈上添加一个新元素，
+而且原来的栈中`s`中的元素不会被弹出。
+最后，为了方便我们向指令序列中添加新的指令，
+我们要求`compile`返回的指令序列是**倒序的**。
+也就是说，链表的头部是最后的指令，尾部是最初的指令。
+
+现在，我们可以写出`compile`函数：
+```
+let rec compile env expr =
+    match expr.shape with
+    (* 将name的值放到栈顶 *)
+    | Var name ->
+        (* 由于类型检查已经完成了作用域检查，
+         * 我们可以假设这里的查找必定成功 *)
+        let loc = VarMap.find name env in
+        (* 记住这串指令要从右往左读 *)
+        [ I_Load; I_Push loc ]
+    | Bool true ->
+        [ I_Push 1 ]
+    | Bool false ->
+        [ I_Push 0 ]
+    | Int i ->
+        [ I_Push i ]
+    | Add(lhs, rhs) ->
+        let lhs_code = compile env lhs in
+        let rhs_code = compile env rhs in
+        (* 从右往左，在栈s上先执行lhs的代码，栈变为s, lhs_result。
+         * 接下来执行rhs的代码，栈变为s, lhs_result, rhs_result。
+         * 最后用Add指令计算它们的和 *)
+        I_Add :: (rhs_code @ lhs_code)
+    | IEq(lhs, rhs) ->
+        let lhs_code = compile env lhs in
+        let rhs_code = compile env rhs in
+        I_Eq :: (rhs_code @ lhs_code)
+    | If(cond, conseq, alter) ->
+        let cond_code = compile env cond in
+        let conseq_code = compile env conseq in
+        let alter_code  = compile env alter  in
+        let label_alter  = gen_label () in
+        let label_if_end = gen_label () in
+        (* 这串指令的结构是：
+         *   <cond_code> // 栈顶变成条件的结果
+         *   if pop() == 0 then goto ALTER;
+         *   <then_code>
+         *   goto END
+         * ALTER:
+         *   <alter_code>
+         * END: *)
+        I_Label label_if_end
+        :: alter_code
+        @  I_Label label_alter
+        :: I_Jmp label_if_end
+        :: conseq_code
+        @  I_JmpIfZero label_alter
+        :: cond_code
+    | Let(name, rhs, body) ->
+        let rhs_code = compile env rhs in
+        (* 根据作用域，编译body时应当给name分配一个地址 *)
+        let loc = gen_loc () in
+        let body_code = compile (VarMap.add name loc env) body in
+        (* <rhs_code> // 栈是s, rhs_result
+         * push loc   // 栈是s, rhs_result, loc
+         * store      // memory[loc] := rhs_result, 栈变成s
+         * <body_code> *)
+        body_code
+        @ I_Store
+        :: I_Push loc
+        :: rhs_code
+```
+
+## 用一个简单的虚拟机来测试代码
+最后，通过实现一个简单的虚拟机，我们可以对上述函数进行测试
+（这个虚拟机只追求语义的正确性，没有对性能做任何优化）：
+```
+module IntMap = Map.Make(Int)
+
+let run_instructions instrs =
+    let store = ref IntMap.empty in
+    let program = Array.of_list instrs in
+
+    let label_map = snd @@ Array.fold_left
+            (fun (index, label_map) instruction ->
+                        match instruction with
+                        | I_Label label ->
+                            (index + 1, IntMap.add label index label_map)
+                        | _ ->
+                            (index + 1, label_map))
+            (0, IntMap.empty) program
+    in
+
+    let rec run stack index =
+        match program.(index) with
+        | exception _ ->
+            stack
+        | I_Push i ->
+            run (i :: stack) (index + 1)
+        | I_Add ->
+            begin match stack with
+            | v1 :: v2 :: stack' ->
+                run ((v2 + v1) :: stack') (index + 1)
+            | _ ->
+                failwith "Runtime Error!"
+            end
+        | I_Eq ->
+            begin match stack with
+            | v1 :: v2 :: stack' ->
+                run ((if v1 = v2 then 1 else 0) :: stack') (index + 1)
+            | _ ->
+                failwith "Runtime Error!"
+            end
+        | I_Load ->
+            begin match stack with
+            | loc :: stack' ->
+                run (IntMap.find loc !store :: stack') (index + 1)
+            | _ ->
+                failwith "Runtime Error!"
+            end
+        | I_Store ->
+            begin match stack with
+            | loc :: value :: stack' ->
+                store := IntMap.add loc value !store;
+                run stack' (index + 1)
+            | _ ->
+                failwith "Runtime Error!"
+            end
+        | I_Label label ->
+            run stack (index + 1)
+        | I_Jmp label ->
+            run stack (IntMap.find label label_map)
+        | I_JmpIfZero label ->
+            begin match stack with
+            | 0 :: stack' ->
+                run stack' (IntMap.find label label_map)
+            | _ :: stack' ->
+                run stack' (index + 1)
+            | _ ->
+                failwith "Runtime Error!"
+            end
+    in
+    run [] 0
+```
+现在，我们已经有了一门简单语言除了parser以外的所有环节，
+我们可以将之前定义的各个函数串联起来了，
+形成一条完整的编译流水线了：
+```
+let process expr =
+    expr
+    |> type_check VarMap.empty
+    |> compile VarMap.empty
+    (* compile产生的指令序列是倒序的 *)
+    |> List.rev
+    |> run_instructions
+```
+我们也可以用一些测试表达式来测试这条编译流水线：
+```
+(* 由于没有parser，没有源码位置可以使用 *)
+let mkExpr shape =
+    { shape
+    ; loc = (0, 0)
+    ; extra = () }
+
+(* let y = (let x = 1 in x)
+ * in x *)
+let test1 =
+    mkExpr @@ Let(
+        "y",
+        mkExpr @@ Let("x", mkExpr @@ Int 1, mkExpr @@ Var "x"),
+        mkExpr @@ Var "x"
+    )
+(* process test1
+ * --> exception Failure("unbound variable x", (0, 0)) *)
+
+(* let x = 1 in
+ * let y = 2 in
+ * if (x = y)
+ * then 10
+ * else (x + y) *)
+let test2 =
+    mkExpr @@ Let(
+        "x", mkExpr @@ Int 1,
+        mkExpr @@ Let(
+            "y", mkExpr @@ Int 2,
+            mkExpr @@ If(
+                mkExpr @@ IEq(mkExpr @@ Var "x", mkExpr @@ Var "y"),
+                mkExpr @@ Int 10,
+                mkExpr @@ Add(mkExpr @@ Var "x", mkExpr @@ Var "y")
+            )
+        )
+    )
+(* process test2
+ * --> [3]
+ * 如果把x的值换成2，那么
+ * process test2
+ * --> [10] *)
 ```
