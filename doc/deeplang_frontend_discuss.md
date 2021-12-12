@@ -86,3 +86,46 @@ target：ref-expr，ref-type，指向它定义的id。
 
 #### 2、其他类型的字段
 
+### 符号表的设计：
+
+**sym_tab1**: 作用域；
+
+**sym_tab2**: 类型，语义信息；
+
+**第一次遍历**
+
+dcl tab
+
+| feild       | data type             | backup |
+| ----------- | --------------------- | ------ |
+| sym_id      | int                   |        |
+| name        | string                |        |
+| scope_ref   | ptr or something else |        |
+| scope_level | int                   |        |
+| node        | ptr or something else |        |
+
+ref tab
+
+| feild  | data type | backup                              |
+| ------ | --------- | ----------------------------------- |
+| sym_id | int       |                                     |
+| target | int       | target, defination, dcl tab->sym_id |
+
+ast结构：expr kinds 进行工作拆分，声明（函数签名）、函数体/类/变量定义、表达式、控制语句。
+
+周二，输出遍历框架代码。
+
+**第二次遍历**
+
+```deeplang
+let foo : Foo = new Foo ( );
+```
+
+ty tab
+
+| feild  | data type | backup         |
+| ------ | --------- | -------------- |
+| sym_id | int       |                |
+| ty     | type      | 用户的，系统的 |
+
+类型判断相等：ty判等
