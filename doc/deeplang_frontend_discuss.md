@@ -35,12 +35,12 @@
 - 可变性的问题，等待设计稳定后
 - interface和委托正在看；
 
-| 模块                            | 负责人         |
-| ------------------------------- | -------------- |
-| walker                          | 练琪灏         |
-| typecheck                       | 陈楷骐         |
-| symboltable                     | 魏韧韬，练琪灏 |
-| types/typeconstruct/typecompare | 陈煜杰         |
+| 模块                            | 负责人             |
+| ------------------------------- | ------------------ |
+| walker                          | 练琪灏 Mepy        |
+| typecheck                       | 陈楷骐             |
+| symboltable                     | 魏韧韬，练琪灏Mepy |
+| types/typeconstruct/typecompare | 陈煜杰             |
 
 ### 符号表字段：
 
@@ -94,22 +94,28 @@ target：ref-expr，ref-type，指向它定义的id。
 
 **第一次遍历**
 
-dcl tab
+**dcl_tab**
 
-| feild       | data type             | backup |
-| ----------- | --------------------- | ------ |
-| sym_id      | int                   |        |
-| name        | string                |        |
-| scope_ref   | ptr or something else |        |
-| scope_level | int                   |        |
-| node        | ptr or something else |        |
+| feild       | data type             | backup   |
+| ----------- | --------------------- | -------- |
+| sym_id      | int                   |          |
+| name        | string                |          |
+| scope_ref   | ptr or something else |          |
+| scope_level | int                   |          |
+| node        | ptr or something else | 暂时保留 |
 
-ref tab
+**ref_tab**
 
-| feild  | data type | backup                              |
-| ------ | --------- | ----------------------------------- |
-| sym_id | int       |                                     |
-| target | int       | target, defination, dcl tab->sym_id |
+f (x, y+z) : ref_tab只有 f 和 x 两个，没有y和z。
+
+只存**叶子节点**的ref信息。
+
+行号和列号的生成问题，node_id的生成问题，需要在parse阶段实现。
+
+| feild   | data type | backup                              |
+| ------- | --------- | ----------------------------------- |
+| node_id | int       | ast每个节点的ID。                   |
+| target  | int       | target, defination, dcl tab->sym_id |
 
 ast结构：expr kinds 进行工作拆分，声明（函数签名）、函数体/类/变量定义、表达式、控制语句。
 
