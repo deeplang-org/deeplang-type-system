@@ -1,1 +1,4 @@
 output
+_build
+.envrc
+.direnv
