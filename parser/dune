@@ -1,0 +1,3 @@
+(library
+ (name parser)
+ (wrapped true))

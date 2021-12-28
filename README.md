@@ -14,10 +14,11 @@ We are learning TAPL and developing some interesting projects as follow:
 - Deeplang wasm codegen
 
 ### LBNF
-
+**The LBNF generated AST is deprecated in this branch**
 We use bnfc to generate deeplang parser and lexer. There is a file named `deeplang.cf` in repo. The file is a labelled bnf file.
 
 #### Build
+**The LBNF generated AST is deprecated in this branch**
 ```bash
 # !bnfc required!
 bash ./BASHME.sh
