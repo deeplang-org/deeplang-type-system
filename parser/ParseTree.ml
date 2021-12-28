@@ -17,7 +17,7 @@
       But may take up more memory. }
       {- use another IR, and perform the translation in 2
       at parsing time.
-      Will make the parser more complex. } *)
+      Will make the parser more complex. } } *)
 
 (** {1 Helper Definitions} *)
 
