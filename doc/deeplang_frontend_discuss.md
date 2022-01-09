@@ -135,3 +135,17 @@ ty tab
 | ty     | type      | 用户的，系统的 |
 
 类型判断相等：ty判等
+
+
+
+### 2022.1.9例会纪要
+
+expr和statement是否统一成expression，结论：不合并。
+
+遗留：
+
+1、流程控制在expr和stat设计两套。
+
+2、node_id, symbol_id拆成更细的table；
+
+讨论到了patterns；
