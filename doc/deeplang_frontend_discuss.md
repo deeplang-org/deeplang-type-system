@@ -144,8 +144,36 @@ expr和statement是否统一成expression，结论：不合并。
 
 遗留：
 
-1、流程控制在expr和stat设计两套。
+1、流程控制在expr和stat设计两套，
 
-2、node_id, symbol_id拆成更细的table；
+2、node_id, symbol_id拆成更细的table，支持刘请设计
 
 讨论到了patterns；
+
+### 2022.1.16例会纪要
+
+1、类型名字，接口名字，函数的名字，不重名。
+
+2、不要++，--；
+
+3、不要构造函数；
+
+4、刷deeplang spec，加命名规则（大小）；
+
+5、for loop，支持 range iterator；
+
+6、我们只有type checker，要标注类型；
+
+
+
+stream parser，二进制匹配操作，match，collect
+
+head：fe aa
+
+length: 06
+
+payload: 01 02 03 04 05  06
+
+tail: 3d ef
+
+crc or lrc: 98
