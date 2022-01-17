@@ -104,6 +104,8 @@ type literal =
     | LitBool   of bool
     | LitInt    of int
     | LitFloat  of float
+    (** 16-bit *)
+    | LitChar   of int
     | LitString of string
 
 
@@ -219,10 +221,10 @@ type methods_impl =
     ; impl_methods : func_impl list }
 
 
+
 type top_clause =
     { shape : top_clause_shape
     ; span  : src_span }
-
 
 and top_clause_shape =
     | StructDef     of struct_def
