@@ -7,59 +7,46 @@ We are learning TAPL and developing some interesting projects as follow:
 
 **Todo list:**
 
-- Deeplang parser/lexer based on bnfc
+- Deeplang parser/lexer
 - Deeeplang typing rules
 - Deeplang symbol table
 - Deeplang type checker and then type infer
 - Deeplang wasm codegen
 
-### LBNF
 
-We use bnfc to generate deeplang parser and lexer. There is a file named `deeplang.cf` in repo. The file is a labelled bnf file.
-
-#### Build
-```bash
-# !bnfc required!
-bash ./BASHME.sh
+### Building
+Currently, only the AST definition is completed.
+Its source file is at `parser/ParseTree.ml`.
+To build the AST definition,
+you need an OCaml compiler and the [dune](https://dune.build/) build system.
+To build directly with dune, do:
 ```
-#### Meta Data
-```json
-{
-  "vertsion": "alpha",
-  "author":"Mepy",
-  "date":"20210810"
-}
+dune build
 ```
-#### 实现解析(parse)的部分
-- 注释 comment
-- 声明 Dec
-  - 变量(可变与否，类型)
-  - 函数(签名)
-  - 接口(继承父接口)
-- 定义 Def
-  - 函数
-  - 类(继承父类，实现接口)
-- 运算 Exp
-  - 算术 Arith
-    - \<\<
-    - \>\>
-    - \+
-    - \-
-    - \*
-    - \/
-  - 布尔 Bool
-    - 比较 Cmp
-      - 小于 Lt
-      - 小等于 Leq
-      - 大于 Gt
-      - 大等于 Geq
-    - 逻辑 NOT AND OR
-  - 实例化 Instant
-- 语句 Sta
-  - 条件 Cdn
-    if else，必须加括号，没有else-if
-  - 循环 For
-#### 缺陷
-```return Exp;```语句是出现在可以出现在所有地方
+You can also build with Makefile, via:
+```
+make build
+```
+To build the module document of source files as well,
+you need to install the [odoc](https://github.com/ocaml/odoc) document generator as well.
+Once `odoc` is installed, you can build module documents through:
+```
+make doc
+```
+The generated documents of internal modules
+are located in `doc/internal/module_name-xxxxxxxxxx`,
+in HTML format.
+You can preview the HTML online by opening the link of the HTML file
+in [](htmlpreview.github.io)
 
-数组还没有实现。
+To build source files and document together, do:
+```
+make all # or simply `make`
+```
+
+
+### Development Guide
+To add new OCaml modules,
+you just need to modify the `dune` build file,
+and add your modules/libraries/executables into it.
+You can find the document of dune [here](https://dune.readthedocs.io/en/stable/overview.html).
