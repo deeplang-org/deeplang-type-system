@@ -95,7 +95,7 @@ and pattern_shape =
     | PatAs     of pattern * var_pattern
     | PatADT    of adt_label * pattern list
     | PatStruct of typ_name * (struct_field * pattern) list
-
+    | PatTuple  of pattern list
 
 
 (** {1 Expressions} *)
