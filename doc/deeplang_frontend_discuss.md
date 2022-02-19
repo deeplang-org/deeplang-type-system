@@ -177,3 +177,19 @@ payload: 01 02 03 04 05  06
 tail: 3d ef
 
 crc or lrc: 98
+
+### 2022.1.23例会纪要
+
+练骐灏：最近跟着刘请的设计思路，名字检查、类型检查、编译流程的作业，基于库上ast 的做名字检查、symbol tab。typing rules，涉及委托、接口的类型规则，需要聚焦讨论。类型检查和普通模式匹配差不多，tuple。解构赋值。
+
+陈楷骐：学习haskell和rust。了解类型系统。在看ast代码。尝试写一个带type system的demo。加到这dev分支。master，main。
+
+陈亦棠：deepvm的bug，memory leak，flow control，builtin，虚表。ocaml环境搭建，bnfc功能有限，之后用手写的parser。
+
+陈煜杰：ocaml的type用法，涉及deeplang type tab并写了一个小demo。type比较。
+
+刘请：ast设计，内存管理系统设计。年后讨论内存方案。
+
+魏韧韬：symbol tab相关实现，和骐灏合作。
+
+祝大家新年快，虎年大吉。
