@@ -1,0 +1,198 @@
+comment "//";
+comment "/*" "*/";
+(:). [Code] ::= Code ";" [Code];
+[]. [Code] ::= ;
+
+Declares. Code ::= Declare;
+Defines. Code ::= Define;
+Statements. Code ::= Statement;
+Expressions. Code ::= Expression;
+Unit. Code ::= ;
+
+-- Type 
+-- none-primitive type begins with an UPPER CAPTICAL
+token TypeId ( upper (letter|digit|'_')* );
+coercions Type 2;
+TypeArray. Type ::= "[" Type ";" Integer "]";
+TypeList. Type ::= "[" Type "]";
+TypeArrow. Type ::= Type "->" Type;
+TypeBool. Type1 ::= "bool"; -- bool 还是 Bool？
+TypeTuple. Type1 ::= "tuple";
+TypeUnit. Type1 ::= "()";
+TypeI8. Type1 ::= "i8";
+TypeI16. Type1 ::= "i16";
+TypeI32. Type1 ::= "i32";
+TypeI64. Type1 ::= "i64";
+TypeU8. Type1 ::= "u8";
+TypeU16. Type1 ::= "u16";
+TypeU32. Type1 ::= "u32";
+TypeU64. Type1 ::= "u64";
+TypeF32. Type1 ::= "f32";
+TypeF64. Type1 ::= "f64";
+TypeChar. Type1 ::= "char";
+TypeThis. Type1 ::= "This";
+TypeX. Type2 ::= TypeId;
+
+-- VarId
+token VarId ( (lower | '_' )(letter|digit|'_')* );
+-- Variable
+Variables. Variable ::= VarId;
+(:[]). [Variable] ::= Variable;
+(:). [Variable] ::= Variable "," [Variable] ;
+
+-- Declare
+DecImmut. Declare ::= "let" VarId ":" Type;
+DecMut. Declare ::= "let" "mut" VarId ":" Type;
+DecFunc. Declare ::= "fun" VarId Args RetType "{" "}";
+Interface. Declare ::= "type" InterfaceName Methods; 
+
+-- Function
+ArgUnit. Args ::= "(" ")"; -- Must write as ( ), or "()" -> must write as () 
+ArgExist. Args ::= "(" [Arg] ")";
+ArgCons. Arg ::= VarId ":" Type;
+(:[]). [Arg] ::= Arg;
+(:). [Arg] ::= Arg "," [Arg]; -- Warning here but no need to worry
+RetUnit. RetType ::= ;
+RetExist. RetType ::= "->" Type;
+
+-- Interface
+InterfaceNames. InterfaceName ::= TypeId;
+(:[]). [InterfaceName] ::= InterfaceName;
+(:). [InterfaceName] ::= InterfaceName "," [InterfaceName]; -- Warning here but no need to worry
+InterfaceMethodUnit. Methods ::= "{" "}";
+InterfaceMethodExist. Methods ::= "{" [Method] "}";
+InterfaceMethod. Method ::=  VarId ":" Type "->" Type ;
+(:[]). [Method] ::= Method;
+(:). [Method] ::= Method ";" [Method]; -- Warning here but no need to worry
+
+-- Define
+DefFunc. Define ::= "fun" VarId Args RetType "{" Body "}";
+Bodys. Body ::= [Code];
+
+ADT. Define ::= "type" TypeId "[" [Constructor] "]" Methods;
+ADTMethod. Method ::=  "fun" VarId Args RetType "{" [Code] "}";
+
+Constructors. Constructor ::= TypeId Fields;
+(:[]). [Constructor] ::= Constructor;
+(:). [Constructor] ::= Constructor "," [Constructor];
+FieldUnit. Fields ::= "(" ")";
+FieldExist. Fields ::= "(" [Field] ")";
+
+Delegate. Arg ::= "as" VarId ":" Type;
+FieldCons. Field ::=  VarId ":" Type;
+(:[]). [Field] ::= Field;
+(:). [Field] ::= Field "," [Field]; -- Warning here but no need to worry
+
+Struct. Define ::= "type" TypeId Args Impl Methods; -- TypeId Args success, while Constructor error, Why?
+ImplUnit. Impl ::= ;
+ImplInterface. Impl ::= "impl" [InterfaceName] ;
+
+ImmutVar. TypedVar ::= VarId ":" Type;
+MutVar. TypedVar ::= "mut" VarId ":" Type;
+DefVar. Define ::= "let" TypedVar "=" Expression;
+DefType. Define ::= "type" TypeId Args;
+
+-- impl是用在ADT层级还是interface层级（SOS）？？？还是Struct
+
+-- readme里 let i : Int=0，还能i++，需要修正
+
+-- Statement
+-- 2月28日：目前我们的控制语句似乎都必须花括号
+
+-- 条件控制语句
+If. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}";
+IfElse. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}" "else" "{" [Code] "}";
+IfCondtions. IfCondtion ::= Expression;
+
+-- 循环
+For. Statement ::= "for" "(" ForInit ";" ForCondition ";" ForFinal ")" "{" [Code] "}";
+ForInitUnit. ForInit ::= ;
+ForInitDefVar. ForInit ::= DefVar;
+ForConditions. ForCondition ::= Expression;
+ForFinals. ForFinal ::= Expression;
+While. Statement ::= "while" "(" ForCondition ")" "{" [Code] "}";
+
+-- Return
+Return. Statement ::= "return" Expression;
+
+-- 模式匹配
+-- Match Case中的Constructor如何处理？
+Match. Statement ::= "match" "(" VarId ")" "{" MatchBody "}";
+MatchBodys. MatchBody ::= [MatchCase];
+MatchCases. MatchCase ::= Matcher "=>" "{" [Code] "}";
+WildCardMatch. Matcher ::= "_";
+-- 不确定这边的Constructor这样处理是否正确
+ConsMatch. Matcher ::= Constructor;
+VarMatch. Matcher ::= TypedVar
+AsVarMatch. Matcher ::= Matcher "as" TypedVar
+[]. [MatchCase] ::= ;
+(:). [MatchCase] ::= MatchCase [MatchCase];
+
+-- Expression
+
+{-
+表达式有哪些、优先级、结合性表格不明确
+比如for循环里面使用了后置++，但是 ## 算术，逻辑，一元表达式中没有写到
+假定有以下运算，其优先级与结合性参考C
+assignment      exp0
+< array_builtin_macro exp1 而且也不知道有哪些macro，
+< || 左结合
+< && 左结合
+< ! 左结合
+< \lt = \leq = \gt = \geq 
+< \eq = \noteq
+< << = >> 
+< + = - 
+< * = / = % exp9
+< ++ = -- = ++ = -- exp10
+< new Constructor() = application operator() = var.method exp11
+< var = literal exp12
+< () exp13
+-}
+{-
+2月28日：不支持++
+-}
+coercions Expression 13;
+
+-- 这里是元组么？
+[]. [Expression] ::= ;
+(:[]). [Expression] ::= Expression;
+(:). [Expression] ::= Expression "," [Expression] ;
+
+-- 2月28日：需要macro吗？
+-- ExpAssignment. Expression ::= Variable "=" Expression;
+-- ExpMacro. Expression1 ::= Variable "@" Macro;
+
+-- 字面量
+ExpVar. Expression12 ::= Variable;
+Literals. Expression12 ::= Literal; -- 字面量
+String. Literal ::= String;
+Integer. Literal ::= Integer;
+True. Literal ::= "true";
+False. Literal ::= "false";
+
+-- 模式匹配
+ArrayMatch. Macro ::= "match" "(" [Code] ")"; -- 暂时这么写着吧
+
+-- 运算符
+ExpLogicalOr. Expression2 ::= Expression2 "||" Expression3 ; -- 注意是左结合的
+ExpLogicalAnd. Expression3 ::= Expression3 "&&" Expression4 ;
+ExpLogicalNot. Expression4 ::= "!" Expression4 ;
+ExpLt. Expression5 ::= Expression7 "<" Expression7; -- 不能隐形转bool为int
+ExpLeq. Expression5 ::= Expression7 "<=" Expression7;
+ExpGt. Expression5 ::= Expression7 ">" Expression7;
+ExpGeq. Expression5 ::= Expression7 ">=" Expression7;
+ExpEq. Expression6 ::= Expression7 "==" Expression7;
+ExpNoteq. Expression6 ::= Expression7 "!=" Expression7;
+ExpLeftShift. Expression7 ::= Expression7 "<<" Expression8; -- 注意左结合
+ExpRightShift. Expression7 ::= Expression7 ">>" Expression8;
+ExpAdd. Expression8 ::= Expression8 "+" Expression9;
+ExpSub. Expression8 ::= Expression8 "-" Expression9;
+ExpMul. Expression9 ::= Expression9 "*" Expression10;
+ExpDiv. Expression9 ::= Expression9 "\\" Expression10;
+ExpMod. Expression9 ::= Expression9 "%" Expression10;
+ExpApp. Expression11 ::= Expression11 "(" [Expression] ")";
+ExpNewObj. Expression11 ::= "new" TypeId "(" [Expression]  ")";
+ExpMethod. Expression11 ::= Expression11 "." Variable ;
+
+ExpBracket. Expression13 ::= "(" Expression ")";
