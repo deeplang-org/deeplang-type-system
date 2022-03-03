@@ -105,9 +105,8 @@ IfElse. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}" "else" "{" [Code] "
 IfCondtions. IfCondtion ::= Expression;
 
 -- 循环
-For. Statement ::= "for" "(" ForInit ";" ForCondition ";" ForFinal ")" "{" [Code] "}";
+For. Statement ::= "for" "(" "let" TypedVar "=" Expression ";" ForCondition ";" ForFinal ")" "{" [Code] "}";
 ForInitUnit. ForInit ::= ;
-ForInitDefVar. ForInit ::= DefVar;
 ForConditions. ForCondition ::= Expression;
 ForFinals. ForFinal ::= Expression;
 While. Statement ::= "while" "(" ForCondition ")" "{" [Code] "}";
@@ -123,8 +122,8 @@ MatchCases. MatchCase ::= Matcher "=>" "{" [Code] "}";
 WildCardMatch. Matcher ::= "_";
 -- 不确定这边的Constructor这样处理是否正确
 ConsMatch. Matcher ::= Constructor;
-VarMatch. Matcher ::= TypedVar
-AsVarMatch. Matcher ::= Matcher "as" TypedVar
+VarMatch. Matcher ::= TypedVar;
+AsVarMatch. Matcher ::= Matcher "as" TypedVar;
 []. [MatchCase] ::= ;
 (:). [MatchCase] ::= MatchCase [MatchCase];
 
