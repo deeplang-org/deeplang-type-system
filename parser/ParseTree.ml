@@ -113,18 +113,28 @@ type literal =
 type unary_op =
     | UnOpNeg | UnOpNot
 
+type compare_op = 
+    | BinOpLt  | BinOpLeq | BinOpGt | BinOpGeq
+    | BinOpEq | BinOpNeq
+(** note : BinOpLNot --modify--> BinOpLXor 
+ *  optional : | BinOpBOr | BinOpBAnd | BinOpBXor
+ *    B = bit, |   '|'    |    '&'    |    '^'
+ *  it might be useful for IoT development
+ *)
+type calculate_op =
+    | BinOpLOr | BinOpLAnd | BinOpLXor
+    | BinOpBOr | BinOpBAnd | BinOpBXor
+    | BinOpLShift | BinOpRShift
+    | BinOpAdd | BinOpSub | BinOpMul | BinOpDiv | BinOpMod
 (** Some notes on [BinOpAssign]:
     - [BinOpAssign None] is normal assignment
     - [BinOpAssign Add] is "+=", [BinOpAssign Sub] is "-=", etc.
     - Not all operators have corresponding assignment operators
     in the parser. This is just a simplification of AST definition *)
 type binary_op =
-    | BinOpLt  | BinOpLeq | BinOpGt | BinOpGeq
-    | BinOpEq | BinOpNeq
-    | BinOpLOr | BinOpLAnd | BinOpLNot
-    | BinOpLShift | BinOpRShift
-    | BinOpAdd | BinOpSub | BinOpMul | BinOpDiv | BinOpMod
-    | BinOpAssign of binary_op option
+    | BinOpCompare of compare_op
+    | BinOpCalculate of calculate_op
+    | BinOpAssign of calculate_op option
 
 
 
@@ -189,7 +199,7 @@ type func_arg =
 type func_decl =
     { func_decl_name : func_name
     ; func_decl_args : func_arg list
-    ; func_decl_id   : NodeId.func
+    ; func_decl_id   : NodeId.func (* it seems not needed *)
     ; func_decl_ret  : typ }
 
 type func_impl = func_decl * stmt
@@ -207,7 +217,7 @@ type struct_def =
 
 type adt_def =
     { adt_name     : typ_name
-    ; adt_branches : (adt_label * typ) list }
+    ; adt_branches : (adt_label * typ list) list }
 
 
 type interface_decl =
@@ -216,8 +226,8 @@ type interface_decl =
 
 type methods_impl =
     { impl_intf : intf_name option
-    ; impl_typ  : typ
-    ; impl_id   : NodeId.impl
+    ; impl_typ  : typ_name (* just type name *)
+    ; impl_id   : NodeId.impl (* no need? *)
     ; impl_methods : func_impl list }
 
 
