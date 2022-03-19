@@ -43,8 +43,8 @@ Variables. Variable ::= VarId;
 -- Declare
 DecImmut. Declare ::= "let" VarId ":" Type;
 DecMut. Declare ::= "let" "mut" VarId ":" Type;
-DecFunc. Declare ::= "fun" VarId Args RetType "{" "}";
-Interface. Declare ::= "type" InterfaceName Methods; 
+-- 函数声明需要带一对括号么？
+DecFunc. Declare ::= "fun" VarId Args RetType; -- "{" "}";
 
 -- Function
 ArgUnit. Args ::= "(" ")"; -- Must write as ( ), or "()" -> must write as () 
@@ -55,19 +55,25 @@ ArgCons. Arg ::= VarId ":" Type;
 RetUnit. RetType ::= ;
 RetExist. RetType ::= "->" Type;
 
--- Interface
+-- Interface Declaration
+InterfaceNoExt. Declare ::= "interface" InterfaceName "{" Methods "}"; 
+InterfaceExt. Declare ::= "interface" InterfaceName "extends" [InterfaceName] "{" Methods "}"; 
 InterfaceNames. InterfaceName ::= TypeId;
 (:[]). [InterfaceName] ::= InterfaceName;
 (:). [InterfaceName] ::= InterfaceName "," [InterfaceName]; -- Warning here but no need to worry
 InterfaceMethodUnit. Methods ::= "{" "}";
 InterfaceMethodExist. Methods ::= "{" [Method] "}";
-InterfaceMethod. Method ::=  VarId ":" Type "->" Type ;
+-- 应该是所有method声明后面都得有个分号？
+InterfaceMethod. Method ::= "fun" VarId Args RetType ";";
 (:[]). [Method] ::= Method;
-(:). [Method] ::= Method ";" [Method]; -- Warning here but no need to worry
+(:). [Method] ::= Method [Method];
+
+-- Interface Implementation
+InterfaceImpl. Define ::= "impl" InterfaceName "for" Type "{" [Method] "}";
+RawImpl. Define ::= "impl" Type "{" [Method] "}";
 
 -- Define
-DefFunc. Define ::= "fun" VarId Args RetType "{" Body "}";
-Bodys. Body ::= [Code];
+DefFunc. Define ::= "fun" VarId Args RetType "{" [Code] "}";
 
 ADT. Define ::= "type" TypeId "[" [Constructor] "]" Methods;
 ADTMethod. Method ::=  "fun" VarId Args RetType "{" [Code] "}";
@@ -81,20 +87,12 @@ FieldExist. Fields ::= "(" [Field] ")";
 Delegate. Arg ::= "as" VarId ":" Type;
 FieldCons. Field ::=  VarId ":" Type;
 (:[]). [Field] ::= Field;
-(:). [Field] ::= Field "," [Field]; -- Warning here but no need to worry
-
-Struct. Define ::= "type" TypeId Args Impl Methods; -- TypeId Args success, while Constructor error, Why?
-ImplUnit. Impl ::= ;
-ImplInterface. Impl ::= "impl" [InterfaceName] ;
+(:). [Field] ::= Field "," [Field];
 
 ImmutVar. TypedVar ::= VarId ":" Type;
 MutVar. TypedVar ::= "mut" VarId ":" Type;
 DefVar. Define ::= "let" TypedVar "=" Expression;
 DefType. Define ::= "type" TypeId Args;
-
--- impl是用在ADT层级还是interface层级（SOS）？？？还是Struct
-
--- readme里 let i : Int=0，还能i++，需要修正
 
 -- Statement
 -- 2月28日：目前我们的控制语句似乎都必须花括号
@@ -153,7 +151,7 @@ assignment      exp0
 -}
 coercions Expression 13;
 
--- 这里是元组么？
+-- 元组
 []. [Expression] ::= ;
 (:[]). [Expression] ::= Expression;
 (:). [Expression] ::= Expression "," [Expression] ;
