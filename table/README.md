@@ -41,11 +41,12 @@ $ utop
    ```
    also in ```type methods_impl```
 5. Question : table { 6 Hashtbl field } 是否可变？尚未测试
+   Hashtbl ```utop```
 6. 目前还没有检查成员函数与成员变量的重名情况，需要在```walk_method_decl```内修改
 7. 目前，Interface的名字和ADT/Struct的名字可以重复，ADT和Struct的名字不可以重复
 8. ```PatAs``` 不是很明白，这里需要检查一下
-9. binary op 稍微改一下
-   ```
+9.  binary op 稍微改一下
+   ```OCaml
    type binary_op =
    | BinOpCompare of compare_op
    | BinOpLOr | BinOpLAnd | BinOpLNot
@@ -53,13 +54,41 @@ $ utop
    | BinOpAdd | BinOpSub | BinOpMul | BinOpDiv | BinOpMod
    | BinOpAssign of binary_op option
    ```
-10. See ```TODO ``` ```Discuss``` in ```name_resolute.ml```
-11. 隐式类型转换么？还是需要显式？安全起见最好是提供库级的类型转换函数。
-12. 关于函数体内部的return 返回类型检查，关于This类型检查，还没做，需要插入当前在哪一函数内的环境信息
-13. ADT branch modify
-    ```
+11. See ```TODO ``` ```Discuss``` in ```name_resolute.ml```
+12. 隐式类型转换么？还是需要显式？安全起见最好是提供库级的类型转换函数。
+13. 关于函数体内部的return 返回类型检查，关于This类型检查，还没做，需要插入当前在哪一函数内的环境信息
+14. ADT branch modify
+    ```OCaml
     type adt_def =
     { adt_name     : typ_name
     ; adt_branches : (adt_label * typ list) list }
     ```
-14. ```List.find_map``` OCaml v4.10+
+15. ```List.find_map``` OCaml v4.10+
+
+### 20220319
+1. TyExists
+   ```OCaml
+   { vpat_mut  : mutability
+   ; vpat_typ  : typ option (* Only TyCk now, must be Some(ty) *)
+   ; vpat_name : variable
+   ; vpat_symb : symbol }
+   ```
+
+2. Delegate : modify search order DONE
+3. BuiltinType.this is just a hole, DO NOT use
+4. AST::func_decl 没有支持声明参数是某一接口，即
+   ```OCaml
+   type func_arg =
+    { farg_name : variable
+    ; farg_symb : symbol
+    ; farg_typ  : typ }
+   type func_decl =
+    { (* ... *)
+      func_decl_args : func_arg list
+    ; (* ... *)
+   ```
+   假设此处以TyVar(name)作为intf_name，那么也可以做，
+   反正intf_name, type_name(adt, struct)都是不交的。
+   将intf, type(adt, struct)放到一张表格里去吧，同一个命名空间 TODO
+
+5. TODO method field 名字检查

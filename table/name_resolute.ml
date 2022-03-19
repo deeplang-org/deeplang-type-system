@@ -8,7 +8,7 @@ type layered_name_map =
     ;;
 type var_data = 
     { mut  : mutability
-    ; typ  : typ option
+    ; typ  : typ
     ; name : variable
     (* ; id   : NodeId.expr *)
     }
@@ -84,10 +84,56 @@ module BuiltinType = struct
     let var (name:typ_name) : typ =
         { shape = TyVar(name)
         ; span  = None (* TODO : save it when in top_clause *)
-        } 
+        };;
+    (** BuiltinType.this is just a hole *)
+    let this : typ =
+        { shape = TyThis
+        ; span  = None
+        };;
 end
+(* add variable in table and name_map.deep, .shallow *)
+let walk_add_variable (symbol:symbol) (mut:mutability) (name:variable) (typo:typ option) (table:table) (name_map:layered_name_map) : layered_name_map = 
+    match typo with
+    | None -> failwith(" Type Annotation Needed Currently ")
+    | Some(typ) -> (
+        match NameMap.find_opt name name_map.shallow with
+        | Some(_) -> failwith("varaible"^ name ^ "has been declared")
+        | None -> Hashtbl.add table.var symbol
+            { mut  = mut
+            ; typ  = typ
+            ; name = name
+            }
+        ;
+        { deep    = NameMap.add name symbol name_map.deep 
+        ; shallow = NameMap.add name symbol name_map.shallow
+        }
+    );;
+
+(* walk pattern to modify table & name_map *)
+let rec walk_pattern (pattern:pattern) (table:table) (name_map:layered_name_map) : layered_name_map = match pattern.shape with
+    | PatWildcard -> name_map
+    | PatVar(vpat) -> walk_add_variable vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ table name_map
+    | PatAs(pattern, vpat) -> 
+        (* Typing rules here *)
+        let name_map = walk_pattern pattern table name_map in
+        walk_add_variable vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ table name_map
+    
+    | PatADT(adt_label, patterns) -> 
+        (* Typing rules here *)
+        let walk_fold_left name_map pattern = walk_pattern pattern table name_map in
+        List.fold_left walk_fold_left name_map patterns
+    | PatStruct(itf_name, field_patterns)->
+        (* Typing rules here *)
+        let walk_fold_left name_map (struct_field, pattern) = walk_pattern pattern table name_map in
+        List.fold_left walk_fold_left name_map field_patterns
+    | PatTuple(patterns) ->
+        (* Typing rules here *)
+        let walk_fold_left name_map pattern = walk_pattern pattern table name_map in
+        List.fold_left walk_fold_left name_map patterns
+    ;;
+
 (** TODO : modify ref_table *)
-let rec walk_expr (expr:expr) (table:table) (name_map:name_map) = match expr.shape with 
+let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ): typ = match expr.shape with 
     | ExpLit(literal) -> ( match literal with
         | LitBool(_)   -> BuiltinType.bool
         | LitInt(_)    -> BuiltinType.i32  (* Discuss *)
@@ -96,19 +142,16 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) = match expr.sha
         | LitString(s) -> BuiltinType.array BuiltinType.char (String.length s + 1) (* Discuss *)
     )
     | ExpVar(name)-> ( match NameMap.find_opt name name_map with 
-        | Some(symbol) -> Hashtbl.add table.ref expr.expr_id
+        | Some(symbol) -> ( Hashtbl.add table.ref expr.expr_id
             { sym = symbol 
             };
-            BuiltinType.bool
-            (* TODO : modify like below
-             * ( match Hashtbl.find_opt table.var symbol with
-             * | None -> failwith("It should be impossible, DEBUG ExpVar please")
-             * | Some(data) -> data.typ (* TODO currently haven't dropped the option shell *)
-             * )
-             *)
+            match Hashtbl.find_opt table.var symbol with
+            | None -> failwith("Impossible, symbol not found, DEBUG needed")
+            | Some(data) -> data.typ
+        )
         | None -> failwith("varaible " ^ name ^ " Not Found")
     )
-    | ExpUnOp(op, expr) -> let typ = walk_expr expr table name_map in 
+    | ExpUnOp(op, expr) -> let typ = walk_expr expr table name_map type_this in 
         ( match op with 
         | UnOpNeg -> ( match typ.shape with
             | TyInt(_, _) -> typ
@@ -121,8 +164,8 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) = match expr.sha
             | _      -> failwith(" apply - to Not a Boolean ")
         ))
     | ExpBinOp(op, left_e, right) ->
-        let left  = walk_expr left_e table name_map in
-        let right = walk_expr right  table name_map in
+        let left  = walk_expr left_e table name_map type_this in
+        let right = walk_expr right  table name_map type_this in
         let calculate_op_check (op:calculate_op) : typ = ( match op with
             | BinOpLOr | BinOpLAnd | BinOpLXor -> 
                 if left=right then ( match right.shape with
@@ -182,11 +225,11 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) = match expr.sha
             | Some(op) -> calculate_op_check op
             )
         )
-    | ExpTuple(exprs) -> BuiltinType.tuple ( List.map (fun expr -> walk_expr expr table name_map) exprs )
+    | ExpTuple(exprs) -> BuiltinType.tuple ( List.map (fun expr -> walk_expr expr table name_map type_this) exprs )
     | ExpAdt(label, exprs) -> ( match Hashtbl.find_opt table.adt label with
         | None       -> failwith(" ADT label " ^ label ^ " Not Found ")
         | Some(data) -> (
-            if data.typ = List.map (fun expr -> walk_expr expr table name_map) exprs then
+            if data.typ = List.map (fun expr -> walk_expr expr table name_map type_this) exprs then
                 BuiltinType.var data.sum
             else
                 failwith(" types doesn't match with ADT label "^ label)
@@ -201,7 +244,7 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) = match expr.sha
                     | StructDelegate(field, typ) -> (field, typ)
                 in 
                 let map_field_expr ((field, expr)) = 
-                    (field, walk_expr expr table name_map)
+                    (field, walk_expr expr table name_map type_this)
                 in
                 if List.map map_def_field def_fields = List.map map_field_expr field_exprs then
                     BuiltinType.var name
@@ -215,17 +258,29 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) = match expr.sha
             | None       -> None (* failwith("It's impossible. DEBUG why typ_name not found") *)
             | Some(data) -> ( match data.core with 
                 | ADTCore(_) -> None (* failwith(" ADT has no fields! ") *)
-                | StructCore(def_fields) -> let find_map def_field = ( match def_field with
-                    | StructField(field', typ) -> if field'=field then Some typ else None 
-                    | StructField(field', typ) -> if field'=field then Some typ else
-                        find_field typ field
+                | StructCore(def_fields) ->
+                    let find_map def_field = ( match def_field with
+                        | StructField(field', typ)
+                        | StructDelegate(field', typ) 
+                        -> if field'=field then Some typ else None
                     ) in 
-                    List.find_map find_map def_fields
+                    (* find in this level first *)
+                    match List.find_map find_map def_fields with 
+                    | Some(typ) -> Some(typ)
+                    (* if failed, try to find it in delegated fields *)
+                    | None -> ( let types = List.filter_map
+                        (fun field -> match field with
+                            | StructField(_, _) -> None
+                            | StructDelegate(_, typ) -> Some(typ)
+                        ) def_fields in 
+                        let find_map' (typ:typ) = find_field typ field in
+                            List.find_map find_map' types
+                    )
                 )
             )
         | _           -> None (* failwith(" expr is not a term of struct type") *)
         ) in 
-        let typ = walk_expr expr table name_map in
+        let typ = walk_expr expr table name_map type_this in
         ( match typ.shape with 
         | TyVar(name) -> ( match Hashtbl.find_opt table.typ name with
             | None       -> failwith("It's impossible. DEBUG why struct name not found")
@@ -239,26 +294,40 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) = match expr.sha
             ) 
         | _        -> failwith(" expr is not a term of struct type")
         )
-    | ExpThis -> BuiltinType.bool (* TODO : pass TypeThis to current env *)
+    | ExpThis -> type_this;
     | ExpApp(func, args) -> (* TODO : interface check haven't included *)
         ( match Hashtbl.find_opt table.fnc func with
         | None -> failwith(" function " ^ func ^ " not found ")
         | Some(data) -> 
-            if data.args = List.map (fun expr->walk_expr expr table name_map) args then
+            if data.args = List.map (fun expr->walk_expr expr table name_map type_this) args then
                 data.retv
             else failwith(" function args' types doesn't match ")
     )
-    | ExpMethod(expr, meth, args) -> BuiltinType.bool (* TODO : around TyThis *)
-    | ExpIf(cond, fst, snd) -> let cond = walk_expr cond table name_map in
+    | ExpMethod(obj, meth, args) -> (
+        let obj_type = walk_expr obj table name_map type_this in
+        match obj_type.shape with
+        | TyVar(name) -> ( match Hashtbl.find_opt table.typ name with
+            | None -> failwith(" method not found for type " ^ name);
+            | Some(data) -> ( match Hashtbl.find_opt data.meth meth with 
+                | None -> failwith(" method " ^ meth ^ " not found in type " ^ name);
+                | Some(data) -> 
+                    if data.args = List.map (fun expr->walk_expr expr table name_map type_this) args then
+                        data.retv
+                    else failwith(" function args' types doesn't match ")
+            )
+        )
+        | _ -> failwith(" Unsupported ") (* TODO Discuss whether or not to support impl method for Other Types ?? *)
+    )
+    | ExpIf(cond, fst, snd) -> let cond = walk_expr cond table name_map type_this in
         ( match cond.shape with
         | TyBool -> ()
         | _      -> failwith(" condition of if is not a bool ")
         )
         ;
-        let fst = walk_expr fst table name_map in
-        let snd = walk_expr snd table name_map in
+        let fst = walk_expr fst table name_map type_this in
+        let snd = walk_expr snd table name_map type_this in
         if fst=snd then snd else failwith(" types of fst and snd of if don't equal ")
-    | ExpMatch(expr, pattern_exprs) -> let typ = walk_expr expr table name_map in
+    | ExpMatch(expr, pattern_exprs) -> let typ = walk_expr expr table name_map type_this in
         (* Discuss : Only support match term:ADT with ...
          * as for other pattern matches, use let pattern = term:Type
          *)
@@ -268,99 +337,75 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) = match expr.sha
             | Some(data) -> ( match data.core with 
                 | StructCore(_) -> failwith(" cannot match with Struct")
                 | ADTCore(branches) -> (
-                (* TODO Discuess : how to solve pattern exhaustive *)
-                (*
-                    let map_branch : = () in
-                    let map_pattern_expr = () in
-                    List.map map_branch branches = List.map 
+                (* TODO Discuss : how to solve pattern exhaustive *)
+                (* Discussion : Temporarily not implement. *)
+
+                (* check all exprs from pattern_exprs : the same type
+                 * then return it
                  *)
-                (* TODO : check all exprs from pattern_exprs : the same type
-                 *        then return it
-                 *)
-                    BuiltinType.bool
+                let mapper (pattern, expr) =  
+                    let layered_name_map : layered_name_map = 
+                    { deep = name_map
+                    ; shallow = NameMap.empty
+                    } in (
+                        walk_pattern pattern table layered_name_map;
+                        walk_expr expr table layered_name_map.deep BuiltinType.this
+                ) in
+                let types = List.map mapper pattern_exprs in
+                let ty1 = match types with
+                    | [] -> failwith(" match no branches ")
+                    | t::tys -> t 
+                in 
+                if List.for_all (fun ty'->ty'=ty1) types then
+                    ty1
+                else
+                    failwith(" match branches return different types");
                 )
             )
         ) 
         | _           -> failwith(" expr is not a term of ADT")
-    )
+        (* As for tuple, use let assignment to fetch its sub-fields *)
+        )
     ;;
 
-(* add variable in table and name_map.deep, .shallow *)
-let walk_add_variable (symbol:symbol) (mut:mutability) (name:variable) (typo:typ option) (table:table) (name_map:layered_name_map) : layered_name_map = (
-    match NameMap.find_opt name name_map.shallow with
-    | Some(_) -> failwith("varaible"^ name ^ "has been declared")
-    | None -> Hashtbl.add table.var symbol
-        { mut  = mut
-        ; typ  = typo
-        ; name = name
-        }
-    ;
-    { deep    = NameMap.add name symbol name_map.deep 
-    ; shallow = NameMap.add name symbol name_map.shallow
-    }
-    );;
-
-(* walk pattern to modify table & name_map *)
-let rec walk_pattern (pattern:pattern) (table:table) (name_map:layered_name_map) : layered_name_map = match pattern.shape with
-    | PatWildcard -> name_map
-    | PatVar(vpat) -> walk_add_variable vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ table name_map
-    | PatAs(pattern, vpat) -> 
-        (* Typing rules here *)
-        let name_map = walk_pattern pattern table name_map in
-        walk_add_variable vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ table name_map
-    
-    | PatADT(adt_label, patterns) -> 
-        (* Typing rules here *)
-        let walk_fold_left name_map pattern = walk_pattern pattern table name_map in
-        List.fold_left walk_fold_left name_map patterns
-    | PatStruct(itf_name, field_patterns)->
-        (* Typing rules here *)
-        let walk_fold_left name_map (struct_field, pattern) = walk_pattern pattern table name_map in
-        List.fold_left walk_fold_left name_map field_patterns
-    | PatTuple(patterns) ->
-        (* Typing rules here *)
-        let walk_fold_left name_map pattern = walk_pattern pattern table name_map in
-        List.fold_left walk_fold_left name_map patterns
-    ;;
-
-let rec walk_stmt (stmt:stmt) (table:table) (name_map:layered_name_map) : layered_name_map = match stmt.shape with
-    | StmtSeq(stmts) -> let walk_fold_left name_map stmt = walk_stmt stmt table name_map in
+let rec walk_stmt (stmt:stmt) (table:table) (name_map:layered_name_map) (type_this:typ): layered_name_map = match stmt.shape with
+    | StmtSeq(stmts) -> let walk_fold_left name_map stmt = walk_stmt stmt table name_map type_this in
         List.fold_left walk_fold_left name_map stmts 
     | StmtExpr(expr) -> 
-        walk_expr expr table name_map.deep;
+        walk_expr expr table name_map.deep type_this;
         name_map
     | StmtDecl(pattern, expr) -> 
         let name_map = walk_pattern pattern table name_map in (
-            walk_expr expr table name_map.deep;
+            walk_expr expr table name_map.deep type_this;
             name_map
         )
     | StmtIf(cond, t_stmt, f_stmt) ->
-        walk_expr cond table name_map.deep;
-        walk_stmt t_stmt table name_map;
-        walk_stmt f_stmt table name_map;
+        walk_expr cond table name_map.deep type_this;
+        walk_stmt t_stmt table name_map type_this;
+        walk_stmt f_stmt table name_map type_this;
         name_map (* use the old *)
     | StmtFor((init, cond, final), body) ->
-        let name_map = walk_stmt init table name_map in 
-        ( walk_expr cond table name_map.deep
-        ; walk_stmt body table name_map
-        ; walk_stmt final table name_map
+        let name_map = walk_stmt init table name_map type_this in 
+        ( walk_expr cond table name_map.deep type_this
+        ; walk_stmt body table name_map type_this
+        ; walk_stmt final table name_map type_this
         );
         name_map (* use the old *)
     | StmtForRange((pattern, expr), body)->
         let name_map = walk_pattern pattern table name_map in (
-            walk_expr expr table name_map.deep;
-            walk_stmt body table name_map
+            walk_expr expr table name_map.deep type_this;
+            walk_stmt body table name_map type_this
         );
         name_map (* use the old *)
     | StmtWhile(cond, body) -> 
-        walk_expr cond table name_map.deep;
-        walk_stmt body table name_map;
+        walk_expr cond table name_map.deep type_this;
+        walk_stmt body table name_map type_this;
         name_map (* use the old *)
     | StmtMatch(expr, branches) ->
         (* Typing rules here *)
         let walk_iter (pattern,body) = (
             let name_map = walk_pattern pattern table name_map in
-            walk_stmt body;
+            walk_stmt body table name_map type_this;
             ()
         ) in List.iter walk_iter branches;
         name_map (* use the old *)
@@ -388,7 +433,7 @@ let walk_func_decl (name:func_name) (args:func_arg list) (retv:typ) (table:table
         }
     )
     ;;
-let walk_func_stmt (args:func_arg list) (stmt:stmt) (table:table) (name_map:name_map) =
+let walk_func_stmt (type_this:typ) (args:func_arg list) (stmt:stmt) (table:table) (name_map:name_map) =
     let walk_fold_left (layered_map:layered_name_map) (arg:func_arg) = 
         walk_add_variable arg.farg_symb Mut arg.farg_name (Some arg.farg_typ) table layered_map
         in
@@ -396,7 +441,7 @@ let walk_func_stmt (args:func_arg list) (stmt:stmt) (table:table) (name_map:name
     { deep    = name_map
     ; shallow = NameMap.empty
     } args in
-    walk_stmt stmt table layer_map;;
+    walk_stmt stmt table layer_map type_this;;
 
 (* impl intf for T { methods }*)
 (* check intf name *)
@@ -448,7 +493,7 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
         let name = gvar.gvar_name in (
             Hashtbl.add table.var symbol
             { mut  = Mut
-            ; typ  = None (* TODO = type_check(gvar.gvar_value)  *)
+            ; typ  = walk_expr gvar.gvar_value table name_map BuiltinType.this
             ; name = name
             };
             match NameMap.find_opt name name_map with
@@ -456,7 +501,6 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
             | None -> NameMap.add name symbol name_map
         )
     | StructDef(def) -> (
-        (* TODO Discuss : As for delegation, field and method, both or just the former? *)
         let name = def.struct_name in 
         let fields = def.struct_fields in
         match Hashtbl.find_opt table.typ name with
@@ -497,13 +541,13 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
         | None -> Hashtbl.add table.itf name decl.intf_decl_methods
         );
         name_map
-    | FunctionDef(func_impl) -> 
+    | FunctionDef(func_impl) ->
         let (decl, stmt) = func_impl in
         let args = decl.func_decl_args in
         let name = decl.func_decl_name in
         let retv = decl.func_decl_ret  in (
             walk_func_decl name args retv table; (* func name check, modify table.fnc *)
-            walk_func_stmt args stmt table name_map
+            walk_func_stmt BuiltinType.this args stmt table name_map
         );
         name_map
     | MethodsImpl(impl) -> 
@@ -518,7 +562,7 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
                 let name = decl.func_decl_name in
                 let retv = decl.func_decl_ret  in (
                     walk_method_decl typ name args retv table;
-                    walk_method_stmt args stmt table name_map;
+                    walk_method_stmt (BuiltinType.var typ) args stmt table name_map;
                     ()
                 )
             ) in List.iter walk_iter methods;
