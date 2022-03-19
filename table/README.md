@@ -1,21 +1,64 @@
 ## Walk 1st, table
-In root directory of the repo:
-```bash
-$ eval `opam config env`
-$ bash BASHME.sh
-$ test
-```
-
-refer to ```./table/example.ml```, ```./output/AbsDeeplang.ml``` and ```./output/ShowDeeplang.ml``` to develop
 
 ```bash
-$ cd ./output
 $ # currently, just use repl to dev
+$ eval `opam config env`
 $ utop 
+utop # #use "../parser/ParseTree.ml";;
+utop # #use "name_resolute.ml";;
 ```
-目前还没有引入node指针，感觉要在顶层（即tableCode函数中立即插入e:node aka AbsDeeplang.code），这里的所谓指针，其实其类型就是AbsDeeplang.code，相当于引用。
 
-### 20220305 dev notes
+### Discuss, TODO and REMAIN list
+1. Discuss BuiltinType.var.span = None
+2. Discuss literal for int and float, i32? i64? f32? f64?
+3. TODO TyCk for pattern destruct
+4. TODO Discuss Pattern Exhaustivity
+5. TODO Test
+6. TODO doc (** *)
+   安装odoc总有点问题，Curl failed，之后再查查怎么解决
+7. REMAIN ... subtyping for interface extension
+
+### dev notes
+#### 20220319
+1. TyExists
+   ```OCaml
+   { vpat_mut  : mutability
+   ; vpat_typ  : typ option (* Only TyCk now, must be Some(ty) *)
+   ; vpat_name : variable
+   ; vpat_symb : symbol }
+   ```
+
+2. Delegate : modify search order DONE
+3. BuiltinType.this is just a hole, DO NOT use
+4. AST::func_decl 没有支持声明参数是某一接口，即
+   ```OCaml
+   type func_arg =
+    { farg_name : variable
+    ; farg_symb : symbol
+    ; farg_typ  : 
+    typ }
+   type func_decl =
+    { (* ... *)
+      func_decl_args : func_arg list
+    ; (* ... *)
+   ```
+   假设此处以TyVar(name)作为intf_name，那么也可以做，
+   反正intf_name, type_name(adt, struct)都是不交的。
+   将intf, type(adt, struct)放到一张表格里去吧，同一个命名空间
+   Done
+
+5. TODO method field 名字检查 
+6. TODO function retv check
+7. REMAIN ...
+8. Discuss literal for int and float, i32? i64? f32? f64?
+9. Discuss : return x:Intf reject
+   ```deeplang
+   fun foo(x:intf){ // -> reject
+      return x;
+   }
+   ```
+
+#### 20220305 
 1. 变量名可以覆盖函数名（实现起来简单）
    ```OCaml
    let foo x = x+3;
@@ -65,30 +108,3 @@ $ utop
     ```
 15. ```List.find_map``` OCaml v4.10+
 
-### 20220319
-1. TyExists
-   ```OCaml
-   { vpat_mut  : mutability
-   ; vpat_typ  : typ option (* Only TyCk now, must be Some(ty) *)
-   ; vpat_name : variable
-   ; vpat_symb : symbol }
-   ```
-
-2. Delegate : modify search order DONE
-3. BuiltinType.this is just a hole, DO NOT use
-4. AST::func_decl 没有支持声明参数是某一接口，即
-   ```OCaml
-   type func_arg =
-    { farg_name : variable
-    ; farg_symb : symbol
-    ; farg_typ  : typ }
-   type func_decl =
-    { (* ... *)
-      func_decl_args : func_arg list
-    ; (* ... *)
-   ```
-   假设此处以TyVar(name)作为intf_name，那么也可以做，
-   反正intf_name, type_name(adt, struct)都是不交的。
-   将intf, type(adt, struct)放到一张表格里去吧，同一个命名空间 TODO
-
-5. TODO method field 名字检查

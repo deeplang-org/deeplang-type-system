@@ -2,8 +2,8 @@ module NameMap = Map.Make(String);;
 type name_map = symbol NameMap.t;;
 (** deep & shallow -> discuss needed *)
 type layered_name_map = 
-    { deep    : name_map
-    ; shallow : name_map
+    { mutable deep    : name_map
+    ; mutable shallow : name_map
     }
     ;;
 type var_data = 
@@ -18,22 +18,28 @@ type var_table = (symbol, var_data) Hashtbl.t;;
 type fun_data =
     { args  : typ list
     ; retv  : typ
+    ; name  : variable list (* args' names *)
     }
     ;;
 type fun_table = (func_name, fun_data) Hashtbl.t;;
 
-type itf_data = func_decl list;;
-type itf_table = (intf_name, itf_data) Hashtbl.t;;
-
-type typ_core = 
-    | StructCore of struct_def_field       list
-    | ADTCore    of (adt_label * typ list) list
-    ;;
-type typ_data = 
+type adt_data = 
     { mutable intf : intf_name list (* impl interface for T *)
     ; mutable meth : fun_table      (* impl for T *)
-    ;         core : typ_core       
-    }
+    ;         core : (adt_label * typ list) list
+    };;
+type struct_data = 
+    { mutable intf : intf_name list
+    ; mutable meth : fun_table
+    ;         core : struct_def_field list
+    };;
+type intf_data = 
+    {         meth : fun_table
+    };;
+type typ_data =
+    | ADT_data of adt_data
+    | Struct_data of struct_data
+    | Intf_data of intf_data
     ;;
 type typ_table = (typ_name, typ_data) Hashtbl.t;; (* T -> impl what intf and what method *)
 type adt_data = 
@@ -52,7 +58,6 @@ type table =
     { var : var_table
     ; fnc : fun_table
     ; typ : typ_table
-    ; itf : itf_table
     ; adt : adt_table
     ; ref : ref_table
     };;
@@ -83,7 +88,7 @@ module BuiltinType = struct
         };;
     let var (name:typ_name) : typ =
         { shape = TyVar(name)
-        ; span  = None (* TODO : save it when in top_clause *)
+        ; span  = None (* Discuss : maybe not*)
         };;
     (** BuiltinType.this is just a hole *)
     let this : typ =
@@ -92,7 +97,7 @@ module BuiltinType = struct
         };;
 end
 (* add variable in table and name_map.deep, .shallow *)
-let walk_add_variable (symbol:symbol) (mut:mutability) (name:variable) (typo:typ option) (table:table) (name_map:layered_name_map) : layered_name_map = 
+let walk_add_variable (symbol:symbol) (mut:mutability) (name:variable) (typo:typ option) (table:table) (name_map:layered_name_map) : unit = 
     match typo with
     | None -> failwith(" Type Annotation Needed Currently ")
     | Some(typ) -> (
@@ -104,35 +109,34 @@ let walk_add_variable (symbol:symbol) (mut:mutability) (name:variable) (typo:typ
             ; name = name
             }
         ;
-        { deep    = NameMap.add name symbol name_map.deep 
-        ; shallow = NameMap.add name symbol name_map.shallow
-        }
+        name_map.deep <- NameMap.add name symbol name_map.deep ;
+        name_map.shallow <- NameMap.add name symbol name_map.shallow
     );;
 
 (* walk pattern to modify table & name_map *)
-let rec walk_pattern (pattern:pattern) (table:table) (name_map:layered_name_map) : layered_name_map = match pattern.shape with
-    | PatWildcard -> name_map
+(* TODO : pattern TyCk *)
+let rec walk_pattern (pattern:pattern) (table:table) (name_map:layered_name_map) : unit = match pattern.shape with
+    | PatWildcard -> ()
     | PatVar(vpat) -> walk_add_variable vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ table name_map
     | PatAs(pattern, vpat) -> 
         (* Typing rules here *)
-        let name_map = walk_pattern pattern table name_map in
+        walk_pattern pattern table name_map;
         walk_add_variable vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ table name_map
     
     | PatADT(adt_label, patterns) -> 
         (* Typing rules here *)
-        let walk_fold_left name_map pattern = walk_pattern pattern table name_map in
-        List.fold_left walk_fold_left name_map patterns
+        let walk_iter pattern = walk_pattern pattern table name_map in
+        List.iter walk_iter patterns
     | PatStruct(itf_name, field_patterns)->
         (* Typing rules here *)
-        let walk_fold_left name_map (struct_field, pattern) = walk_pattern pattern table name_map in
-        List.fold_left walk_fold_left name_map field_patterns
+        let walk_iter (struct_field, pattern) = walk_pattern pattern table name_map in
+        List.iter walk_iter field_patterns
     | PatTuple(patterns) ->
         (* Typing rules here *)
-        let walk_fold_left name_map pattern = walk_pattern pattern table name_map in
-        List.fold_left walk_fold_left name_map patterns
+        let walk_iter pattern = walk_pattern pattern table name_map in
+        List.iter walk_iter patterns
     ;;
 
-(** TODO : modify ref_table *)
 let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ): typ = match expr.shape with 
     | ExpLit(literal) -> ( match literal with
         | LitBool(_)   -> BuiltinType.bool
@@ -236,9 +240,9 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ):
         ))
     | ExpStruct(name, field_exprs) -> ( match Hashtbl.find_opt table.typ name with
         | None -> failwith(" type " ^ name ^ " Not Found ")
-        | Some(data) -> ( match data.core with
-            | ADTCore(_) -> failwith(" type " ^ name ^ " is not a Strcut but an ADT ")
-            | StructCore(def_fields) ->
+        | Some(ADT_data(_)) -> failwith(" type " ^ name ^ " is not a Strcut but an ADT ")
+        | Some(Intf_data(_)) -> failwith(""^name ^ " is not a Strcut but an Interface ")
+        | Some(Struct_data(data)) -> ( let def_fields = data.core in
                 let map_def_field (def_field:struct_def_field) = match def_field with
                     | StructField(field, typ) -> (field, typ)
                     | StructDelegate(field, typ) -> (field, typ)
@@ -255,28 +259,26 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ):
         ( match typ.shape with 
         | TyVar(name) -> 
             ( match Hashtbl.find_opt table.typ name with
-            | None       -> None (* failwith("It's impossible. DEBUG why typ_name not found") *)
-            | Some(data) -> ( match data.core with 
-                | ADTCore(_) -> None (* failwith(" ADT has no fields! ") *)
-                | StructCore(def_fields) ->
-                    let find_map def_field = ( match def_field with
-                        | StructField(field', typ)
-                        | StructDelegate(field', typ) 
-                        -> if field'=field then Some typ else None
-                    ) in 
-                    (* find in this level first *)
-                    match List.find_map find_map def_fields with 
-                    | Some(typ) -> Some(typ)
-                    (* if failed, try to find it in delegated fields *)
-                    | None -> ( let types = List.filter_map
-                        (fun field -> match field with
-                            | StructField(_, _) -> None
-                            | StructDelegate(_, typ) -> Some(typ)
-                        ) def_fields in 
-                        let find_map' (typ:typ) = find_field typ field in
-                            List.find_map find_map' types
-                    )
+            | Some(Struct_data(data)) -> 
+                let def_fields = data.core in
+                let find_map def_field = ( match def_field with
+                    | StructField(field', typ)
+                    | StructDelegate(field', typ) 
+                    -> if field'=field then Some typ else None
+                ) in 
+                (* find in this level first *)
+                ( match List.find_map find_map def_fields with 
+                | Some(typ) -> Some(typ)
+                (* if failed, try to find it in delegated fields *)
+                | None ->  let types = List.filter_map
+                    (fun field -> match field with
+                        | StructField(_, _) -> None
+                        | StructDelegate(_, typ) -> Some(typ)
+                    ) def_fields in 
+                    let find_map' (typ:typ) = find_field typ field in
+                        List.find_map find_map' types
                 )
+            | _ -> None
             )
         | _           -> None (* failwith(" expr is not a term of struct type") *)
         ) in 
@@ -284,39 +286,63 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ):
         ( match typ.shape with 
         | TyVar(name) -> ( match Hashtbl.find_opt table.typ name with
             | None       -> failwith("It's impossible. DEBUG why struct name not found")
-            | Some(data) -> ( match data.core with 
-                | ADTCore(_) -> failwith(" ADT has no fields! ")
-                | StructCore(_) -> ( match find_field typ field with
-                    | None -> failwith(" field " ^ field ^ " not found ")
-                    | Some(typ) -> typ
-                    )
+            | Some(ADT_data(data)) -> failwith(" ADT has no fields! ")
+            | Some(Intf_data(_)) -> failwith(" Interface has no fields! ")
+            | Some(Struct_data(_)) -> ( match find_field typ field with
+                | None -> failwith(" field " ^ field ^ " not found ")
+                | Some(typ) -> typ
                 )
-            ) 
+            )
         | _        -> failwith(" expr is not a term of struct type")
         )
     | ExpThis -> type_this;
-    | ExpApp(func, args) -> (* TODO : interface check haven't included *)
+    | ExpApp(func, args) -> (* interface check included *)
         ( match Hashtbl.find_opt table.fnc func with
         | None -> failwith(" function " ^ func ^ " not found ")
         | Some(data) -> 
-            if data.args = List.map (fun expr->walk_expr expr table name_map type_this) args then
+            (* arg : formal, i.e. declared in function , para : actual *)
+            let ty_eq_with_intf (para_t:typ) (arg_t:typ) = 
+                if para_t = arg_t then true 
+                else match arg_t.shape with (* para_t = Type <: Intf = arg_t *)
+                | TyVar(intf_name) -> (match Hashtbl.find_opt table.typ intf_name with
+                    | None -> failwith("Impossible, DEBUG please")
+                    (* arg_t is a interface *)
+                    | Some(Intf_data(_)) -> ( match para_t.shape with
+                        | TyVar(type_name) -> ( match Hashtbl.find_opt table.typ type_name with
+                            | None -> failwith("Impossible, DEBUG please")
+                            | Some(Intf_data(_)) -> false (* REMAIN : interface subtyping here, currently reject *)
+                            | Some(Struct_data(data)) -> List.exists (fun name->name=intf_name) data.intf;
+                            | Some(ADT_data(data)) -> List.exists (fun name->name=intf_name) data.intf;
+                        )
+                        | _ -> false
+                    )
+                    | _ -> false
+                )
+                | _ -> false
+            in
+            let para_types = List.map (fun expr->walk_expr expr table name_map type_this) args in
+            let result = List.for_all2 ty_eq_with_intf para_types data.args in
+            if result then
                 data.retv
             else failwith(" function args' types doesn't match ")
     )
     | ExpMethod(obj, meth, args) -> (
         let obj_type = walk_expr obj table name_map type_this in
         match obj_type.shape with
-        | TyVar(name) -> ( match Hashtbl.find_opt table.typ name with
-            | None -> failwith(" method not found for type " ^ name);
-            | Some(data) -> ( match Hashtbl.find_opt data.meth meth with 
-                | None -> failwith(" method " ^ meth ^ " not found in type " ^ name);
-                | Some(data) -> 
-                    if data.args = List.map (fun expr->walk_expr expr table name_map type_this) args then
-                        data.retv
-                    else failwith(" function args' types doesn't match ")
-            )
+        | TyVar(name) -> ( let walk_meth fun_table = match Hashtbl.find_opt fun_table meth with
+            | None -> failwith(" method " ^ meth ^ " not found in type " ^ name)
+            | Some(data) -> 
+                if data.args = List.map (fun expr->walk_expr expr table name_map type_this) args then
+                    data.retv
+                else failwith(" function args' types doesn't match ")
+            in 
+            match Hashtbl.find_opt table.typ name with
+            | None -> failwith(" method not found for type " ^ name)
+            | Some(ADT_data(data)) -> walk_meth data.meth
+            | Some(Struct_data(data)) -> walk_meth data.meth
+            | Some(Intf_data(data)) -> walk_meth data.meth
         )
-        | _ -> failwith(" Unsupported ") (* TODO Discuss whether or not to support impl method for Other Types ?? *)
+        | _ -> failwith(" Unsupported ") (* Discuss : Support impl for just TyVar currently *)
     )
     | ExpIf(cond, fst, snd) -> let cond = walk_expr cond table name_map type_this in
         ( match cond.shape with
@@ -334,12 +360,12 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ):
         ( match typ.shape with
         | TyVar(name) -> ( match Hashtbl.find_opt table.typ name with
             | None       -> failwith("It's impossible. DEBUG why ADT name not found")
-            | Some(data) -> ( match data.core with 
-                | StructCore(_) -> failwith(" cannot match with Struct")
-                | ADTCore(branches) -> (
-                (* TODO Discuss : how to solve pattern exhaustive *)
+            | Some(Intf_data(_)) -> failwith("cannot match with Interface")
+            | Some(Struct_data(_)) -> failwith(" cannot match with Struct")
+            | Some(ADT_data(data)) -> let branches = data.core in
+                (* TODO Discuss : how to solve pattern exhaustive not only here but also StmtMatch *)
                 (* Discussion : Temporarily not implement. *)
-
+                (* branches unused because pattern exhaustion hasn't been done *)
                 (* check all exprs from pattern_exprs : the same type
                  * then return it
                  *)
@@ -360,65 +386,76 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ):
                     ty1
                 else
                     failwith(" match branches return different types");
-                )
-            )
-        ) 
+            ) 
         | _           -> failwith(" expr is not a term of ADT")
         (* As for tuple, use let assignment to fetch its sub-fields *)
         )
     ;;
 
-let rec walk_stmt (stmt:stmt) (table:table) (name_map:layered_name_map) (type_this:typ): layered_name_map = match stmt.shape with
-    | StmtSeq(stmts) -> let walk_fold_left name_map stmt = walk_stmt stmt table name_map type_this in
-        List.fold_left walk_fold_left name_map stmts 
+(** only used by walk_stmt in return type checking *)
+let eq_typo (ty1:typ option) (ty2:typ option) = match ty1 with
+    | None -> true
+    | Some(ty1) -> (match ty2 with 
+        | None -> true
+        | Some(ty2) -> ty1=ty2
+    );;
+(* walk_stmt : ... -> typ list *)
+let rec walk_stmt (stmt:stmt) (table:table) (name_map:layered_name_map) (typo:typ option) (type_this:typ): typ option = match stmt.shape with
+    | StmtSeq(stmts) -> 
+        let walk_fold_left typo stmt = walk_stmt stmt table name_map typo type_this in
+        let typo' = List.fold_left walk_fold_left typo stmts in
+        typo'
     | StmtExpr(expr) -> 
-        walk_expr expr table name_map.deep type_this;
-        name_map
+        let ty = walk_expr expr table name_map.deep type_this in
+        typo
     | StmtDecl(pattern, expr) -> 
-        let name_map = walk_pattern pattern table name_map in (
-            walk_expr expr table name_map.deep type_this;
-            name_map
-        )
+        let ty = walk_expr expr table name_map.deep type_this in 
+        walk_pattern pattern table name_map;
+        typo
     | StmtIf(cond, t_stmt, f_stmt) ->
-        walk_expr cond table name_map.deep type_this;
-        walk_stmt t_stmt table name_map type_this;
-        walk_stmt f_stmt table name_map type_this;
-        name_map (* use the old *)
+        let ty = walk_expr cond table name_map.deep type_this in
+        (* WARNING, use '=' here ... *)
+        if ty = BuiltinType.bool then ()
+        else failwith(" cond of if-statement is not a boolean"); 
+        let typo' = walk_stmt t_stmt table name_map typo type_this in
+        let typo' = walk_stmt f_stmt table name_map typo' type_this in
+        typo'
     | StmtFor((init, cond, final), body) ->
-        let name_map = walk_stmt init table name_map type_this in 
-        ( walk_expr cond table name_map.deep type_this
-        ; walk_stmt body table name_map type_this
-        ; walk_stmt final table name_map type_this
-        );
-        name_map (* use the old *)
+        let ty = walk_expr cond table name_map.deep type_this in
+        if ty = BuiltinType.bool then 
+            let typo' = walk_stmt init table name_map typo type_this in
+            let typo' = walk_stmt body table name_map typo' type_this in
+            let typo' = walk_stmt final table name_map typo' type_this in
+            typo'
+        else failwith(" cond of if-statement is not a boolean"); 
     | StmtForRange((pattern, expr), body)->
-        let name_map = walk_pattern pattern table name_map in (
-            walk_expr expr table name_map.deep type_this;
-            walk_stmt body table name_map type_this
-        );
-        name_map (* use the old *)
+        let ty = walk_expr expr table name_map.deep type_this in
+        let _ = walk_pattern pattern table name_map in
+        let typo' = walk_stmt body table name_map typo type_this in
+        typo'
     | StmtWhile(cond, body) -> 
-        walk_expr cond table name_map.deep type_this;
-        walk_stmt body table name_map type_this;
-        name_map (* use the old *)
+        let ty = walk_expr cond table name_map.deep type_this in
+        if ty = BuiltinType.bool then 
+            let typo' = walk_stmt body table name_map typo type_this in
+                typo'
+        else failwith(" cond of if-statement is not a boolean"); 
     | StmtMatch(expr, branches) ->
-        (* Typing rules here *)
-        let walk_iter (pattern,body) = (
-            let name_map = walk_pattern pattern table name_map in
-            walk_stmt body table name_map type_this;
-            ()
-        ) in List.iter walk_iter branches;
-        name_map (* use the old *)
+        let ty = walk_expr expr table name_map.deep type_this in
+        let walk_fold_left typo (pattern,body) = (
+            walk_pattern pattern table name_map;
+            walk_stmt body table name_map typo type_this
+        ) in List.fold_left walk_fold_left typo branches
     | StmtReturn(expr) ->
-        (* Typing rules here *)
         (* process control here *)
-        name_map
+        let typo' = Some (walk_expr expr table name_map.deep type_this) in
+        if eq_typo typo typo' then typo'
+        else failwith(" return different types ")
     | StmtBreak ->
         (* process control here *)
-        name_map
+        typo
     | StmtContinue -> 
         (* process control here *)
-        name_map
+        typo
     ;;
 
 (** not return name_map *)
@@ -430,59 +467,70 @@ let walk_func_decl (name:func_name) (args:func_arg list) (retv:typ) (table:table
     | None -> ( Hashtbl.add table.fnc name
         { args=List.map (fun (arg:func_arg)->arg.farg_typ) args
         ; retv=retv
+        ; name=List.map (fun (arg:func_arg)->arg.farg_name) args
         }
     )
     ;;
 let walk_func_stmt (type_this:typ) (args:func_arg list) (stmt:stmt) (table:table) (name_map:name_map) =
-    let walk_fold_left (layered_map:layered_name_map) (arg:func_arg) = 
+    let layered_map =     
+        { deep    = name_map
+        ; shallow = NameMap.empty
+        } in
+    let walk_iter (arg:func_arg) = 
         walk_add_variable arg.farg_symb Mut arg.farg_name (Some arg.farg_typ) table layered_map
         in
-    let layer_map = List.fold_left walk_fold_left
-    { deep    = name_map
-    ; shallow = NameMap.empty
-    } args in
-    walk_stmt stmt table layer_map type_this;;
+    let _ = List.iter walk_iter args in
+    walk_stmt stmt table layered_map None type_this;;
 
 (* impl intf for T { methods }*)
 (* check intf name *)
-let walk_method_intf (intf:intf_name option) (typ:typ_name) (methods:func_impl list) (table:table) : unit = 
+let walk_method_intf (intf:intf_name option) (typ:typ_name) (table:table) : unit = 
     match intf with
     | None -> () 
     (* no interface name, no need to check whether impl methods 
      * declared in interface
      *)
-    | Some(name) -> ( match Hashtbl.find_opt table.itf name with
-        | Some(decls) -> 
-            let method_decls = List.map (fun ((decl, _) : func_impl)-> decl) methods in
-            let has_method (decl:func_decl) : bool = List.exists  (fun method_decl->
-                method_decl.func_decl_name = decl.func_decl_name
-             && method_decl.func_decl_args = decl.func_decl_args
-             && method_decl.func_decl_ret  = decl.func_decl_ret
-            ) method_decls in
-            if List.for_all has_method decls = false then
-                failwith("not impl all methods declared in interface " ^ name)
-            else ( match Hashtbl.find_opt table.typ typ with
-                | None -> failwith("no type named" ^ typ)
-                | Some(typ_table) -> ( match List.find_opt (fun name'->name'=name) typ_table.intf  with
-                    | Some(_) -> failwith("interface " ^ name ^ "has been implemented")
-                    | None -> ( typ_table.intf = name::typ_table.intf; () )
-                )
-            )
-        | _ -> failwith("no interface name as " ^ name)
+    | Some(name) -> ( match Hashtbl.find_opt table.typ name with
+        | Some(Intf_data data) -> 
+            let folder fun_name fun_data bool = 
+                if bool then match Hashtbl.find_opt table.typ typ with
+                    | Some(ADT_data(data)) -> ( match Hashtbl.find_opt data.meth fun_name with
+                        | None -> false
+                        | Some(fun_data') -> 
+                            fun_data.args = fun_data'.args 
+                         && fun_data.retv = fun_data'.retv
+                        )
+                    | Some(Struct_data(data)) -> ( match Hashtbl.find_opt data.meth fun_name with
+                        | None -> false
+                        | Some(fun_data') -> 
+                            fun_data.args = fun_data'.args 
+                         && fun_data.retv = fun_data'.retv
+                        )
+                    | _ -> failwith(" impl type NOT FOUND ")
+                else false in
+            let result = Hashtbl.fold folder data.meth true in 
+            if result then ()
+            else failwith(" not match with interface's methods ")
+        | Some(ADT_data(_)) -> failwith(name ^ " is not an interface but an ADT")
+        | Some(Struct_data(_)) -> failwith(name ^ " is not an interface but a Struct")
+        | None -> failwith("no interface name as " ^ name)
     )
     ;;
 
 (* check method name, and collect type info *)
 let walk_method_decl (typ:typ_name) (name:func_name) (args:func_arg list) (retv:typ) (table:table) : unit =
-    let fun_table = (match Hashtbl.find_opt table.typ typ with
+    let fun_table = match Hashtbl.find_opt table.typ typ with
         | None -> failwith("no type named" ^ typ)
-        | Some(typ_table) -> typ_table.meth
-    ) in
+        | Some(Intf_data(table)) -> failwith(typ^" is not a type but an interface")
+        | Some(Struct_data(table)) -> table.meth
+        | Some(ADT_data(table)) -> table.meth
+    in
     match Hashtbl.find_opt fun_table name with
     | Some(_) -> failwith("member function name " ^ name ^ " has been used")
     | None -> ( Hashtbl.add fun_table name
         { args=List.map (fun (arg:func_arg)->arg.farg_typ) args
         ; retv=retv
+        ; name=List.map (fun (arg:func_arg)->arg.farg_name) args
         }
     )
     ;;
@@ -505,11 +553,12 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
         let fields = def.struct_fields in
         match Hashtbl.find_opt table.typ name with
         | Some(_) -> failwith("The same Struct Name")
-        | None -> Hashtbl.add table.typ name 
+        | None -> Hashtbl.add table.typ name (Struct_data(
             { intf = []
             ; meth = Hashtbl.create 10
-            ; core = StructCore fields
+            ; core = fields
             }
+        ))
         ;
         name_map
     )
@@ -518,12 +567,11 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
         let branches = def.adt_branches in
         ( match Hashtbl.find_opt table.typ name with
         | Some(_) -> failwith("The same ADT Name")
-        | None    -> ( Hashtbl.add table.typ name 
+        | None    -> ( Hashtbl.add table.typ name (ADT_data (
             { intf = []
             ; meth = Hashtbl.create 10
-            ; core = ADTCore branches
-            }
-            ;
+            ; core = branches
+            }));
             let walk_iter_adt_branch ((label, typs)) = 
                 ( match Hashtbl.find_opt table.adt label with
                 | Some(_) -> failwith("The same ADT label")
@@ -536,9 +584,21 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
         ));
         name_map
     | InterfaceDecl(decl) -> let name = decl.intf_decl_name in
-        ( match Hashtbl.find_opt table.itf name with
+        ( match Hashtbl.find_opt table.typ name with
         | Some(_) -> failwith("The same Interface Name")
-        | None -> Hashtbl.add table.itf name decl.intf_decl_methods
+        | None ->
+            let fun_table = Hashtbl.create 10 in
+            let iterator (decl:func_decl) = 
+                let args = List.map (fun farg->farg.farg_typ) decl.func_decl_args in
+                let name = List.map (fun farg->farg.farg_name) decl.func_decl_args in
+                Hashtbl.add fun_table decl.func_decl_name
+                { args = args
+                ; retv = decl.func_decl_ret
+                ; name = name
+                } in 
+            ( List.iter iterator decl.intf_decl_methods
+            ; Hashtbl.add table.typ name (Intf_data { meth = fun_table })
+            )
         );
         name_map
     | FunctionDef(func_impl) ->
@@ -547,7 +607,9 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
         let name = decl.func_decl_name in
         let retv = decl.func_decl_ret  in (
             walk_func_decl name args retv table; (* func name check, modify table.fnc *)
-            walk_func_stmt BuiltinType.this args stmt table name_map
+            let typo = walk_func_stmt BuiltinType.this args stmt table name_map in
+            if typo = (Some retv) then ()
+            else failwith(" function return type doesn't match ! ")
         );
         name_map
     | MethodsImpl(impl) -> 
@@ -555,17 +617,18 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) = match claus
         let typ = impl.impl_typ in
         let methods = impl.impl_methods in
         let intf = impl.impl_intf in (
-            walk_method_intf intf typ methods table;
 
             let walk_iter ((decl, stmt):func_impl) = (
                 let args = decl.func_decl_args in
                 let name = decl.func_decl_name in
                 let retv = decl.func_decl_ret  in (
                     walk_method_decl typ name args retv table;
-                    walk_method_stmt (BuiltinType.var typ) args stmt table name_map;
-                    ()
+                    let typo = walk_method_stmt (BuiltinType.var typ) args stmt table name_map in
+                    if typo = (Some retv) then ()
+                    else failwith(" function return type doesn't match ! ")
                 )
             ) in List.iter walk_iter methods;
+            walk_method_intf intf typ table;
         );
         name_map
     ;;
@@ -601,7 +664,6 @@ let test_case = top_clause_gen (GlobalVarDef
 let table : table = 
     { var=Hashtbl.create 10
     ; fnc=Hashtbl.create 10
-    ; itf=Hashtbl.create 10
     ; typ=Hashtbl.create 10
     ; adt=Hashtbl.create 10
     ; ref=Hashtbl.create 10
