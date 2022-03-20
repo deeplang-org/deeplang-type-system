@@ -3,10 +3,10 @@ comment "/*" "*/";
 (:). [Code] ::= Code ";" [Code];
 []. [Code] ::= ;
 
-Declare. Code ::= Declare;
-Define. Code ::= Define;
-Statement. Code ::= Statement;
-Expression. Code ::= Expression;
+Declares. Code ::= Declare;
+Defines. Code ::= Define;
+Statements. Code ::= Statement;
+Expressions. Code ::= Expression;
 Unit. Code ::= ;
 
 -- Type 
@@ -36,81 +36,94 @@ TypeX. Type2 ::= TypeId;
 -- VarId
 token VarId ( (lower | '_' )(letter|digit|'_')* );
 -- Variable
-Variable. Variable ::= VarId;
+Variables. Variable ::= VarId;
 (:[]). [Variable] ::= Variable;
 (:). [Variable] ::= Variable "," [Variable] ;
 
 -- Declare
 DecImmut. Declare ::= "let" VarId ":" Type;
 DecMut. Declare ::= "let" "mut" VarId ":" Type;
-DecFunc. Declare ::= "fun" VarId Args RetType "{" "}";
-Interface. Declare ::= "type" InterfaceName Methods; 
+-- 函数声明需要带一对括号么？
+DecFunc. Declare ::= "fun" VarId Args RetType; -- "{" "}";
 
 -- Function
 ArgUnit. Args ::= "(" ")"; -- Must write as ( ), or "()" -> must write as () 
 ArgExist. Args ::= "(" [Arg] ")";
-Arg. Arg ::= VarId ":" Type;
+ArgCons. Arg ::= VarId ":" Type;
 (:[]). [Arg] ::= Arg;
 (:). [Arg] ::= Arg "," [Arg]; -- Warning here but no need to worry
 RetUnit. RetType ::= ;
 RetExist. RetType ::= "->" Type;
 
--- Interface
-InterfaceName. InterfaceName ::= TypeId;
+-- Interface Declaration
+InterfaceNoExt. Declare ::= "interface" InterfaceName "{" Methods "}"; 
+InterfaceExt. Declare ::= "interface" InterfaceName "extends" [InterfaceName] "{" Methods "}"; 
+InterfaceNames. InterfaceName ::= TypeId;
 (:[]). [InterfaceName] ::= InterfaceName;
 (:). [InterfaceName] ::= InterfaceName "," [InterfaceName]; -- Warning here but no need to worry
 InterfaceMethodUnit. Methods ::= "{" "}";
 InterfaceMethodExist. Methods ::= "{" [Method] "}";
-InterfaceMethod. Method ::=  VarId ":" Type "->" Type ;
+-- 应该是所有method声明后面都得有个分号？
+InterfaceMethod. Method ::= "fun" VarId Args RetType ";";
 (:[]). [Method] ::= Method;
-(:). [Method] ::= Method ";" [Method]; -- Warning here but no need to worry
+(:). [Method] ::= Method [Method];
+
+-- Interface Implementation
+InterfaceImpl. Define ::= "impl" InterfaceName "for" Type "{" [Method] "}";
+RawImpl. Define ::= "impl" Type "{" [Method] "}";
 
 -- Define
-DefFunc. Define ::= "fun" VarId Args RetType "{" Body "}";
-Body. Body ::= [Code];
+DefFunc. Define ::= "fun" VarId Args RetType "{" [Code] "}";
 
 ADT. Define ::= "type" TypeId "[" [Constructor] "]" Methods;
 ADTMethod. Method ::=  "fun" VarId Args RetType "{" [Code] "}";
 
-Constructor. Constructor ::= TypeId Fields;
+Constructors. Constructor ::= TypeId Fields;
 (:[]). [Constructor] ::= Constructor;
-(:). [Constructor] ::= Constructor "," [Constructor]; -- Warning here but no need to worry
+(:). [Constructor] ::= Constructor "," [Constructor];
 FieldUnit. Fields ::= "(" ")";
 FieldExist. Fields ::= "(" [Field] ")";
 
 Delegate. Arg ::= "as" VarId ":" Type;
-Field. Field ::=  VarId ":" Type;
+FieldCons. Field ::=  VarId ":" Type;
 (:[]). [Field] ::= Field;
-(:). [Field] ::= Field "," [Field]; -- Warning here but no need to worry
+(:). [Field] ::= Field "," [Field];
 
-Struct. Define ::= "type" TypeId Args Impl Methods; -- TypeId Args success, while Constructor error, Why?
-ImplUnit. Impl ::= ;
-ImplInterface. Impl ::= "impl" [InterfaceName] ;
-
-DefImmut. Define ::= "let" VarId ":" Type "=" Expression;
-DefMut. Define ::= "let" "mut" VarId ":" Type "=" Expression;
+ImmutVar. TypedVar ::= VarId ":" Type;
+MutVar. TypedVar ::= "mut" VarId ":" Type;
+DefVar. Define ::= "let" TypedVar "=" Expression;
 DefType. Define ::= "type" TypeId Args;
 
--- impl是用在ADT层级还是interface层级（SOS）？？？还是Struct
-
--- readme里 let i : Int=0，还能i++，需要修正
-
 -- Statement
-If. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}" "else" "{" [Code] "}";
-IfCondtion. IfCondtion ::= Expression;
-For. Statement ::= "for" "(" ForInit ";" ForCondition ";" ForFinal ")" "{" [Code] "}";
+-- 2月28日：目前我们的控制语句似乎都必须花括号
+
+-- 条件控制语句
+If. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}";
+IfElse. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}" "else" "{" [Code] "}";
+IfCondtions. IfCondtion ::= Expression;
+
+-- 循环
+For. Statement ::= "for" "(" "let" TypedVar "=" Expression ";" ForCondition ";" ForFinal ")" "{" [Code] "}";
 ForInitUnit. ForInit ::= ;
-ForInitDef. ForInit ::= "{" "let" "mut" VarId ":" Type "=" Expression "}";
-ForCondition. ForCondition ::= Expression;
-ForFinal. ForFinal ::= Expression;
+ForConditions. ForCondition ::= Expression;
+ForFinals. ForFinal ::= Expression;
+While. Statement ::= "while" "(" ForCondition ")" "{" [Code] "}";
 
+-- Return
 Return. Statement ::= "return" Expression;
-Match. Statement ::= "match" "(" VarId ")" "{" MatchBody "}";
 
-MatchBody. MatchBody ::= [MatchCase];
-MatchCase. MatchCase ::= TypeId "(" [Variable] ")" "{" [Code] "}";
+-- 模式匹配
+-- Match Case中的Constructor如何处理？
+Match. Statement ::= "match" "(" VarId ")" "{" MatchBody "}";
+MatchBodys. MatchBody ::= [MatchCase];
+MatchCases. MatchCase ::= Matcher "=>" "{" [Code] "}";
+WildCardMatch. Matcher ::= "_";
+-- 不确定这边的Constructor这样处理是否正确
+ConsMatch. Matcher ::= Constructor;
+VarMatch. Matcher ::= TypedVar;
+AsVarMatch. Matcher ::= Matcher "as" TypedVar;
 []. [MatchCase] ::= ;
-(:). [MatchCase] ::= MatchCase [MatchCase]; -- Warning here but no need to worry
+(:). [MatchCase] ::= MatchCase [MatchCase];
 
 -- Expression
 
@@ -133,13 +146,32 @@ assignment      exp0
 < var = literal exp12
 < () exp13
 -}
+{-
+2月28日：不支持++
+-}
 coercions Expression 13;
+
+-- 元组
 []. [Expression] ::= ;
 (:[]). [Expression] ::= Expression;
 (:). [Expression] ::= Expression "," [Expression] ;
-ExpAssignment. Expression ::= Variable "=" Expression;
-ExpMacro. Expression1 ::= Variable "@" Macro;
+
+-- 2月28日：需要macro吗？
+-- ExpAssignment. Expression ::= Variable "=" Expression;
+-- ExpMacro. Expression1 ::= Variable "@" Macro;
+
+-- 字面量
+ExpVar. Expression12 ::= Variable;
+Literals. Expression12 ::= Literal; -- 字面量
+String. Literal ::= String;
+Integer. Literal ::= Integer;
+True. Literal ::= "true";
+False. Literal ::= "false";
+
+-- 模式匹配
 ArrayMatch. Macro ::= "match" "(" [Code] ")"; -- 暂时这么写着吧
+
+-- 运算符
 ExpLogicalOr. Expression2 ::= Expression2 "||" Expression3 ; -- 注意是左结合的
 ExpLogicalAnd. Expression3 ::= Expression3 "&&" Expression4 ;
 ExpLogicalNot. Expression4 ::= "!" Expression4 ;
@@ -149,7 +181,6 @@ ExpGt. Expression5 ::= Expression7 ">" Expression7;
 ExpGeq. Expression5 ::= Expression7 ">=" Expression7;
 ExpEq. Expression6 ::= Expression7 "==" Expression7;
 ExpNoteq. Expression6 ::= Expression7 "!=" Expression7;
-
 ExpLeftShift. Expression7 ::= Expression7 "<<" Expression8; -- 注意左结合
 ExpRightShift. Expression7 ::= Expression7 ">>" Expression8;
 ExpAdd. Expression8 ::= Expression8 "+" Expression9;
@@ -157,22 +188,8 @@ ExpSub. Expression8 ::= Expression8 "-" Expression9;
 ExpMul. Expression9 ::= Expression9 "*" Expression10;
 ExpDiv. Expression9 ::= Expression9 "\\" Expression10;
 ExpMod. Expression9 ::= Expression9 "%" Expression10;
-
-ExpPreIncre. Expression10 ::= "++" Expression10; -- 这里的右结合倒是没错啦
-ExpSufIncre. Expression10 ::= Expression10 "++"; -- 算是右结合么？
-ExpPreDecre. Expression10 ::= "--" Expression10; -- 这里的右结合倒是没错啦
-ExpSufDecre. Expression10 ::= Expression10 "--"; -- 算是右结合么？
-
-
 ExpApp. Expression11 ::= Expression11 "(" [Expression] ")";
 ExpNewObj. Expression11 ::= "new" TypeId "(" [Expression]  ")";
 ExpMethod. Expression11 ::= Expression11 "." Variable ;
-
-ExpVar. Expression12 ::= Variable;
-Literal. Expression12 ::= Literal; -- 字面量
-String. Literal ::= String;
-Integer. Literal ::= Integer;
-True. Literal ::= "true";
-False. Literal ::= "false";
 
 ExpBracket. Expression13 ::= "(" Expression ")";
