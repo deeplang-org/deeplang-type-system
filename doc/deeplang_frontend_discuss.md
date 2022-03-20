@@ -136,8 +136,6 @@ ty tab
 
 类型判断相等：ty判等
 
-
-
 ### 2022.1.9例会纪要
 
 expr和statement是否统一成expression，结论：不合并。
@@ -163,8 +161,6 @@ expr和statement是否统一成expression，结论：不合并。
 5、for loop，支持 range iterator；
 
 6、我们只有type checker，要标注类型；
-
-
 
 stream parser，二进制匹配操作，match，collect
 
@@ -226,3 +222,10 @@ crc or lrc: 98
 
 陈楷骐：ocaml编译器自举，报错的实现。
 
+### 2022.3.20例会纪要
+
+刘请内存管理系统的讨论。
+
+练琪灏：ast的tab基本完成。
+
+陈亦棠：deeplang.cf文件更新
