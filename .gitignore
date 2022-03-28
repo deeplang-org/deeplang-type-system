@@ -5,4 +5,6 @@ _build
 .DS_Store
 *.cmi
 *.cmo
+*.bak
+*.o
 TestDeepLang

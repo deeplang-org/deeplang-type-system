@@ -255,6 +255,7 @@ pMacro : macro TOK_EOF { $1 }
 
 
 code_list : code SYMB1 code_list { (fun (x,xs) -> x::xs) ($1, $3) }
+  | code { (fun x -> [x]) $1 }
   | /* empty */ { []  }
 ;
 
@@ -308,6 +309,7 @@ declare : KW_let varId SYMB9 typeT { DecImmut ($2, $4) }
 ;
 
 args : SYMB2 SYMB3 { ArgUnit  }
+  | SYMB7 { ArgUnit2  }
   | SYMB2 arg_list SYMB3 { ArgExist $2 }
 ;
 
@@ -409,6 +411,7 @@ matchCase_list : /* empty */ { []  }
 ;
 
 expression : expression1 {  $1 }
+  | variable SYMB12 expression { ExpAssignment ($1, $3) }
 ;
 
 expression1 : expression2 {  $1 }

@@ -43,6 +43,7 @@ and declare =
 
 and args =
    ArgUnit
+ | ArgUnit2
  | ArgExist of arg list
 
 and arg =
@@ -119,7 +120,8 @@ and matcher =
  | AsVarMatch of matcher * typedVar
 
 and expression =
-   ExpVar of variable
+   ExpAssignment of variable * expression
+ | ExpVar of variable
  | Literals of literal
  | ExpLogicalOr of expression * expression
  | ExpLogicalAnd of expression * expression

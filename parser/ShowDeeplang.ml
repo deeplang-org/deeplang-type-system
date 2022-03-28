@@ -84,6 +84,7 @@ and showDeclare (e : AbsDeeplang.declare) : showable = match e with
 
 and showArgs (e : AbsDeeplang.args) : showable = match e with
        AbsDeeplang.ArgUnit  -> s2s "ArgUnit"
+  |    AbsDeeplang.ArgUnit2  -> s2s "ArgUnit2"
   |    AbsDeeplang.ArgExist args -> s2s "ArgExist" >> c2s ' ' >> c2s '(' >> showList showArg args >> c2s ')'
 
 
@@ -179,7 +180,8 @@ and showMatcher (e : AbsDeeplang.matcher) : showable = match e with
 
 
 and showExpression (e : AbsDeeplang.expression) : showable = match e with
-       AbsDeeplang.ExpVar variable -> s2s "ExpVar" >> c2s ' ' >> c2s '(' >> showVariable variable >> c2s ')'
+       AbsDeeplang.ExpAssignment (variable, expression) -> s2s "ExpAssignment" >> c2s ' ' >> c2s '(' >> showVariable variable  >> s2s ", " >>  showExpression expression >> c2s ')'
+  |    AbsDeeplang.ExpVar variable -> s2s "ExpVar" >> c2s ' ' >> c2s '(' >> showVariable variable >> c2s ')'
   |    AbsDeeplang.Literals literal -> s2s "Literals" >> c2s ' ' >> c2s '(' >> showLiteral literal >> c2s ')'
   |    AbsDeeplang.ExpLogicalOr (expression0, expression) -> s2s "ExpLogicalOr" >> c2s ' ' >> c2s '(' >> showExpression expression0  >> s2s ", " >>  showExpression expression >> c2s ')'
   |    AbsDeeplang.ExpLogicalAnd (expression0, expression) -> s2s "ExpLogicalAnd" >> c2s ' ' >> c2s '(' >> showExpression expression0  >> s2s ", " >>  showExpression expression >> c2s ')'

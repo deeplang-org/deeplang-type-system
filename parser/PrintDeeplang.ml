@@ -93,6 +93,7 @@ let rec prtCode (i:int) (e : AbsDeeplang.code) : doc = match e with
 
 and prtCodeListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
+  | (_,[x]) -> (concatD [prtCode 0 x])
   | (_,x::xs) -> (concatD [prtCode 0 x ; render ";" ; prtCodeListBNFC 0 xs])
 and prtTypeT (i:int) (e : AbsDeeplang.typeT) : doc = match e with
        AbsDeeplang.TypeArray (type_, integer) -> prPrec i 0 (concatD [render "[" ; prtTypeT 0 type_ ; render ";" ; prtInt 0 integer ; render "]"])
@@ -132,6 +133,7 @@ and prtDeclare (i:int) (e : AbsDeeplang.declare) : doc = match e with
 
 and prtArgs (i:int) (e : AbsDeeplang.args) : doc = match e with
        AbsDeeplang.ArgUnit  -> prPrec i 0 (concatD [render "(" ; render ")"])
+  |    AbsDeeplang.ArgUnit2  -> prPrec i 0 (concatD [render "()"])
   |    AbsDeeplang.ArgExist args -> prPrec i 0 (concatD [render "(" ; prtArgListBNFC 0 args ; render ")"])
 
 
@@ -239,7 +241,8 @@ and prtMatcher (i:int) (e : AbsDeeplang.matcher) : doc = match e with
 
 
 and prtExpression (i:int) (e : AbsDeeplang.expression) : doc = match e with
-       AbsDeeplang.ExpVar variable -> prPrec i 12 (concatD [prtVariable 0 variable])
+       AbsDeeplang.ExpAssignment (variable, expression) -> prPrec i 0 (concatD [prtVariable 0 variable ; render "=" ; prtExpression 0 expression])
+  |    AbsDeeplang.ExpVar variable -> prPrec i 12 (concatD [prtVariable 0 variable])
   |    AbsDeeplang.Literals literal -> prPrec i 12 (concatD [prtLiteral 0 literal])
   |    AbsDeeplang.ExpLogicalOr (expression1, expression2) -> prPrec i 2 (concatD [prtExpression 2 expression1 ; render "||" ; prtExpression 3 expression2])
   |    AbsDeeplang.ExpLogicalAnd (expression1, expression2) -> prPrec i 3 (concatD [prtExpression 3 expression1 ; render "&&" ; prtExpression 4 expression2])

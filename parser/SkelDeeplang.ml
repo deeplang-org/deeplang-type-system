@@ -60,6 +60,7 @@ and transDeclare (x : declare) : result = match x with
 
 and transArgs (x : args) : result = match x with
     ArgUnit  -> failure x
+  | ArgUnit2  -> failure x
   | ArgExist args -> failure x
 
 
@@ -155,7 +156,8 @@ and transMatcher (x : matcher) : result = match x with
 
 
 and transExpression (x : expression) : result = match x with
-    ExpVar variable -> failure x
+    ExpAssignment (variable, expression) -> failure x
+  | ExpVar variable -> failure x
   | Literals literal -> failure x
   | ExpLogicalOr (expression0, expression) -> failure x
   | ExpLogicalAnd (expression0, expression) -> failure x

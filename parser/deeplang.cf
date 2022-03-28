@@ -1,6 +1,7 @@
 comment "//";
 comment "/*" "*/";
 (:). [Code] ::= Code ";" [Code];
+(:[]). [Code] ::= Code;
 []. [Code] ::= ;
 
 Declares. Code ::= Declare;
@@ -47,11 +48,12 @@ DecMut. Declare ::= "let" "mut" VarId ":" Type;
 DecFunc. Declare ::= "fun" VarId Args RetType; -- "{" "}";
 
 -- Function
-ArgUnit. Args ::= "(" ")"; -- Must write as ( ), or "()" -> must write as () 
+ArgUnit. Args ::= "(" ")";
+ArgUnit2. Args ::= "()";
 ArgExist. Args ::= "(" [Arg] ")";
 ArgCons. Arg ::= VarId ":" Type;
 (:[]). [Arg] ::= Arg;
-(:). [Arg] ::= Arg "," [Arg]; -- Warning here but no need to worry
+(:). [Arg] ::= Arg "," [Arg];
 RetUnit. RetType ::= ;
 RetExist. RetType ::= "->" Type;
 
@@ -156,8 +158,8 @@ coercions Expression 13;
 (:[]). [Expression] ::= Expression;
 (:). [Expression] ::= Expression "," [Expression] ;
 
+ExpAssignment. Expression ::= Variable "=" Expression;
 -- 2月28日：需要macro吗？
--- ExpAssignment. Expression ::= Variable "=" Expression;
 -- ExpMacro. Expression1 ::= Variable "@" Macro;
 
 -- 字面量
