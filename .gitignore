@@ -3,3 +3,6 @@ _build
 .envrc
 .direnv
 .DS_Store
+*.cmi
+*.cmo
+TestDeepLang
