@@ -2,3 +2,4 @@ output
 _build
 .envrc
 .direnv
+.DS_Store
