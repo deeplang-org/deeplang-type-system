@@ -120,6 +120,7 @@ For. Statement ::= "for" "(" "let" TypedVar "=" Expression ";" ForCondition ";" 
 ForInitUnit. ForInit ::= ;
 ForConditions. ForCondition ::= Expression;
 ForFinals. ForFinal ::= Expression;
+ForFInalUnit. ForFinal ::= ;
 While. Statement ::= "while" "(" ForCondition ")" Statement;
 
 -- Return
@@ -168,7 +169,6 @@ coercions Expression 13;
 (:[]). [Expression] ::= Expression;
 (:). [Expression] ::= Expression "," [Expression];
 
-ExpAssignment. Expression ::= Variable "=" Expression;
 -- 2月28日：需要macro吗？
 -- ExpMacro. Expression1 ::= Variable "@" Macro;
 
@@ -191,6 +191,13 @@ FieldInitCons. FieldInit ::= VarId ":" Expression;
 
 -- 模式匹配
 ArrayMatch. Macro ::= "match" "(" [Code] ")"; -- 暂时这么写着吧
+
+ExpAssignment. Expression1 ::= Variable "=" Expression1;
+ExpAssignmentPlus. Expression1 ::= Variable "+=" Expression1;
+ExpAssignmentMinus. Expression1 ::= Variable "-=" Expression1;
+ExpAssignmentMul. Expression1 ::= Variable "*=" Expression1;
+ExpAssignmentDiv. Expression1 ::= Variable "\\=" Expression1;
+ExpAssignmentMod. Expression1 ::= Variable "%=" Expression1;
 
 -- 运算符
 ExpLogicalOr. Expression2 ::= Expression2 "||" Expression3 ; -- 注意是左结合的
