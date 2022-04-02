@@ -1,13 +1,13 @@
 comment "//";
 comment "/*" "*/";
-(:). [Code] ::= Code ";" [Code];
+(:). [Code] ::= Code [Code];
 (:[]). [Code] ::= Code;
 []. [Code] ::= ;
 
 Declares. Code ::= Declare;
 Defines. Code ::= Define;
 Statements. Code ::= Statement;
-Expressions. Code ::= Expression;
+Expressions. Code ::= Expression ";";
 Unit. Code ::= ;
 
 -- Type 
@@ -42,10 +42,10 @@ Variables. Variable ::= VarId;
 (:). [Variable] ::= Variable "," [Variable] ;
 
 -- Declare
-DecImmut. Declare ::= "let" VarId ":" Type;
-DecMut. Declare ::= "let" "mut" VarId ":" Type;
+DecImmut. Declare ::= "let" VarId ":" Type ";";
+DecMut. Declare ::= "let" "mut" VarId ":" Type ";";
 -- 函数声明需要带一对括号么？
-DecFunc. Declare ::= "fun" VarId Args RetType; -- "{" "}";
+DecFunc. Declare ::= "fun" VarId Args RetType;
 
 -- Function
 ArgUnit. Args ::= "(" ")";
@@ -63,10 +63,11 @@ InterfaceExt. Declare ::= "interface" InterfaceName "extends" [InterfaceName] "{
 InterfaceNames. InterfaceName ::= TypeId;
 (:[]). [InterfaceName] ::= InterfaceName;
 (:). [InterfaceName] ::= InterfaceName "," [InterfaceName]; -- Warning here but no need to worry
-InterfaceMethodUnit. Methods ::= "{" "}";
+InterfaceMethodUnit. Methods ::= "{}";
 InterfaceMethodExist. Methods ::= "{" [Method] "}";
 -- 应该是所有method声明后面都得有个分号？
 InterfaceMethod. Method ::= "fun" VarId Args RetType ";";
+[]. [Method] ::= ;
 (:[]). [Method] ::= Method;
 (:). [Method] ::= Method [Method];
 
@@ -75,44 +76,54 @@ InterfaceImpl. Define ::= "impl" InterfaceName "for" Type "{" [Method] "}";
 RawImpl. Define ::= "impl" Type "{" [Method] "}";
 
 -- Define
+DefFuncUnit. Define ::= "fun" VarId Args RetType "{}";
 DefFunc. Define ::= "fun" VarId Args RetType "{" [Code] "}";
 
-ADT. Define ::= "type" TypeId "[" [Constructor] "]" Methods;
+ADT. Define ::= "type" TypeId "[" [Constructor] "]";
 ADTMethod. Method ::=  "fun" VarId Args RetType "{" [Code] "}";
 
-Constructors. Constructor ::= TypeId Fields;
+Struct. Define ::= "type" TypeId "{" [StructField] "}";
+
+Constructors. Constructor ::= TypeId "(" [Field] ")";
 (:[]). [Constructor] ::= Constructor;
 (:). [Constructor] ::= Constructor "," [Constructor];
-FieldUnit. Fields ::= "(" ")";
-FieldExist. Fields ::= "(" [Field] ")";
 
-Delegate. Arg ::= "as" VarId ":" Type;
-FieldCons. Field ::=  VarId ":" Type;
+FieldCons. Field ::= VarId ":" Type;
 (:[]). [Field] ::= Field;
 (:). [Field] ::= Field "," [Field];
+BasicStructField. StructField ::= Field;
+DelegateStructField. StructField ::= "as" Field;
+(:[]). [StructField] ::= StructField;
+(:). [StructField] ::= StructField "," [StructField];
 
 ImmutVar. TypedVar ::= VarId ":" Type;
 MutVar. TypedVar ::= "mut" VarId ":" Type;
-DefVar. Define ::= "let" TypedVar "=" Expression;
-DefType. Define ::= "type" TypeId Args;
+DefVar. Define ::= "let" TypedVar "=" Expression ";";
+DefType. Define ::= "type" TypeId Args ";";
 
 -- Statement
--- 2月28日：目前我们的控制语句似乎都必须花括号
+
+-- Block（花括号）
+Block. Statement ::= "{" [Code] "}";
+DefVarSt. Statement ::= "let" TypedVar "=" Expression ";";
+DefTypeSt. Statement ::= "type" TypeId Args ";";
+
+-- Var definition statements
 
 -- 条件控制语句
-If. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}";
-IfElse. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}" "else" "{" [Code] "}";
+If. Statement ::= "if" "(" IfCondtion ")" Statement;
+IfElse. Statement ::= "if" "(" IfCondtion ")" Statement "else" Statement;
 IfCondtions. IfCondtion ::= Expression;
 
 -- 循环
-For. Statement ::= "for" "(" "let" TypedVar "=" Expression ";" ForCondition ";" ForFinal ")" "{" [Code] "}";
+For. Statement ::= "for" "(" "let" TypedVar "=" Expression ";" ForCondition ";" ForFinal ")" Statement;
 ForInitUnit. ForInit ::= ;
 ForConditions. ForCondition ::= Expression;
 ForFinals. ForFinal ::= Expression;
-While. Statement ::= "while" "(" ForCondition ")" "{" [Code] "}";
+While. Statement ::= "while" "(" ForCondition ")" Statement;
 
 -- Return
-Return. Statement ::= "return" Expression;
+Return. Statement ::= "return" Expression ";";
 
 -- 模式匹配
 -- Match Case中的Constructor如何处理？
@@ -153,10 +164,9 @@ assignment      exp0
 -}
 coercions Expression 13;
 
--- 元组
 []. [Expression] ::= ;
 (:[]). [Expression] ::= Expression;
-(:). [Expression] ::= Expression "," [Expression] ;
+(:). [Expression] ::= Expression "," [Expression];
 
 ExpAssignment. Expression ::= Variable "=" Expression;
 -- 2月28日：需要macro吗？
@@ -166,9 +176,18 @@ ExpAssignment. Expression ::= Variable "=" Expression;
 ExpVar. Expression12 ::= Variable;
 Literals. Expression12 ::= Literal; -- 字面量
 String. Literal ::= String;
+Char. Literal ::= Char;
 Integer. Literal ::= Integer;
+Float. Literal ::= Double;
 True. Literal ::= "true";
 False. Literal ::= "false";
+LUnit. Literal ::= "()";
+Tuple. Literal ::= "(" [Expression] ")";
+StructInit. Literal ::= TypeId "{" [FieldInit] "}";
+
+(:[]). [FieldInit] ::= FieldInit;
+(:). [FieldInit] ::= FieldInit "," [FieldInit];
+FieldInitCons. FieldInit ::= VarId ":" Expression;
 
 -- 模式匹配
 ArrayMatch. Macro ::= "match" "(" [Code] ")"; -- 暂时这么写着吧
@@ -191,7 +210,9 @@ ExpMul. Expression9 ::= Expression9 "*" Expression10;
 ExpDiv. Expression9 ::= Expression9 "\\" Expression10;
 ExpMod. Expression9 ::= Expression9 "%" Expression10;
 ExpApp. Expression11 ::= Expression11 "(" [Expression] ")";
-ExpNewObj. Expression11 ::= "new" TypeId "(" [Expression]  ")";
+ExpAppUnit. Expression11 ::= Expression11 "()";
+ExpNewObj. Expression11 ::= "new" TypeId "(" [Expression] ")";
+ExpNewObjUnit. Expression11 ::= "new" TypeId "()";
 ExpMethod. Expression11 ::= Expression11 "." Variable ;
 
 ExpBracket. Expression13 ::= "(" Expression ")";

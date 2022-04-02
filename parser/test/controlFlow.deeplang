@@ -1,0 +1,23 @@
+fun main(x: char) {
+  let f: bool;
+
+  // meaningless if structure
+  if (f) {
+    print(1);
+  } else if (true) {
+    print(f);
+    if (false) {
+      foo();
+    } else if (bar) {
+      baz();
+    }
+  } else {
+    fooBar();
+  }
+
+  // meaningless while structure
+  let mut x: i32 = 0;
+  while (1 + x == 3) {
+    return (0, (1.2, 'c'), "Abc");
+  }
+}
