@@ -12,7 +12,7 @@ Unit. Code ::= ;
 
 -- Type 
 -- none-primitive type begins with an UPPER CAPTICAL
-token TypeId ( upper (letter|digit|'_')* );
+position token TypeId ( upper (letter|digit|'_')* );
 coercions Type 2;
 TypeArray. Type ::= "[" Type ";" Integer "]";
 TypeList. Type ::= "[" Type "]";
@@ -35,7 +35,7 @@ TypeThis. Type1 ::= "This";
 TypeX. Type2 ::= TypeId;
 
 -- VarId
-token VarId ( (lower | '_' )(letter|digit|'_')* );
+position token VarId ( (lower | '_' )(letter|digit|'_')* );
 -- Variable
 Variables. Variable ::= VarId;
 (:[]). [Variable] ::= Variable;
@@ -104,9 +104,15 @@ DefType. Define ::= "type" TypeId Args ";";
 -- Statement
 
 -- Block（花括号）
-Block. Statement ::= "{" [Code] "}";
+Block. Statement ::= "{" [Statement] "}";
+(:[]). [Statement] ::= Statement;
+(:). [Statement] ::= Statement [Statement];
+
+-- 带;的单行Statement
 DefVarSt. Statement ::= "let" TypedVar "=" Expression ";";
 DefTypeSt. Statement ::= "type" TypeId Args ";";
+ExprSt. Statement ::= Expression ";";
+Return. Statement ::= "return" Expression ";";
 
 -- Var definition statements
 
@@ -116,15 +122,20 @@ IfElse. Statement ::= "if" "(" IfCondtion ")" Statement "else" Statement;
 IfCondtions. IfCondtion ::= Expression;
 
 -- 循环
-For. Statement ::= "for" "(" "let" TypedVar "=" Expression ";" ForCondition ";" ForFinal ")" Statement;
-ForInitUnit. ForInit ::= ;
+For. Statement ::= "for" "(" ForInit ";" ForCondition ";" ForFinal ")" Statement;
 ForConditions. ForCondition ::= Expression;
-ForFinals. ForFinal ::= Expression;
-ForFInalUnit. ForFinal ::= ;
+ForInitUnit. ForInit ::= ;
+ForInitDefine. ForInit ::= "let" TypedVar "=" Expression;
+ForInitExpression. ForInit ::= Expression;
+ForInitNested. ForInit ::= "{" [ForInit] "}";
+(:[]). [ForInit] ::= ForInit;
+(:). [ForInit] ::= ForInit ";" [ForInit];
+ForFinalUnit. ForFinal ::= ;
+ForFinalExpression. ForFinal ::= Expression;
+ForFinalNested. ForFinal ::= "{" [ForFinal] "}";
+(:[]). [ForFinal] ::= ForFinal;
+(:). [ForFinal] ::= ForFinal ";" [ForFinal];
 While. Statement ::= "while" "(" ForCondition ")" Statement;
-
--- Return
-Return. Statement ::= "return" Expression ";";
 
 -- 模式匹配
 -- Match Case中的Constructor如何处理？
