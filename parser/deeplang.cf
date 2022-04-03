@@ -29,10 +29,15 @@ position token TYPE ({"type"});
 -- 类型
 -- none-primitive type begins with an UPPER CAPTICAL
 position token TypeId ( upper (letter|digit|'_')* );
-position token BaseType ( {"i8"} | {"i16"} | {"i32"} | {"i64"} | {"u8"} | {"u16"} | {"u32"} | {"u64"} | {"f32"} | {"f64"} | {"char"} | {"This"} | {"bool"} | {"()"} );
+position token BaseType ( {"i8"} | {"i16"} | {"i32"} | {"i64"} | {"u8"} | {"u16"} | {"u32"} | {"u64"} | {"f32"} | {"f64"} | {"char"} | {"This"} | {"bool"});
 TypeArray. Type ::= "[" Type ";" Integer "]";
 TypeList. Type ::= "[" Type "]";
 TypeArrow. Type ::= Type "->" Type;
+TypeUnit1. Type ::= "()";
+TypeUnit2. Type ::= "(" ")";
+TypeTuple. Type ::= "(" [Type] ")";
+(:[]). [Type] ::= Type;
+(:). [Type] ::= Type "," [Type];
 TypePrimitive. Type ::= BaseType;
 TypeX. Type ::= TypeId;
 

@@ -1,0 +1,17 @@
+let x: i8;
+let x: i16;
+let x: i32;
+let x: i64;
+let x: u8;
+let x: u16;
+let x: u32;
+let x: u64;
+let x: f32;
+let x: f64;
+let x: char;
+let x: bool;
+let x: ();
+let x: ( );
+let x: (());
+let x: (i32, i64);
+let x: (i32, (i64, f32), u8);
