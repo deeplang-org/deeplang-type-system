@@ -229,3 +229,17 @@ crc or lrc: 98
 练琪灏：ast的tab基本完成。
 
 陈亦棠：deeplang.cf文件更新
+
+### 2022.4.3例会纪要
+
+刘请：内存管理的文档，下周。
+
+练琪灏：努力学习。
+
+陈亦棠：test语法树。interface和pattern matching还没有搞定。
+
+陈楷骐：提议去除c风格for，range for，bnfc的代码， while持续风格，两种不同的语义。
+
+魏韧韬：学习。
+
+for的第一个和第二字段为stat。
