@@ -1,4 +1,4 @@
-fun main(x: char) {
+fun main(x : char, y : bool) {
   let f: bool;
 
   // meaningless if structure
@@ -22,10 +22,7 @@ fun main(x: char) {
   }
 
   // meaningless for structure
-  for ({let mut i: i32 = 0}; i < 114514; i += 1) {
-    for ({let j: i32 = 0; let b: bool = false; i += 3}; j < i;) {
-      j += 1;
-      j += j *= 2;
-    }
+  for ((key, value) : someThing) {
+    return (0, (1.2, 'c'), "Abc");
   }
 }
