@@ -10,6 +10,7 @@ let x: f32;
 let x: f64;
 let x: char;
 let x: bool;
+let x: [bool; 3];
 let x: ();
 let x: ( );
 let x: (());

@@ -31,8 +31,8 @@ position token EXTENDS ({"extends"});
 -- none-primitive type begins with an UPPER CAPTICAL
 position token TypeId ( upper (letter|digit|'_')* );
 position token BaseType ( {"i8"} | {"i16"} | {"i32"} | {"i64"} | {"u8"} | {"u16"} | {"u32"} | {"u64"} | {"f32"} | {"f64"} | {"char"} | {"This"} | {"bool"});
-TypeArray. Type ::= "[" Type ";" Integer "]";
-TypeList. Type ::= "[" Type "]";
+TypeFixLenArray. Type ::= "[" Type ";" Integer "]";
+-- TypeVarLenArray. Type ::= "[" Type "]";
 TypeArrow. Type ::= Type "->" Type;
 TypeUnit1. Type ::= "()";
 TypeUnit2. Type ::= "(" ")";
@@ -137,13 +137,26 @@ While. Statement ::= WHILE "(" Expression ")" "{" [Statement] "}";
 -- Match Case中的Constructor如何处理？
 Match. Statement ::= MATCH "(" VarId ")" "{" MatchBody "}";
 MatchBodys. MatchBody ::= [MatchCase];
-MatchCases. MatchCase ::= Matcher "=>" "{" [Code] "}";
+MatchCases. MatchCase ::= Matcher "=>" "{" [Statement] "}";
 WildCardMatch. Matcher ::= "_";
--- 不确定这边的Constructor这样处理是否正确
-ConsMatch. Matcher ::= Constructor;
+ConsMatchUnit. Matcher ::= TypeId "()";
+ConsMatch. Matcher ::= TypeId "(" Matcher ")";
+TypelessVarMatch. Matcher ::= VarId;
 VarMatch. Matcher ::= TypedVar;
 AsVarMatch. Matcher ::= Matcher AS TypedVar;
-[]. [MatchCase] ::= ;
+UnitMatch. Matcher ::= "()";
+TupleMatch. Matcher ::= "(" [Matcher] ")";
+LiteralMatch. Matcher ::= Literal;
+FieldMatchUnit. Matcher ::= TypeId "{}";
+FieldMatch. Matcher ::= TypeId "{" [FieldMatcher] "}";
+[]. [Matcher] ::= ;
+(:[]). [Matcher] ::= Matcher;
+(:). [Matcher] ::= Matcher "," [Matcher];
+[]. [FieldMatcher] ::= ;
+(:[]). [FieldMatcher] ::= FieldMatcher;
+FieldMatchers. FieldMatcher ::= VarId ":" Matcher;
+(:). [FieldMatcher] ::= FieldMatcher "," [FieldMatcher];
+(:[]). [MatchCase] ::= MatchCase;
 (:). [MatchCase] ::= MatchCase [MatchCase];
 
 -- Expression
@@ -182,6 +195,8 @@ coercions Expression 13;
 -- 字面量
 ExpVar. Expression12 ::= Variable;
 Literals. Expression12 ::= Literal; -- 字面量
+Tuples. Expression12 ::= "(" [Expression] ")";
+StructInit. Expression12 ::= TypeId "{" [FieldInit] "}";
 String. Literal ::= String;
 Char. Literal ::= Char;
 Integer. Literal ::= Integer;
@@ -189,15 +204,13 @@ Float. Literal ::= Double;
 True. Literal ::= "true";
 False. Literal ::= "false";
 LUnit. Literal ::= "()";
-Tuple. Literal ::= "(" [Expression] ")";
-StructInit. Literal ::= TypeId "{" [FieldInit] "}";
 
 (:[]). [FieldInit] ::= FieldInit;
 (:). [FieldInit] ::= FieldInit "," [FieldInit];
 FieldInitCons. FieldInit ::= VarId ":" Expression;
 
 -- 模式匹配
-ArrayMatch. Macro ::= MATCH "(" [Code] ")"; -- 暂时这么写着吧
+-- ArrayMatch. Macro ::= MATCH "(" [Code] ")"; -- 暂时这么写着吧
 
 ExpAssignment. Expression1 ::= Variable "=" Expression1;
 ExpAssignmentPlus. Expression1 ::= Variable "+=" Expression1;
