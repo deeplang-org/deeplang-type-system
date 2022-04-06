@@ -25,6 +25,7 @@ position token IMPL ({"impl"});
 position token AS ({"as"});
 position token MATCH ({"match"});
 position token TYPE ({"type"});
+position token EXTENDS ({"extends"});
 
 -- 类型
 -- none-primitive type begins with an UPPER CAPTICAL
@@ -64,8 +65,8 @@ RetUnit. RetType ::= ;
 RetExist. RetType ::= "->" Type;
 
 -- 接口声明
-InterfaceNoExt. Declare ::= INTERFACE InterfaceName "{" Methods "}"; 
-InterfaceExt. Declare ::= INTERFACE InterfaceName "extends" [InterfaceName] "{" Methods "}"; 
+InterfaceNoExt. Declare ::= INTERFACE InterfaceName Methods; 
+InterfaceExt. Declare ::= INTERFACE InterfaceName EXTENDS [InterfaceName] Methods; 
 InterfaceNames. InterfaceName ::= TypeId;
 (:[]). [InterfaceName] ::= InterfaceName;
 (:). [InterfaceName] ::= InterfaceName "," [InterfaceName]; -- Warning here but no need to worry
