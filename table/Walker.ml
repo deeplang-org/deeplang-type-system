@@ -3,7 +3,7 @@ open ParseTree;;
 (** This module walks AST from {! ParseTree},
     to do {b name resolution} and {b type checking} in one pass.
     
-    For Programmmer, You should read from {! walk}.
+    Programmer should read from the {{: #interface }Interface}.
   *)
 
 (** {1 Types} *)
@@ -740,13 +740,13 @@ let walk_top (clause:top_clause) (table:table) (name_map:name_map) : name_map = 
         name_map
     ;;
 
-(** {1 Walker} *)
+(** {1 Interface} *)
 
 
 (**
     {!type-context} is mutable, mapping variable names to symbols.
 
-    {!type-table} is mutable, produced by {!val-walk}
+    {!type-table} is mutable, produced by {!val-walk}.
 
     Indeed, {!val-walk} is just a wrap of {!val-walk_top}, see the code.
 *)
