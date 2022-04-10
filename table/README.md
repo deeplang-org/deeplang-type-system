@@ -1,24 +1,33 @@
-## Walk 1st, table
-
-```bash
-$ # currently, just use repl to dev
-$ eval `opam config env`
-$ utop 
-utop # #use "../parser/ParseTree.ml";;
-utop # #use "name_resolute.ml";;
-```
+## Walk 1st, table, type
 
 ### Discuss, TODO and REMAIN list
 1. Discuss BuiltinType.var.span = None
 2. Discuss literal for int and float, i32? i64? f32? f64?
-3. TODO TyCk for pattern destruct
-4. TODO Discuss Pattern Exhaustivity
-5. TODO Test
-6. TODO doc (** *)
-   安装odoc总有点问题，Curl failed，之后再查查怎么解决
-7. REMAIN ... subtyping for interface extension
+3. TODO method field 名字不重名检查 
+4. TODO Test
+5. REMAIN Pattern Exhaustivity
+6. REMAIN ... subtyping for interface extension
 
 ### dev notes
+#### 20220410
+1. Decl这里需要修改为option的value么？还是强制要求赋初值？我个人倾向于强制赋初值。
+```OCaml
+type stmt_shape =
+   (* ... *)
+   | StmtDecl     of pattern * expr (* option ? *)
+   (* ... *)
+   ;
+```
+
+2. AST的struct_def_field，建议修改为
+```OCaml
+type is_delegated = 
+   | IsDelegated
+   | JustMember
+and struct_def_field = 
+   is_delegated * struct_field (* name *) * typ
+   ;;
+```
 #### 20220319
 1. TyExists
    ```OCaml
@@ -48,7 +57,7 @@ utop # #use "name_resolute.ml";;
    Done
 
 5. TODO method field 名字检查 
-6. TODO function retv check
+6. DONE function retv check
 7. REMAIN ...
 8. Discuss literal for int and float, i32? i64? f32? f64?
 9. Discuss : return x:Intf reject

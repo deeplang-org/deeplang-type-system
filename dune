@@ -4,4 +4,4 @@
 
 (library
  (name deeplangType)
- (modules ParseTree))
+ (modules ParseTree Walker))
