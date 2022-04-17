@@ -79,8 +79,9 @@ InterfaceMethod. Method ::= FUN VarId Args RetType ";";
 (:). [Method] ::= Method [Method];
 
 -- 定义
-DefFuncUnit. Define ::= FUN VarId Args RetType "{}";
-DefFunc. Define ::= FUN VarId Args RetType "{" [Code] "}";
+DefFunc. Define ::= Function;
+FuncUnit. Function ::= FUN VarId Args RetType "{}";
+Func. Function ::= FUN VarId Args RetType "{" [Code] "}";
 
 ADT. Define ::= TYPE TypeId "[" [Constructor] "]";
 ADTMethod. Method ::=  FUN VarId Args RetType "{" [Code] "}";
@@ -105,8 +106,13 @@ DefVar. Define ::= LET TypedVar "=" Expression ";";
 DefType. Define ::= TYPE TypeId Args ";";
 
 -- 接口实现
-InterfaceImpl. Define ::= IMPL InterfaceName FOR Type "{" [Method] "}";
-RawImpl. Define ::= IMPL Type "{" [Method] "}";
+InterfaceImpl. Define ::= IMPL InterfaceName FOR Type Functions;
+RawImpl. Define ::= IMPL Type Functions;
+FunctionsUnit. Functions ::= "{}";
+FunctionsMany. Functions ::= "{" [Function] "}";
+[]. [Function] ::= ;
+(:[]). [Function] ::= Function;
+(:). [Function] ::= Function [Function];
 
 -- 语句
 
@@ -130,7 +136,7 @@ Elif. ElseBody ::= ELSE IF "(" Expression ")" "{" [Statement] "}" ElseBody;
 Else. ElseBody ::= ELSE "{" [Statement] "}";
 
 -- 循环
-For. Statement ::= FOR "(" Expression ":" Expression ")" "{" [Statement] "}";
+For. Statement ::= FOR "(" Matcher ":" Expression ")" "{" [Statement] "}";
 While. Statement ::= WHILE "(" Expression ")" "{" [Statement] "}";
 
 -- 模式匹配
@@ -142,8 +148,8 @@ WildCardMatch. Matcher ::= "_";
 ConsMatchUnit. Matcher ::= TypeId "()";
 ConsMatch. Matcher ::= TypeId "(" Matcher ")";
 TypelessVarMatch. Matcher ::= VarId;
-VarMatch. Matcher ::= TypedVar;
-AsVarMatch. Matcher ::= Matcher AS TypedVar;
+-- VarMatch. Matcher ::= TypedVar;
+-- AsVarMatch. Matcher ::= Matcher AS TypedVar;
 UnitMatch. Matcher ::= "()";
 TupleMatch. Matcher ::= "(" [Matcher] ")";
 LiteralMatch. Matcher ::= Literal;

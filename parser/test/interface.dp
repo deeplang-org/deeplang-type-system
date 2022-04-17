@@ -8,3 +8,9 @@ interface Bar extends Foo, Bar {
   fun foo(x: Int, y: Int);
   fun bar(x: Int, y: Int) -> Bool;
 }
+
+impl Foo for Baz {
+  fun foo(x: Int, y: Int) {
+    print("bla");
+  }
+}

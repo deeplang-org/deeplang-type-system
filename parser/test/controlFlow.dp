@@ -21,7 +21,10 @@ fun main(x : char, y : bool) {
     return (0, (1.2, 'c'), "Abc");
   }
 
-  // meaningless for structure
+  // meaningless for structures
+  for (df : someThing) {
+    return (0, (1.2, 'c'), "Abc");
+  }
   for ((key, value) : someThing) {
     return (0, (1.2, 'c'), "Abc");
   }
