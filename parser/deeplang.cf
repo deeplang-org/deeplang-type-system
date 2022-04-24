@@ -1,128 +1,168 @@
+-- 注释
 comment "//";
 comment "/*" "*/";
-(:). [Code] ::= Code ";" [Code];
-[]. [Code] ::= ;
 
+-- 程序入口
+(:). [Code] ::= Code [Code];
+(:[]). [Code] ::= Code;
+[]. [Code] ::= ;
 Declares. Code ::= Declare;
 Defines. Code ::= Define;
 Statements. Code ::= Statement;
-Expressions. Code ::= Expression;
+Expressions. Code ::= Expression ";";
 Unit. Code ::= ;
 
--- Type 
+-- 保留字
+position token IF ({"if"});
+position token ELSE ({"else"});
+position token WHILE ({"while"});
+position token FOR ({"for"});
+position token LET ({"let"});
+position token FUN ({"fun"});
+position token MUT ({"mut"});
+position token INTERFACE ({"interface"});
+position token IMPL ({"impl"});
+position token AS ({"as"});
+position token MATCH ({"match"});
+position token TYPE ({"type"});
+position token EXTENDS ({"extends"});
+
+-- 类型
 -- none-primitive type begins with an UPPER CAPTICAL
-token TypeId ( upper (letter|digit|'_')* );
-coercions Type 2;
-TypeArray. Type ::= "[" Type ";" Integer "]";
-TypeList. Type ::= "[" Type "]";
+position token TypeId ( upper (letter|digit|'_')* );
+position token BaseType ( {"i8"} | {"i16"} | {"i32"} | {"i64"} | {"u8"} | {"u16"} | {"u32"} | {"u64"} | {"f32"} | {"f64"} | {"char"} | {"This"} | {"bool"});
+TypeFixLenArray. Type ::= "[" Type ";" Integer "]";
+-- TypeVarLenArray. Type ::= "[" Type "]";
 TypeArrow. Type ::= Type "->" Type;
-TypeBool. Type1 ::= "bool"; -- bool 还是 Bool？
-TypeTuple. Type1 ::= "tuple";
-TypeUnit. Type1 ::= "()";
-TypeI8. Type1 ::= "i8";
-TypeI16. Type1 ::= "i16";
-TypeI32. Type1 ::= "i32";
-TypeI64. Type1 ::= "i64";
-TypeU8. Type1 ::= "u8";
-TypeU16. Type1 ::= "u16";
-TypeU32. Type1 ::= "u32";
-TypeU64. Type1 ::= "u64";
-TypeF32. Type1 ::= "f32";
-TypeF64. Type1 ::= "f64";
-TypeChar. Type1 ::= "char";
-TypeThis. Type1 ::= "This";
-TypeX. Type2 ::= TypeId;
+TypeUnit1. Type ::= "()";
+TypeUnit2. Type ::= "(" ")";
+TypeTuple. Type ::= "(" [Type] ")";
+(:[]). [Type] ::= Type;
+(:). [Type] ::= Type "," [Type];
+TypePrimitive. Type ::= BaseType;
+TypeX. Type ::= TypeId;
 
 -- VarId
-token VarId ( (lower | '_' )(letter|digit|'_')* );
+position token VarId ( (lower | '_' )(letter|digit|'_')* );
 -- Variable
 Variables. Variable ::= VarId;
 (:[]). [Variable] ::= Variable;
 (:). [Variable] ::= Variable "," [Variable] ;
 
--- Declare
-DecImmut. Declare ::= "let" VarId ":" Type;
-DecMut. Declare ::= "let" "mut" VarId ":" Type;
--- 函数声明需要带一对括号么？
-DecFunc. Declare ::= "fun" VarId Args RetType; -- "{" "}";
+-- 声明
+DecImmut. Declare ::= LET VarId ":" Type ";";
+DecMut. Declare ::= LET MUT VarId ":" Type ";";
+DecFunc. Declare ::= FUN VarId Args RetType;
 
--- Function
-ArgUnit. Args ::= "(" ")"; -- Must write as ( ), or "()" -> must write as () 
+-- 函数声明
+ArgUnit. Args ::= "(" ")";
+ArgUnit2. Args ::= "()";
 ArgExist. Args ::= "(" [Arg] ")";
 ArgCons. Arg ::= VarId ":" Type;
 (:[]). [Arg] ::= Arg;
-(:). [Arg] ::= Arg "," [Arg]; -- Warning here but no need to worry
+(:). [Arg] ::= Arg "," [Arg];
 RetUnit. RetType ::= ;
 RetExist. RetType ::= "->" Type;
 
--- Interface Declaration
-InterfaceNoExt. Declare ::= "interface" InterfaceName "{" Methods "}"; 
-InterfaceExt. Declare ::= "interface" InterfaceName "extends" [InterfaceName] "{" Methods "}"; 
+-- 接口声明
+InterfaceNoExt. Declare ::= INTERFACE InterfaceName Methods; 
+InterfaceExt. Declare ::= INTERFACE InterfaceName EXTENDS [InterfaceName] Methods; 
 InterfaceNames. InterfaceName ::= TypeId;
 (:[]). [InterfaceName] ::= InterfaceName;
 (:). [InterfaceName] ::= InterfaceName "," [InterfaceName]; -- Warning here but no need to worry
-InterfaceMethodUnit. Methods ::= "{" "}";
+InterfaceMethodUnit. Methods ::= "{}";
 InterfaceMethodExist. Methods ::= "{" [Method] "}";
 -- 应该是所有method声明后面都得有个分号？
-InterfaceMethod. Method ::= "fun" VarId Args RetType ";";
+InterfaceMethod. Method ::= FUN VarId Args RetType ";";
+[]. [Method] ::= ;
 (:[]). [Method] ::= Method;
 (:). [Method] ::= Method [Method];
 
--- Interface Implementation
-InterfaceImpl. Define ::= "impl" InterfaceName "for" Type "{" [Method] "}";
-RawImpl. Define ::= "impl" Type "{" [Method] "}";
+-- 定义
+DefFunc. Define ::= Function;
+FuncUnit. Function ::= FUN VarId Args RetType "{}";
+Func. Function ::= FUN VarId Args RetType "{" [Code] "}";
 
--- Define
-DefFunc. Define ::= "fun" VarId Args RetType "{" [Code] "}";
+ADT. Define ::= TYPE TypeId "[" [Constructor] "]";
+ADTMethod. Method ::=  FUN VarId Args RetType "{" [Code] "}";
 
-ADT. Define ::= "type" TypeId "[" [Constructor] "]" Methods;
-ADTMethod. Method ::=  "fun" VarId Args RetType "{" [Code] "}";
+Struct. Define ::= TYPE TypeId "{" [StructField] "}";
 
-Constructors. Constructor ::= TypeId Fields;
+Constructors. Constructor ::= TypeId "(" [Field] ")";
 (:[]). [Constructor] ::= Constructor;
 (:). [Constructor] ::= Constructor "," [Constructor];
-FieldUnit. Fields ::= "(" ")";
-FieldExist. Fields ::= "(" [Field] ")";
 
-Delegate. Arg ::= "as" VarId ":" Type;
-FieldCons. Field ::=  VarId ":" Type;
+FieldCons. Field ::= VarId ":" Type;
 (:[]). [Field] ::= Field;
 (:). [Field] ::= Field "," [Field];
+BasicStructField. StructField ::= Field;
+DelegateStructField. StructField ::= AS Field;
+(:[]). [StructField] ::= StructField;
+(:). [StructField] ::= StructField "," [StructField];
 
 ImmutVar. TypedVar ::= VarId ":" Type;
-MutVar. TypedVar ::= "mut" VarId ":" Type;
-DefVar. Define ::= "let" TypedVar "=" Expression;
-DefType. Define ::= "type" TypeId Args;
+MutVar. TypedVar ::= MUT VarId ":" Type;
+DefVar. Define ::= LET TypedVar "=" Expression ";";
+DefType. Define ::= TYPE TypeId Args ";";
 
--- Statement
--- 2月28日：目前我们的控制语句似乎都必须花括号
+-- 接口实现
+InterfaceImpl. Define ::= IMPL InterfaceName FOR Type Functions;
+RawImpl. Define ::= IMPL Type Functions;
+FunctionsUnit. Functions ::= "{}";
+FunctionsMany. Functions ::= "{" [Function] "}";
+[]. [Function] ::= ;
+(:[]). [Function] ::= Function;
+(:). [Function] ::= Function [Function];
+
+-- 语句
+
+-- Block（花括号）
+Block. Statement ::= "{" [Statement] "}";
+(:[]). [Statement] ::= Statement;
+(:). [Statement] ::= Statement [Statement];
+
+-- 带;的单行Statement
+DefVarSt. Statement ::= LET TypedVar "=" Expression ";";
+DefTypeSt. Statement ::= TYPE TypeId Args ";";
+ExprSt. Statement ::= Expression ";";
+Return. Statement ::= "return" Expression ";";
+
+-- Var definition statements
 
 -- 条件控制语句
-If. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}";
-IfElse. Statement ::= "if" "(" IfCondtion ")" "{" [Code] "}" "else" "{" [Code] "}";
-IfCondtions. IfCondtion ::= Expression;
+If. Statement ::= IF "(" Expression ")" "{" [Statement] "}" ElseBody;
+NoElse. ElseBody ::= ;
+Elif. ElseBody ::= ELSE IF "(" Expression ")" "{" [Statement] "}" ElseBody;
+Else. ElseBody ::= ELSE "{" [Statement] "}";
 
 -- 循环
-For. Statement ::= "for" "(" "let" TypedVar "=" Expression ";" ForCondition ";" ForFinal ")" "{" [Code] "}";
-ForInitUnit. ForInit ::= ;
-ForConditions. ForCondition ::= Expression;
-ForFinals. ForFinal ::= Expression;
-While. Statement ::= "while" "(" ForCondition ")" "{" [Code] "}";
-
--- Return
-Return. Statement ::= "return" Expression;
+For. Statement ::= FOR "(" Matcher ":" Expression ")" "{" [Statement] "}";
+While. Statement ::= WHILE "(" Expression ")" "{" [Statement] "}";
 
 -- 模式匹配
 -- Match Case中的Constructor如何处理？
-Match. Statement ::= "match" "(" VarId ")" "{" MatchBody "}";
+Match. Statement ::= MATCH "(" VarId ")" "{" MatchBody "}";
 MatchBodys. MatchBody ::= [MatchCase];
-MatchCases. MatchCase ::= Matcher "=>" "{" [Code] "}";
+MatchCases. MatchCase ::= Matcher "=>" "{" [Statement] "}";
 WildCardMatch. Matcher ::= "_";
--- 不确定这边的Constructor这样处理是否正确
-ConsMatch. Matcher ::= Constructor;
-VarMatch. Matcher ::= TypedVar;
-AsVarMatch. Matcher ::= Matcher "as" TypedVar;
-[]. [MatchCase] ::= ;
+ConsMatchUnit. Matcher ::= TypeId "()";
+ConsMatch. Matcher ::= TypeId "(" Matcher ")";
+TypelessVarMatch. Matcher ::= VarId;
+-- VarMatch. Matcher ::= TypedVar;
+-- AsVarMatch. Matcher ::= Matcher AS TypedVar;
+UnitMatch. Matcher ::= "()";
+TupleMatch. Matcher ::= "(" [Matcher] ")";
+LiteralMatch. Matcher ::= Literal;
+FieldMatchUnit. Matcher ::= TypeId "{}";
+FieldMatch. Matcher ::= TypeId "{" [FieldMatcher] "}";
+[]. [Matcher] ::= ;
+(:[]). [Matcher] ::= Matcher;
+(:). [Matcher] ::= Matcher "," [Matcher];
+[]. [FieldMatcher] ::= ;
+(:[]). [FieldMatcher] ::= FieldMatcher;
+FieldMatchers. FieldMatcher ::= VarId ":" Matcher;
+(:). [FieldMatcher] ::= FieldMatcher "," [FieldMatcher];
+(:[]). [MatchCase] ::= MatchCase;
 (:). [MatchCase] ::= MatchCase [MatchCase];
 
 -- Expression
@@ -151,25 +191,39 @@ assignment      exp0
 -}
 coercions Expression 13;
 
--- 元组
 []. [Expression] ::= ;
 (:[]). [Expression] ::= Expression;
-(:). [Expression] ::= Expression "," [Expression] ;
+(:). [Expression] ::= Expression "," [Expression];
 
 -- 2月28日：需要macro吗？
--- ExpAssignment. Expression ::= Variable "=" Expression;
 -- ExpMacro. Expression1 ::= Variable "@" Macro;
 
 -- 字面量
 ExpVar. Expression12 ::= Variable;
 Literals. Expression12 ::= Literal; -- 字面量
+Tuples. Expression12 ::= "(" [Expression] ")";
+StructInit. Expression12 ::= TypeId "{" [FieldInit] "}";
 String. Literal ::= String;
+Char. Literal ::= Char;
 Integer. Literal ::= Integer;
+Float. Literal ::= Double;
 True. Literal ::= "true";
 False. Literal ::= "false";
+LUnit. Literal ::= "()";
+
+(:[]). [FieldInit] ::= FieldInit;
+(:). [FieldInit] ::= FieldInit "," [FieldInit];
+FieldInitCons. FieldInit ::= VarId ":" Expression;
 
 -- 模式匹配
-ArrayMatch. Macro ::= "match" "(" [Code] ")"; -- 暂时这么写着吧
+-- ArrayMatch. Macro ::= MATCH "(" [Code] ")"; -- 暂时这么写着吧
+
+ExpAssignment. Expression1 ::= Variable "=" Expression1;
+ExpAssignmentPlus. Expression1 ::= Variable "+=" Expression1;
+ExpAssignmentMinus. Expression1 ::= Variable "-=" Expression1;
+ExpAssignmentMul. Expression1 ::= Variable "*=" Expression1;
+ExpAssignmentDiv. Expression1 ::= Variable "/=" Expression1;
+ExpAssignmentMod. Expression1 ::= Variable "%=" Expression1;
 
 -- 运算符
 ExpLogicalOr. Expression2 ::= Expression2 "||" Expression3 ; -- 注意是左结合的
@@ -186,10 +240,12 @@ ExpRightShift. Expression7 ::= Expression7 ">>" Expression8;
 ExpAdd. Expression8 ::= Expression8 "+" Expression9;
 ExpSub. Expression8 ::= Expression8 "-" Expression9;
 ExpMul. Expression9 ::= Expression9 "*" Expression10;
-ExpDiv. Expression9 ::= Expression9 "\\" Expression10;
+ExpDiv. Expression9 ::= Expression9 "/" Expression10;
 ExpMod. Expression9 ::= Expression9 "%" Expression10;
 ExpApp. Expression11 ::= Expression11 "(" [Expression] ")";
-ExpNewObj. Expression11 ::= "new" TypeId "(" [Expression]  ")";
+ExpAppUnit. Expression11 ::= Expression11 "()";
+ExpNewObj. Expression11 ::= "new" TypeId "(" [Expression] ")";
+ExpNewObjUnit. Expression11 ::= "new" TypeId "()";
 ExpMethod. Expression11 ::= Expression11 "." Variable ;
 
 ExpBracket. Expression13 ::= "(" Expression ")";
