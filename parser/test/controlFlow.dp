@@ -1,5 +1,6 @@
 fun main(x : char, y : bool) {
-  let f: bool;
+  let f : bool;
+  f = true;
 
   // meaningless if structure
   if (f) {
@@ -22,10 +23,10 @@ fun main(x : char, y : bool) {
   }
 
   // meaningless for structures
-  for (df : someThing) {
+  for (df: i32 in someThing) {
     return (0, (1.2, 'c'), "Abc");
   }
-  for ((key, value) : someThing) {
+  for ((key, value) in someThing) {
     return (0, (1.2, 'c'), "Abc");
   }
 }

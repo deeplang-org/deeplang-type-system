@@ -50,6 +50,7 @@ type token =
   | TOK_ELSE of ((int * int) * string)
   | TOK_WHILE of ((int * int) * string)
   | TOK_FOR of ((int * int) * string)
+  | TOK_IN of ((int * int) * string)
   | TOK_LET of ((int * int) * string)
   | TOK_FUN of ((int * int) * string)
   | TOK_MUT of ((int * int) * string)
@@ -111,8 +112,8 @@ val pStructField :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.structField
 val pStructField_list :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.structField list
-val pTypedVar :
-  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.typedVar
+val pRHS :
+  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.rHS
 val pFunctions :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.functions
 val pFunctionT_list :
@@ -129,6 +130,10 @@ val pMatchCase :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.matchCase
 val pMatcher :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.matcher
+val pTypedMatcher :
+  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.typedMatcher
+val pTypelessMatcher :
+  (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.typelessMatcher
 val pMatcher_list :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.matcher list
 val pFieldMatcher_list :

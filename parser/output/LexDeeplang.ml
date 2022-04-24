@@ -41,7 +41,7 @@ let incr_lineno (lexbuf:Lexing.lexbuf) : unit =
 # 42 "LexDeeplang.ml"
 let __ocaml_lex_tables = {
   Lexing.lex_base =
-   "\000\000\229\255\230\255\231\255\053\000\002\000\080\000\218\000\
+   "\000\000\228\255\229\255\230\255\053\000\002\000\080\000\218\000\
     \170\001\122\002\074\003\026\004\234\004\186\005\138\006\090\007\
     \042\008\250\008\202\009\154\010\106\011\253\255\002\000\078\000\
     \035\000\089\000\016\000\080\000\081\000\082\000\058\012\085\000\
@@ -54,21 +54,21 @@ let __ocaml_lex_tables = {
     \186\044\138\045\090\046\042\047\250\047\202\048\154\049\106\050\
     \058\051\010\052\218\052\170\053\122\054\074\055\026\056\234\056\
     \186\057\138\058\090\059\111\000\037\001\124\000\134\000\047\001\
-    \233\255\227\001\015\001\116\000\232\255";
+    \232\255\227\001\015\001\116\000\231\255";
   Lexing.lex_backtrk =
-   "\255\255\255\255\255\255\255\255\255\255\255\255\020\000\018\000\
-    \018\000\018\000\018\000\016\000\016\000\018\000\018\000\018\000\
-    \018\000\018\000\018\000\018\000\018\000\255\255\002\000\002\000\
+   "\255\255\255\255\255\255\255\255\255\255\255\255\021\000\019\000\
+    \019\000\019\000\019\000\017\000\017\000\019\000\019\000\019\000\
+    \019\000\019\000\019\000\019\000\019\000\255\255\002\000\002\000\
     \002\000\255\255\255\255\002\000\002\000\002\000\002\000\002\000\
     \002\000\002\000\002\000\002\000\255\255\000\000\255\255\255\255\
-    \255\255\018\000\019\000\018\000\018\000\018\000\017\000\018\000\
-    \018\000\003\000\018\000\018\000\018\000\018\000\018\000\018\000\
-    \010\000\018\000\011\000\018\000\018\000\018\000\004\000\018\000\
-    \018\000\018\000\018\000\015\000\018\000\018\000\018\000\005\000\
-    \018\000\018\000\018\000\018\000\006\000\008\000\018\000\007\000\
-    \018\000\018\000\009\000\018\000\018\000\013\000\012\000\018\000\
-    \018\000\014\000\016\000\016\000\018\000\018\000\018\000\018\000\
-    \018\000\018\000\018\000\255\255\021\000\255\255\021\000\255\255\
+    \255\255\019\000\020\000\019\000\019\000\019\000\018\000\019\000\
+    \007\000\003\000\019\000\019\000\019\000\019\000\019\000\019\000\
+    \011\000\019\000\012\000\019\000\019\000\019\000\004\000\019\000\
+    \019\000\019\000\019\000\016\000\019\000\019\000\019\000\005\000\
+    \019\000\019\000\019\000\019\000\006\000\009\000\019\000\008\000\
+    \019\000\019\000\010\000\019\000\019\000\014\000\013\000\019\000\
+    \019\000\015\000\017\000\017\000\019\000\019\000\019\000\019\000\
+    \019\000\019\000\019\000\255\255\022\000\255\255\022\000\255\255\
     \255\255\255\255\255\255\255\255\255\255";
   Lexing.lex_default =
    "\255\255\000\000\000\000\000\000\107\000\005\000\255\255\255\255\
@@ -3970,139 +3970,144 @@ let rec token lexbuf =
 and __ocaml_lex_token_rec lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 75 "LexDeeplang.mll"
+# 76 "LexDeeplang.mll"
                 ( token lexbuf )
 # 3976 "LexDeeplang.ml"
 
   | 1 ->
-# 77 "LexDeeplang.mll"
+# 78 "LexDeeplang.mll"
                 ( token lexbuf )
 # 3981 "LexDeeplang.ml"
 
   | 2 ->
-# 78 "LexDeeplang.mll"
+# 79 "LexDeeplang.mll"
                 ( let x = lexeme lexbuf in try Hashtbl.find symbol_table x with Not_found -> failwith ("internal lexer error: reserved symbol " ^ x ^ " not found in hashtable") )
 # 3986 "LexDeeplang.ml"
 
   | 3 ->
-# 79 "LexDeeplang.mll"
+# 80 "LexDeeplang.mll"
                 ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_IF ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 3991 "LexDeeplang.ml"
 
   | 4 ->
-# 80 "LexDeeplang.mll"
+# 81 "LexDeeplang.mll"
                 ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_ELSE ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 3996 "LexDeeplang.ml"
 
   | 5 ->
-# 81 "LexDeeplang.mll"
+# 82 "LexDeeplang.mll"
                 ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_WHILE ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4001 "LexDeeplang.ml"
 
   | 6 ->
-# 82 "LexDeeplang.mll"
+# 83 "LexDeeplang.mll"
                 ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_FOR ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4006 "LexDeeplang.ml"
 
   | 7 ->
-# 83 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_LET ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 84 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_IN ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4011 "LexDeeplang.ml"
 
   | 8 ->
-# 84 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_FUN ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 85 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_LET ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4016 "LexDeeplang.ml"
 
   | 9 ->
-# 85 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_MUT ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 86 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_FUN ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4021 "LexDeeplang.ml"
 
   | 10 ->
 # 87 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_INTERFACE ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_MUT ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4026 "LexDeeplang.ml"
 
   | 11 ->
-# 88 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_IMPL ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 89 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_INTERFACE ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4031 "LexDeeplang.ml"
 
   | 12 ->
-# 89 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_AS ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 90 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_IMPL ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4036 "LexDeeplang.ml"
 
   | 13 ->
-# 90 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_MATCH ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 91 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_AS ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4041 "LexDeeplang.ml"
 
   | 14 ->
-# 91 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_TYPE ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 92 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_MATCH ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4046 "LexDeeplang.ml"
 
   | 15 ->
-# 92 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_EXTENDS ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 93 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_TYPE ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4051 "LexDeeplang.ml"
 
   | 16 ->
-# 93 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_TypeId ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 94 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_EXTENDS ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4056 "LexDeeplang.ml"
 
   | 17 ->
 # 95 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_BaseType ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_TypeId ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4061 "LexDeeplang.ml"
 
   | 18 ->
-# 96 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_VarId ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
+# 97 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_BaseType ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4066 "LexDeeplang.ml"
 
   | 19 ->
 # 98 "LexDeeplang.mll"
-                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_Ident l )
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_VarId ((lexeme_start lexbuf, lexeme_end lexbuf), l) )
 # 4071 "LexDeeplang.ml"
 
   | 20 ->
-# 99 "LexDeeplang.mll"
-                ( TOK_Integer (int_of_string (lexeme lexbuf)) )
+# 100 "LexDeeplang.mll"
+                ( let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_Ident l )
 # 4076 "LexDeeplang.ml"
 
   | 21 ->
 # 101 "LexDeeplang.mll"
-                ( TOK_Double (float_of_string (lexeme lexbuf)) )
+                ( TOK_Integer (int_of_string (lexeme lexbuf)) )
 # 4081 "LexDeeplang.ml"
 
   | 22 ->
 # 103 "LexDeeplang.mll"
-                ( TOK_String (unescapeInitTail (lexeme lexbuf)) )
+                ( TOK_Double (float_of_string (lexeme lexbuf)) )
 # 4086 "LexDeeplang.ml"
 
   | 23 ->
 # 105 "LexDeeplang.mll"
-                ( TOK_Char (lexeme lexbuf).[1] )
+                ( TOK_String (unescapeInitTail (lexeme lexbuf)) )
 # 4091 "LexDeeplang.ml"
 
   | 24 ->
 # 107 "LexDeeplang.mll"
-                ( token lexbuf )
+                ( TOK_Char (lexeme lexbuf).[1] )
 # 4096 "LexDeeplang.ml"
 
   | 25 ->
-# 108 "LexDeeplang.mll"
-                ( incr_lineno lexbuf; token lexbuf )
+# 109 "LexDeeplang.mll"
+                ( token lexbuf )
 # 4101 "LexDeeplang.ml"
 
   | 26 ->
-# 109 "LexDeeplang.mll"
-                ( TOK_EOF )
+# 110 "LexDeeplang.mll"
+                ( incr_lineno lexbuf; token lexbuf )
 # 4106 "LexDeeplang.ml"
+
+  | 27 ->
+# 111 "LexDeeplang.mll"
+                ( TOK_EOF )
+# 4111 "LexDeeplang.ml"
 
   | __ocaml_lex_state -> lexbuf.Lexing.refill_buff lexbuf;
       __ocaml_lex_token_rec lexbuf __ocaml_lex_state

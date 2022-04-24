@@ -5,6 +5,7 @@ type iF = IF of ((int * int) * string)
 and eLSE = ELSE of ((int * int) * string)
 and wHILE = WHILE of ((int * int) * string)
 and fOR = FOR of ((int * int) * string)
+and iN = IN of ((int * int) * string)
 and lET = LET of ((int * int) * string)
 and fUN = FUN of ((int * int) * string)
 and mUT = MUT of ((int * int) * string)
@@ -14,9 +15,9 @@ and aS = AS of ((int * int) * string)
 and mATCH = MATCH of ((int * int) * string)
 and tYPE = TYPE of ((int * int) * string)
 and eXTENDS = EXTENDS of ((int * int) * string)
-and typeId = TypeId of (((int * int) * string) * int)
+and typeId = TypeId of ((int * int) * string)
 and baseType = BaseType of ((int * int) * string)
-and varId = VarId of (((int * int) * string) * int)
+and varId = VarId of ((int * int) * string)
 and code =
    Declares of declare
  | Defines of define
@@ -37,9 +38,7 @@ and variable =
    Variables of varId
 
 and declare =
-   DecImmut of lET * varId * typeT
- | DecMut of lET * mUT * varId * typeT
- | DecFunc of fUN * varId * args * retType
+   DecFunc of fUN * varId * args * retType
  | InterfaceNoExt of iNTERFACE * interfaceName * methods
  | InterfaceExt of iNTERFACE * interfaceName * eXTENDS * interfaceName list * methods
 
@@ -70,7 +69,8 @@ and define =
    DefFunc of functionT
  | ADT of tYPE * typeId * constructor list
  | Struct of tYPE * typeId * structField list
- | DefVar of lET * typedVar * expression
+ | DefVar of lET * typedMatcher * rHS
+ | DefMutVar of lET * mUT * typedMatcher * rHS
  | DefType of tYPE * typeId * args
  | InterfaceImpl of iMPL * interfaceName * fOR * typeT * functions
  | RawImpl of iMPL * typeT * functions
@@ -89,9 +89,9 @@ and structField =
    BasicStructField of field
  | DelegateStructField of aS * field
 
-and typedVar =
-   ImmutVar of varId * typeT
- | MutVar of mUT * varId * typeT
+and rHS =
+   DefRHS of expression
+ | NilRHS
 
 and functions =
    FunctionsUnit
@@ -99,12 +99,13 @@ and functions =
 
 and statement =
    Block of statement list
- | DefVarSt of lET * typedVar * expression
+ | DefVarSt of lET * typedMatcher * rHS
+ | DefMutVarSt of lET * mUT * typedMatcher * rHS
  | DefTypeSt of tYPE * typeId * args
  | ExprSt of expression
  | Return of expression
  | If of iF * expression * statement list * elseBody
- | For of fOR * matcher * expression * statement list
+ | For of fOR * matcher * iN * expression * statement list
  | While of wHILE * expression * statement list
  | Match of mATCH * varId * matchBody
 
@@ -120,6 +121,13 @@ and matchCase =
    MatchCases of matcher * statement list
 
 and matcher =
+   TypedMatchers of typedMatcher
+ | TypelessMatchers of typelessMatcher
+
+and typedMatcher =
+   Typed of typelessMatcher * typeT
+
+and typelessMatcher =
    WildCardMatch
  | ConsMatchUnit of typeId
  | ConsMatch of typeId * matcher
@@ -131,7 +139,7 @@ and matcher =
  | FieldMatch of typeId * fieldMatcher list
 
 and fieldMatcher =
-   FieldMatchers of varId * matcher
+   FieldMatchers of varId * typelessMatcher
 
 and expression =
    ExpVar of variable

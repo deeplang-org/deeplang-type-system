@@ -56,6 +56,7 @@ open Lexing
 %token <(int * int) * string> TOK_ELSE
 %token <(int * int) * string> TOK_WHILE
 %token <(int * int) * string> TOK_FOR
+%token <(int * int) * string> TOK_IN
 %token <(int * int) * string> TOK_LET
 %token <(int * int) * string> TOK_FUN
 %token <(int * int) * string> TOK_MUT
@@ -69,7 +70,7 @@ open Lexing
 %token <(int * int) * string> TOK_BaseType
 %token <(int * int) * string> TOK_VarId
 
-%start pCode_list pCode pTypeT pTypeT_list pVariable pVariable_list pDeclare pArgs pArg pArg_list pRetType pInterfaceName pInterfaceName_list pMethods pMethodT pMethodT_list pDefine pFunctionT pConstructor pConstructor_list pField pField_list pStructField pStructField_list pTypedVar pFunctions pFunctionT_list pStatement pStatement_list pElseBody pMatchBody pMatchCase pMatcher pMatcher_list pFieldMatcher_list pFieldMatcher pMatchCase_list pExpression pExpression1 pExpression2 pExpression3 pExpression4 pExpression5 pExpression6 pExpression7 pExpression8 pExpression9 pExpression10 pExpression11 pExpression12 pExpression13 pExpression_list pLiteral pFieldInit_list pFieldInit
+%start pCode_list pCode pTypeT pTypeT_list pVariable pVariable_list pDeclare pArgs pArg pArg_list pRetType pInterfaceName pInterfaceName_list pMethods pMethodT pMethodT_list pDefine pFunctionT pConstructor pConstructor_list pField pField_list pStructField pStructField_list pRHS pFunctions pFunctionT_list pStatement pStatement_list pElseBody pMatchBody pMatchCase pMatcher pTypedMatcher pTypelessMatcher pMatcher_list pFieldMatcher_list pFieldMatcher pMatchCase_list pExpression pExpression1 pExpression2 pExpression3 pExpression4 pExpression5 pExpression6 pExpression7 pExpression8 pExpression9 pExpression10 pExpression11 pExpression12 pExpression13 pExpression_list pLiteral pFieldInit_list pFieldInit
 %type <AbsDeeplang.code list> pCode_list
 %type <AbsDeeplang.code> pCode
 %type <AbsDeeplang.typeT> pTypeT
@@ -94,7 +95,7 @@ open Lexing
 %type <AbsDeeplang.field list> pField_list
 %type <AbsDeeplang.structField> pStructField
 %type <AbsDeeplang.structField list> pStructField_list
-%type <AbsDeeplang.typedVar> pTypedVar
+%type <AbsDeeplang.rHS> pRHS
 %type <AbsDeeplang.functions> pFunctions
 %type <AbsDeeplang.functionT list> pFunctionT_list
 %type <AbsDeeplang.statement> pStatement
@@ -103,6 +104,8 @@ open Lexing
 %type <AbsDeeplang.matchBody> pMatchBody
 %type <AbsDeeplang.matchCase> pMatchCase
 %type <AbsDeeplang.matcher> pMatcher
+%type <AbsDeeplang.typedMatcher> pTypedMatcher
+%type <AbsDeeplang.typelessMatcher> pTypelessMatcher
 %type <AbsDeeplang.matcher list> pMatcher_list
 %type <AbsDeeplang.fieldMatcher list> pFieldMatcher_list
 %type <AbsDeeplang.fieldMatcher> pFieldMatcher
@@ -200,7 +203,7 @@ pStructField : structField TOK_EOF { $1 }
 pStructField_list : structField_list TOK_EOF { $1 }
   | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
 
-pTypedVar : typedVar TOK_EOF { $1 }
+pRHS : rHS TOK_EOF { $1 }
   | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
 
 pFunctions : functions TOK_EOF { $1 }
@@ -225,6 +228,12 @@ pMatchCase : matchCase TOK_EOF { $1 }
   | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
 
 pMatcher : matcher TOK_EOF { $1 }
+  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
+
+pTypedMatcher : typedMatcher TOK_EOF { $1 }
+  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
+
+pTypelessMatcher : typelessMatcher TOK_EOF { $1 }
   | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
 
 pMatcher_list : matcher_list TOK_EOF { $1 }
@@ -326,9 +335,7 @@ variable_list : variable { (fun x -> [x]) $1 }
   | variable SYMB8 variable_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-declare : lET varId SYMB9 typeT SYMB1 { DecImmut ($1, $2, $4) }
-  | lET mUT varId SYMB9 typeT SYMB1 { DecMut ($1, $2, $3, $5) }
-  | fUN varId args retType { DecFunc ($1, $2, $3, $4) }
+declare : fUN varId args retType { DecFunc ($1, $2, $3, $4) }
   | iNTERFACE interfaceName methods { InterfaceNoExt ($1, $2, $3) }
   | iNTERFACE interfaceName eXTENDS interfaceName_list methods { InterfaceExt ($1, $2, $3, $4, $5) }
 ;
@@ -372,7 +379,8 @@ methodT_list : /* empty */ { []  }
 define : functionT { DefFunc $1 }
   | tYPE typeId SYMB2 constructor_list SYMB3 { ADT ($1, $2, $4) }
   | tYPE typeId SYMB11 structField_list SYMB12 { Struct ($1, $2, $4) }
-  | lET typedVar SYMB13 expression SYMB1 { DefVar ($1, $2, $4) }
+  | lET typedMatcher rHS SYMB1 { DefVar ($1, $2, $3) }
+  | lET mUT typedMatcher rHS SYMB1 { DefMutVar ($1, $2, $3, $4) }
   | tYPE typeId args SYMB1 { DefType ($1, $2, $3) }
   | iMPL interfaceName fOR typeT functions { InterfaceImpl ($1, $2, $3, $4, $5) }
   | iMPL typeT functions { RawImpl ($1, $2, $3) }
@@ -404,8 +412,8 @@ structField_list : structField { (fun x -> [x]) $1 }
   | structField SYMB8 structField_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-typedVar : varId SYMB9 typeT { ImmutVar ($1, $3) }
-  | mUT varId SYMB9 typeT { MutVar ($1, $2, $4) }
+rHS : SYMB13 expression { DefRHS $2 }
+  | /* empty */ { NilRHS  }
 ;
 
 functions : SYMB10 { FunctionsUnit  }
@@ -418,12 +426,13 @@ functionT_list : /* empty */ { []  }
 ;
 
 statement : SYMB11 statement_list SYMB12 { Block $2 }
-  | lET typedVar SYMB13 expression SYMB1 { DefVarSt ($1, $2, $4) }
+  | lET typedMatcher rHS SYMB1 { DefVarSt ($1, $2, $3) }
+  | lET mUT typedMatcher rHS SYMB1 { DefMutVarSt ($1, $2, $3, $4) }
   | tYPE typeId args SYMB1 { DefTypeSt ($1, $2, $3) }
   | expression SYMB1 { ExprSt $1 }
   | KW_return expression SYMB1 { Return $2 }
   | iF SYMB6 expression SYMB7 SYMB11 statement_list SYMB12 elseBody { If ($1, $3, $6, $8) }
-  | fOR SYMB6 matcher SYMB9 expression SYMB7 SYMB11 statement_list SYMB12 { For ($1, $3, $5, $8) }
+  | fOR SYMB6 matcher iN expression SYMB7 SYMB11 statement_list SYMB12 { For ($1, $3, $4, $5, $8) }
   | wHILE SYMB6 expression SYMB7 SYMB11 statement_list SYMB12 { While ($1, $3, $6) }
   | mATCH SYMB6 varId SYMB7 SYMB11 matchBody SYMB12 { Match ($1, $3, $6) }
 ;
@@ -443,7 +452,14 @@ matchBody : matchCase_list { MatchBodys $1 }
 matchCase : matcher SYMB14 SYMB11 statement_list SYMB12 { MatchCases ($1, $4) }
 ;
 
-matcher : SYMB15 { WildCardMatch  }
+matcher : typedMatcher { TypedMatchers $1 }
+  | typelessMatcher { TypelessMatchers $1 }
+;
+
+typedMatcher : typelessMatcher SYMB9 typeT { Typed ($1, $3) }
+;
+
+typelessMatcher : SYMB15 { WildCardMatch  }
   | typeId SYMB5 { ConsMatchUnit $1 }
   | typeId SYMB6 matcher SYMB7 { ConsMatch ($1, $3) }
   | varId { TypelessVarMatch $1 }
@@ -464,7 +480,7 @@ fieldMatcher_list : /* empty */ { []  }
   | fieldMatcher SYMB8 fieldMatcher_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-fieldMatcher : varId SYMB9 matcher { FieldMatchers ($1, $3) }
+fieldMatcher : varId SYMB9 typelessMatcher { FieldMatchers ($1, $3) }
 ;
 
 matchCase_list : matchCase { (fun x -> [x]) $1 }
@@ -575,6 +591,7 @@ iF : TOK_IF { IF ($1)};
 eLSE : TOK_ELSE { ELSE ($1)};
 wHILE : TOK_WHILE { WHILE ($1)};
 fOR : TOK_FOR { FOR ($1)};
+iN : TOK_IN { IN ($1)};
 lET : TOK_LET { LET ($1)};
 fUN : TOK_FUN { FUN ($1)};
 mUT : TOK_MUT { MUT ($1)};
@@ -584,8 +601,8 @@ aS : TOK_AS { AS ($1)};
 mATCH : TOK_MATCH { MATCH ($1)};
 tYPE : TOK_TYPE { TYPE ($1)};
 eXTENDS : TOK_EXTENDS { EXTENDS ($1)};
-typeId : TOK_TypeId { TypeId ($1, 0)};
+typeId : TOK_TypeId { TypeId ($1)};
 baseType : TOK_BaseType { BaseType ($1)};
-varId : TOK_VarId { VarId ($1, 0)};
+varId : TOK_VarId { VarId ($1)};
 
 

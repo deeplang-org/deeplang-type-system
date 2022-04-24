@@ -24,6 +24,10 @@ and transFOR (x : fOR) : result = match x with
     FOR string -> failure x
 
 
+and transIN (x : iN) : result = match x with
+    IN string -> failure x
+
+
 and transLET (x : lET) : result = match x with
     LET string -> failure x
 
@@ -95,9 +99,7 @@ and transVariable (x : variable) : result = match x with
 
 
 and transDeclare (x : declare) : result = match x with
-    DecImmut (let', varid, type') -> failure x
-  | DecMut (let', mut, varid, type') -> failure x
-  | DecFunc (fun', varid, args, rettype) -> failure x
+    DecFunc (fun', varid, args, rettype) -> failure x
   | InterfaceNoExt (interface, interfacename, methods) -> failure x
   | InterfaceExt (interface, interfacename, extends, interfacenames, methods) -> failure x
 
@@ -135,7 +137,8 @@ and transDefine (x : define) : result = match x with
     DefFunc function' -> failure x
   | ADT (type', typeid, constructors) -> failure x
   | Struct (type', typeid, structfields) -> failure x
-  | DefVar (let', typedvar, expression) -> failure x
+  | DefVar (let', typedmatcher, rhs) -> failure x
+  | DefMutVar (let', mut, typedmatcher, rhs) -> failure x
   | DefType (type', typeid, args) -> failure x
   | InterfaceImpl (impl, interfacename, for', type', functions) -> failure x
   | RawImpl (impl, type', functions) -> failure x
@@ -159,9 +162,9 @@ and transStructField (x : structField) : result = match x with
   | DelegateStructField (as', field) -> failure x
 
 
-and transTypedVar (x : typedVar) : result = match x with
-    ImmutVar (varid, type') -> failure x
-  | MutVar (mut, varid, type') -> failure x
+and transRHS (x : rHS) : result = match x with
+    DefRHS expression -> failure x
+  | NilRHS  -> failure x
 
 
 and transFunctions (x : functions) : result = match x with
@@ -171,12 +174,13 @@ and transFunctions (x : functions) : result = match x with
 
 and transStatement (x : statement) : result = match x with
     Block statements -> failure x
-  | DefVarSt (let', typedvar, expression) -> failure x
+  | DefVarSt (let', typedmatcher, rhs) -> failure x
+  | DefMutVarSt (let', mut, typedmatcher, rhs) -> failure x
   | DefTypeSt (type', typeid, args) -> failure x
   | ExprSt expression -> failure x
   | Return expression -> failure x
   | If (if', expression, statements, elsebody) -> failure x
-  | For (for', matcher, expression, statements) -> failure x
+  | For (for', matcher, in', expression, statements) -> failure x
   | While (while', expression, statements) -> failure x
   | Match (match', varid, matchbody) -> failure x
 
@@ -196,6 +200,15 @@ and transMatchCase (x : matchCase) : result = match x with
 
 
 and transMatcher (x : matcher) : result = match x with
+    TypedMatchers typedmatcher -> failure x
+  | TypelessMatchers typelessmatcher -> failure x
+
+
+and transTypedMatcher (x : typedMatcher) : result = match x with
+    Typed (typelessmatcher, type') -> failure x
+
+
+and transTypelessMatcher (x : typelessMatcher) : result = match x with
     WildCardMatch  -> failure x
   | ConsMatchUnit typeid -> failure x
   | ConsMatch (typeid, matcher) -> failure x
@@ -208,7 +221,7 @@ and transMatcher (x : matcher) : result = match x with
 
 
 and transFieldMatcher (x : fieldMatcher) : result = match x with
-    FieldMatchers (varid, matcher) -> failure x
+    FieldMatchers (varid, typelessmatcher) -> failure x
 
 
 and transExpression (x : expression) : result = match x with

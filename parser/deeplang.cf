@@ -17,6 +17,7 @@ position token IF ({"if"});
 position token ELSE ({"else"});
 position token WHILE ({"while"});
 position token FOR ({"for"});
+position token IN ({"in"});
 position token LET ({"let"});
 position token FUN ({"fun"});
 position token MUT ({"mut"});
@@ -49,12 +50,8 @@ Variables. Variable ::= VarId;
 (:[]). [Variable] ::= Variable;
 (:). [Variable] ::= Variable "," [Variable] ;
 
--- 声明
-DecImmut. Declare ::= LET VarId ":" Type ";";
-DecMut. Declare ::= LET MUT VarId ":" Type ";";
-DecFunc. Declare ::= FUN VarId Args RetType;
-
 -- 函数声明
+DecFunc. Declare ::= FUN VarId Args RetType;
 ArgUnit. Args ::= "(" ")";
 ArgUnit2. Args ::= "()";
 ArgExist. Args ::= "(" [Arg] ")";
@@ -100,10 +97,11 @@ DelegateStructField. StructField ::= AS Field;
 (:[]). [StructField] ::= StructField;
 (:). [StructField] ::= StructField "," [StructField];
 
-ImmutVar. TypedVar ::= VarId ":" Type;
-MutVar. TypedVar ::= MUT VarId ":" Type;
-DefVar. Define ::= LET TypedVar "=" Expression ";";
+DefVar. Define ::= LET TypedMatcher RHS ";";
+DefMutVar. Define ::= LET MUT TypedMatcher RHS ";";
 DefType. Define ::= TYPE TypeId Args ";";
+DefRHS. RHS ::= "=" Expression;
+NilRHS. RHS ::= ;
 
 -- 接口实现
 InterfaceImpl. Define ::= IMPL InterfaceName FOR Type Functions;
@@ -122,7 +120,8 @@ Block. Statement ::= "{" [Statement] "}";
 (:). [Statement] ::= Statement [Statement];
 
 -- 带;的单行Statement
-DefVarSt. Statement ::= LET TypedVar "=" Expression ";";
+DefVarSt. Statement ::= LET TypedMatcher RHS ";";
+DefMutVarSt. Statement ::= LET MUT TypedMatcher RHS ";";
 DefTypeSt. Statement ::= TYPE TypeId Args ";";
 ExprSt. Statement ::= Expression ";";
 Return. Statement ::= "return" Expression ";";
@@ -136,7 +135,7 @@ Elif. ElseBody ::= ELSE IF "(" Expression ")" "{" [Statement] "}" ElseBody;
 Else. ElseBody ::= ELSE "{" [Statement] "}";
 
 -- 循环
-For. Statement ::= FOR "(" Matcher ":" Expression ")" "{" [Statement] "}";
+For. Statement ::= FOR "(" Matcher IN Expression ")" "{" [Statement] "}";
 While. Statement ::= WHILE "(" Expression ")" "{" [Statement] "}";
 
 -- 模式匹配
@@ -144,23 +143,25 @@ While. Statement ::= WHILE "(" Expression ")" "{" [Statement] "}";
 Match. Statement ::= MATCH "(" VarId ")" "{" MatchBody "}";
 MatchBodys. MatchBody ::= [MatchCase];
 MatchCases. MatchCase ::= Matcher "=>" "{" [Statement] "}";
-WildCardMatch. Matcher ::= "_";
-ConsMatchUnit. Matcher ::= TypeId "()";
-ConsMatch. Matcher ::= TypeId "(" Matcher ")";
-TypelessVarMatch. Matcher ::= VarId;
--- VarMatch. Matcher ::= TypedVar;
--- AsVarMatch. Matcher ::= Matcher AS TypedVar;
-UnitMatch. Matcher ::= "()";
-TupleMatch. Matcher ::= "(" [Matcher] ")";
-LiteralMatch. Matcher ::= Literal;
-FieldMatchUnit. Matcher ::= TypeId "{}";
-FieldMatch. Matcher ::= TypeId "{" [FieldMatcher] "}";
+TypedMatchers. Matcher ::= TypedMatcher;
+Typed. TypedMatcher ::= TypelessMatcher ":" Type;
+TypelessMatchers. Matcher ::= TypelessMatcher;
+WildCardMatch. TypelessMatcher ::= "_";
+ConsMatchUnit. TypelessMatcher ::= TypeId "()";
+ConsMatch. TypelessMatcher ::= TypeId "(" Matcher ")";
+TypelessVarMatch. TypelessMatcher ::= VarId;
+-- AsVarMatch. Matcher ::= Matcher AS VarId;
+UnitMatch. TypelessMatcher ::= "()";
+TupleMatch. TypelessMatcher ::= "(" [Matcher] ")";
+LiteralMatch. TypelessMatcher ::= Literal;
+FieldMatchUnit. TypelessMatcher ::= TypeId "{}";
+FieldMatch. TypelessMatcher ::= TypeId "{" [FieldMatcher] "}";
 []. [Matcher] ::= ;
 (:[]). [Matcher] ::= Matcher;
 (:). [Matcher] ::= Matcher "," [Matcher];
 []. [FieldMatcher] ::= ;
 (:[]). [FieldMatcher] ::= FieldMatcher;
-FieldMatchers. FieldMatcher ::= VarId ":" Matcher;
+FieldMatchers. FieldMatcher ::= VarId ":" TypelessMatcher;
 (:). [FieldMatcher] ::= FieldMatcher "," [FieldMatcher];
 (:[]). [MatchCase] ::= MatchCase;
 (:). [MatchCase] ::= MatchCase [MatchCase];
@@ -214,9 +215,6 @@ LUnit. Literal ::= "()";
 (:[]). [FieldInit] ::= FieldInit;
 (:). [FieldInit] ::= FieldInit "," [FieldInit];
 FieldInitCons. FieldInit ::= VarId ":" Expression;
-
--- 模式匹配
--- ArrayMatch. Macro ::= MATCH "(" [Code] ")"; -- 暂时这么写着吧
 
 ExpAssignment. Expression1 ::= Variable "=" Expression1;
 ExpAssignmentPlus. Expression1 ::= Variable "+=" Expression1;
