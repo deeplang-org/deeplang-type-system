@@ -282,6 +282,7 @@ and prtMatchCaseListBNFC i es : doc = match (i, es) with
 and prtMatcher (i:int) (e : AbsDeeplang.matcher) : doc = match e with
        AbsDeeplang.TypedMatchers typedmatcher -> prPrec i 0 (concatD [prtTypedMatcher 0 typedmatcher])
   |    AbsDeeplang.TypelessMatchers typelessmatcher -> prPrec i 0 (concatD [prtTypelessMatcher 0 typelessmatcher])
+  |    AbsDeeplang.AsVarMatch (matcher, as_, varid) -> prPrec i 0 (concatD [prtMatcher 0 matcher ; prtAS 0 as_ ; prtVarId 0 varid])
 
 and prtMatcherListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])

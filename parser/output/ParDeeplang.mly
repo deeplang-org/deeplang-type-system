@@ -454,6 +454,7 @@ matchCase : matcher SYMB14 SYMB11 statement_list SYMB12 { MatchCases ($1, $4) }
 
 matcher : typedMatcher { TypedMatchers $1 }
   | typelessMatcher { TypelessMatchers $1 }
+  | matcher aS varId { AsVarMatch ($1, $2, $3) }
 ;
 
 typedMatcher : typelessMatcher SYMB9 typeT { Typed ($1, $3) }

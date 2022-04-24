@@ -123,6 +123,7 @@ and matchCase =
 and matcher =
    TypedMatchers of typedMatcher
  | TypelessMatchers of typelessMatcher
+ | AsVarMatch of matcher * aS * varId
 
 and typedMatcher =
    Typed of typelessMatcher * typeT

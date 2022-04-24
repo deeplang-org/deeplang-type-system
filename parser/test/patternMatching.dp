@@ -9,5 +9,6 @@ fun main() {
     (a, b: bool, (c, d), e: char): (f32, bool, (i32, i32), char) => { return 6; }
     7 => { return 7; }
     Point { x : (7: i32), y : Point { x : _ } } => { return 8; }
+    Point { x : 7, y : Point { x : _ } } : Point as p => { return 9; }
   }
 }

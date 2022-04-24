@@ -181,6 +181,7 @@ and showMatchCase (e : AbsDeeplang.matchCase) : showable = match e with
 and showMatcher (e : AbsDeeplang.matcher) : showable = match e with
        AbsDeeplang.TypedMatchers typedmatcher -> s2s "TypedMatchers" >> c2s ' ' >> c2s '(' >> showTypedMatcher typedmatcher >> c2s ')'
   |    AbsDeeplang.TypelessMatchers typelessmatcher -> s2s "TypelessMatchers" >> c2s ' ' >> c2s '(' >> showTypelessMatcher typelessmatcher >> c2s ')'
+  |    AbsDeeplang.AsVarMatch (matcher, as', varid) -> s2s "AsVarMatch" >> c2s ' ' >> c2s '(' >> showMatcher matcher  >> s2s ", " >>  showAS as'  >> s2s ", " >>  showVarId varid >> c2s ')'
 
 
 and showTypedMatcher (e : AbsDeeplang.typedMatcher) : showable = match e with

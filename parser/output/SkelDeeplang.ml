@@ -202,6 +202,7 @@ and transMatchCase (x : matchCase) : result = match x with
 and transMatcher (x : matcher) : result = match x with
     TypedMatchers typedmatcher -> failure x
   | TypelessMatchers typelessmatcher -> failure x
+  | AsVarMatch (matcher, as', varid) -> failure x
 
 
 and transTypedMatcher (x : typedMatcher) : result = match x with
