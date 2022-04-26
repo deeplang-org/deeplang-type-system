@@ -126,7 +126,9 @@ let rec prtBaseType _ (AbsDeeplang.BaseType (_,i)) : doc = render i
 
 
 let rec prtVarId _ (AbsDeeplang.VarId (_,i)) : doc = render i
-
+and prtVarIdListBNFC i es : doc = match (i, es) with
+    (_,[x]) -> (concatD [prtVarId 0 x])
+  | (_,x::xs) -> (concatD [prtVarId 0 x ; render "," ; prtVarIdListBNFC 0 xs])
 
 
 let rec prtCode (i:int) (e : AbsDeeplang.code) : doc = match e with
@@ -152,12 +154,11 @@ and prtTypeT (i:int) (e : AbsDeeplang.typeT) : doc = match e with
 and prtTypeTListBNFC i es : doc = match (i, es) with
     (_,[x]) -> (concatD [prtTypeT 0 x])
   | (_,x::xs) -> (concatD [prtTypeT 0 x ; render "," ; prtTypeTListBNFC 0 xs])
-and prtVariable (i:int) (e : AbsDeeplang.variable) : doc = match e with
-       AbsDeeplang.Variables varid -> prPrec i 0 (concatD [prtVarId 0 varid])
+and prtMVarId (i:int) (e : AbsDeeplang.mVarId) : doc = match e with
+       AbsDeeplang.MutVar (mut, varid) -> prPrec i 0 (concatD [prtMUT 0 mut ; prtVarId 0 varid])
+  |    AbsDeeplang.ImmutVar varid -> prPrec i 0 (concatD [prtVarId 0 varid])
 
-and prtVariableListBNFC i es : doc = match (i, es) with
-    (_,[x]) -> (concatD [prtVariable 0 x])
-  | (_,x::xs) -> (concatD [prtVariable 0 x ; render "," ; prtVariableListBNFC 0 xs])
+
 and prtDeclare (i:int) (e : AbsDeeplang.declare) : doc = match e with
        AbsDeeplang.DecFunc (fun_, varid, args, rettype) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype])
   |    AbsDeeplang.InterfaceNoExt (interface, interfacename, methods) -> prPrec i 0 (concatD [prtINTERFACE 0 interface ; prtInterfaceName 0 interfacename ; prtMethods 0 methods])
@@ -194,7 +195,7 @@ and prtMethods (i:int) (e : AbsDeeplang.methods) : doc = match e with
 
 and prtMethodT (i:int) (e : AbsDeeplang.methodT) : doc = match e with
        AbsDeeplang.InterfaceMethod (fun_, varid, args, rettype) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render ";"])
-  |    AbsDeeplang.ADTMethod (fun_, varid, args, rettype, codes) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{" ; prtCodeListBNFC 0 codes ; render "}"])
+  |    AbsDeeplang.ADTMethod (fun_, varid, args, rettype, statements) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{" ; prtStatementListBNFC 0 statements ; render "}"])
 
 and prtMethodTListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
@@ -204,8 +205,7 @@ and prtDefine (i:int) (e : AbsDeeplang.define) : doc = match e with
        AbsDeeplang.DefFunc function_ -> prPrec i 0 (concatD [prtFunctionT 0 function_])
   |    AbsDeeplang.ADT (type_, typeid, constructors) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; render "[" ; prtConstructorListBNFC 0 constructors ; render "]"])
   |    AbsDeeplang.Struct (type_, typeid, structfields) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; render "{" ; prtStructFieldListBNFC 0 structfields ; render "}"])
-  |    AbsDeeplang.DefVar (let_, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
-  |    AbsDeeplang.DefMutVar (let_, mut, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; prtMUT 0 mut ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
+  |    AbsDeeplang.DefVar (let_, mutflag, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; prtMutFlag 0 mutflag ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
   |    AbsDeeplang.DefType (type_, typeid, args) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; prtArgs 0 args ; render ";"])
   |    AbsDeeplang.InterfaceImpl (impl, interfacename, for_, type_, functions) -> prPrec i 0 (concatD [prtIMPL 0 impl ; prtInterfaceName 0 interfacename ; prtFOR 0 for_ ; prtTypeT 0 type_ ; prtFunctions 0 functions])
   |    AbsDeeplang.RawImpl (impl, type_, functions) -> prPrec i 0 (concatD [prtIMPL 0 impl ; prtTypeT 0 type_ ; prtFunctions 0 functions])
@@ -213,14 +213,15 @@ and prtDefine (i:int) (e : AbsDeeplang.define) : doc = match e with
 
 and prtFunctionT (i:int) (e : AbsDeeplang.functionT) : doc = match e with
        AbsDeeplang.FuncUnit (fun_, varid, args, rettype) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{}"])
-  |    AbsDeeplang.Func (fun_, varid, args, rettype, codes) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{" ; prtCodeListBNFC 0 codes ; render "}"])
+  |    AbsDeeplang.Func (fun_, varid, args, rettype, statements) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{" ; prtStatementListBNFC 0 statements ; render "}"])
 
 and prtFunctionTListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
   | (_,[x]) -> (concatD [prtFunctionT 0 x])
   | (_,x::xs) -> (concatD [prtFunctionT 0 x ; prtFunctionTListBNFC 0 xs])
 and prtConstructor (i:int) (e : AbsDeeplang.constructor) : doc = match e with
-       AbsDeeplang.Constructors (typeid, fields) -> prPrec i 0 (concatD [prtTypeId 0 typeid ; render "(" ; prtFieldListBNFC 0 fields ; render ")"])
+       AbsDeeplang.UnitCons typeid -> prPrec i 0 (concatD [prtTypeId 0 typeid])
+  |    AbsDeeplang.ParamCons (typeid, fields) -> prPrec i 0 (concatD [prtTypeId 0 typeid ; render "(" ; prtFieldListBNFC 0 fields ; render ")"])
 
 and prtConstructorListBNFC i es : doc = match (i, es) with
     (_,[x]) -> (concatD [prtConstructor 0 x])
@@ -243,6 +244,11 @@ and prtRHS (i:int) (e : AbsDeeplang.rHS) : doc = match e with
   |    AbsDeeplang.NilRHS  -> prPrec i 0 (concatD [])
 
 
+and prtMutFlag (i:int) (e : AbsDeeplang.mutFlag) : doc = match e with
+       AbsDeeplang.Mut mut -> prPrec i 0 (concatD [prtMUT 0 mut])
+  |    AbsDeeplang.Immut  -> prPrec i 0 (concatD [])
+
+
 and prtFunctions (i:int) (e : AbsDeeplang.functions) : doc = match e with
        AbsDeeplang.FunctionsUnit  -> prPrec i 0 (concatD [render "{}"])
   |    AbsDeeplang.FunctionsMany functions -> prPrec i 0 (concatD [render "{" ; prtFunctionTListBNFC 0 functions ; render "}"])
@@ -250,9 +256,7 @@ and prtFunctions (i:int) (e : AbsDeeplang.functions) : doc = match e with
 
 and prtStatement (i:int) (e : AbsDeeplang.statement) : doc = match e with
        AbsDeeplang.Block statements -> prPrec i 0 (concatD [render "{" ; prtStatementListBNFC 0 statements ; render "}"])
-  |    AbsDeeplang.DefVarSt (let_, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
-  |    AbsDeeplang.DefMutVarSt (let_, mut, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; prtMUT 0 mut ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
-  |    AbsDeeplang.DefTypeSt (type_, typeid, args) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; prtArgs 0 args ; render ";"])
+  |    AbsDeeplang.DefVarSt (let_, mutflag, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; prtMutFlag 0 mutflag ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
   |    AbsDeeplang.ExprSt expression -> prPrec i 0 (concatD [prtExpression 0 expression ; render ";"])
   |    AbsDeeplang.Return expression -> prPrec i 0 (concatD [render "return" ; prtExpression 0 expression ; render ";"])
   |    AbsDeeplang.If (if_, expression, statements, elsebody) -> prPrec i 0 (concatD [prtIF 0 if_ ; render "(" ; prtExpression 0 expression ; render ")" ; render "{" ; prtStatementListBNFC 0 statements ; render "}" ; prtElseBody 0 elsebody])
@@ -282,7 +286,7 @@ and prtMatchCaseListBNFC i es : doc = match (i, es) with
 and prtMatcher (i:int) (e : AbsDeeplang.matcher) : doc = match e with
        AbsDeeplang.TypedMatchers typedmatcher -> prPrec i 0 (concatD [prtTypedMatcher 0 typedmatcher])
   |    AbsDeeplang.TypelessMatchers typelessmatcher -> prPrec i 0 (concatD [prtTypelessMatcher 0 typelessmatcher])
-  |    AbsDeeplang.AsVarMatch (matcher, as_, varid) -> prPrec i 0 (concatD [prtMatcher 0 matcher ; prtAS 0 as_ ; prtVarId 0 varid])
+  |    AbsDeeplang.AsVarMatch (matcher, as_, mvarid) -> prPrec i 0 (concatD [prtMatcher 0 matcher ; prtAS 0 as_ ; prtMVarId 0 mvarid])
 
 and prtMatcherListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
@@ -296,7 +300,7 @@ and prtTypelessMatcher (i:int) (e : AbsDeeplang.typelessMatcher) : doc = match e
        AbsDeeplang.WildCardMatch  -> prPrec i 0 (concatD [render "_"])
   |    AbsDeeplang.ConsMatchUnit typeid -> prPrec i 0 (concatD [prtTypeId 0 typeid ; render "()"])
   |    AbsDeeplang.ConsMatch (typeid, matcher) -> prPrec i 0 (concatD [prtTypeId 0 typeid ; render "(" ; prtMatcher 0 matcher ; render ")"])
-  |    AbsDeeplang.TypelessVarMatch varid -> prPrec i 0 (concatD [prtVarId 0 varid])
+  |    AbsDeeplang.TypelessVarMatch mvarid -> prPrec i 0 (concatD [prtMVarId 0 mvarid])
   |    AbsDeeplang.UnitMatch  -> prPrec i 0 (concatD [render "()"])
   |    AbsDeeplang.TupleMatch matchers -> prPrec i 0 (concatD [render "(" ; prtMatcherListBNFC 0 matchers ; render ")"])
   |    AbsDeeplang.LiteralMatch literal -> prPrec i 0 (concatD [prtLiteral 0 literal])
@@ -312,16 +316,16 @@ and prtFieldMatcherListBNFC i es : doc = match (i, es) with
   | (_,[x]) -> (concatD [prtFieldMatcher 0 x])
   | (_,x::xs) -> (concatD [prtFieldMatcher 0 x ; render "," ; prtFieldMatcherListBNFC 0 xs])
 and prtExpression (i:int) (e : AbsDeeplang.expression) : doc = match e with
-       AbsDeeplang.ExpVar variable -> prPrec i 12 (concatD [prtVariable 0 variable])
+       AbsDeeplang.ExpVar matcher -> prPrec i 12 (concatD [prtMatcher 0 matcher])
   |    AbsDeeplang.Literals literal -> prPrec i 12 (concatD [prtLiteral 0 literal])
   |    AbsDeeplang.Tuples expressions -> prPrec i 12 (concatD [render "(" ; prtExpressionListBNFC 0 expressions ; render ")"])
   |    AbsDeeplang.StructInit (typeid, fieldinits) -> prPrec i 12 (concatD [prtTypeId 0 typeid ; render "{" ; prtFieldInitListBNFC 0 fieldinits ; render "}"])
-  |    AbsDeeplang.ExpAssignment (variable, expression) -> prPrec i 1 (concatD [prtVariable 0 variable ; render "=" ; prtExpression 1 expression])
-  |    AbsDeeplang.ExpAssignmentPlus (variable, expression) -> prPrec i 1 (concatD [prtVariable 0 variable ; render "+=" ; prtExpression 1 expression])
-  |    AbsDeeplang.ExpAssignmentMinus (variable, expression) -> prPrec i 1 (concatD [prtVariable 0 variable ; render "-=" ; prtExpression 1 expression])
-  |    AbsDeeplang.ExpAssignmentMul (variable, expression) -> prPrec i 1 (concatD [prtVariable 0 variable ; render "*=" ; prtExpression 1 expression])
-  |    AbsDeeplang.ExpAssignmentDiv (variable, expression) -> prPrec i 1 (concatD [prtVariable 0 variable ; render "/=" ; prtExpression 1 expression])
-  |    AbsDeeplang.ExpAssignmentMod (variable, expression) -> prPrec i 1 (concatD [prtVariable 0 variable ; render "%=" ; prtExpression 1 expression])
+  |    AbsDeeplang.ExpAssignment (varid, expression) -> prPrec i 1 (concatD [prtVarId 0 varid ; render "=" ; prtExpression 1 expression])
+  |    AbsDeeplang.ExpAssignmentPlus (varid, expression) -> prPrec i 1 (concatD [prtVarId 0 varid ; render "+=" ; prtExpression 1 expression])
+  |    AbsDeeplang.ExpAssignmentMinus (varid, expression) -> prPrec i 1 (concatD [prtVarId 0 varid ; render "-=" ; prtExpression 1 expression])
+  |    AbsDeeplang.ExpAssignmentMul (varid, expression) -> prPrec i 1 (concatD [prtVarId 0 varid ; render "*=" ; prtExpression 1 expression])
+  |    AbsDeeplang.ExpAssignmentDiv (varid, expression) -> prPrec i 1 (concatD [prtVarId 0 varid ; render "/=" ; prtExpression 1 expression])
+  |    AbsDeeplang.ExpAssignmentMod (varid, expression) -> prPrec i 1 (concatD [prtVarId 0 varid ; render "%=" ; prtExpression 1 expression])
   |    AbsDeeplang.ExpLogicalOr (expression1, expression2) -> prPrec i 2 (concatD [prtExpression 2 expression1 ; render "||" ; prtExpression 3 expression2])
   |    AbsDeeplang.ExpLogicalAnd (expression1, expression2) -> prPrec i 3 (concatD [prtExpression 3 expression1 ; render "&&" ; prtExpression 4 expression2])
   |    AbsDeeplang.ExpLogicalNot expression -> prPrec i 4 (concatD [render "!" ; prtExpression 4 expression])
@@ -340,9 +344,9 @@ and prtExpression (i:int) (e : AbsDeeplang.expression) : doc = match e with
   |    AbsDeeplang.ExpMod (expression1, expression2) -> prPrec i 9 (concatD [prtExpression 9 expression1 ; render "%" ; prtExpression 10 expression2])
   |    AbsDeeplang.ExpApp (expression, expressions) -> prPrec i 11 (concatD [prtExpression 11 expression ; render "(" ; prtExpressionListBNFC 0 expressions ; render ")"])
   |    AbsDeeplang.ExpAppUnit expression -> prPrec i 11 (concatD [prtExpression 11 expression ; render "()"])
-  |    AbsDeeplang.ExpNewObj (typeid, expressions) -> prPrec i 11 (concatD [render "new" ; prtTypeId 0 typeid ; render "(" ; prtExpressionListBNFC 0 expressions ; render ")"])
-  |    AbsDeeplang.ExpNewObjUnit typeid -> prPrec i 11 (concatD [render "new" ; prtTypeId 0 typeid ; render "()"])
-  |    AbsDeeplang.ExpMethod (expression, variable) -> prPrec i 11 (concatD [prtExpression 11 expression ; render "." ; prtVariable 0 variable])
+  |    AbsDeeplang.ExpNewObj (typeid, expressions) -> prPrec i 11 (concatD [prtTypeId 0 typeid ; render "(" ; prtExpressionListBNFC 0 expressions ; render ")"])
+  |    AbsDeeplang.ExpNewObjUnit typeid -> prPrec i 11 (concatD [prtTypeId 0 typeid ; render "()"])
+  |    AbsDeeplang.ExpMethod (expression, varid) -> prPrec i 11 (concatD [prtExpression 11 expression ; render "." ; prtVarId 0 varid])
   |    AbsDeeplang.ExpBracket expression -> prPrec i 13 (concatD [render "(" ; prtExpression 0 expression ; render ")"])
 
 and prtExpressionListBNFC i es : doc = match (i, es) with

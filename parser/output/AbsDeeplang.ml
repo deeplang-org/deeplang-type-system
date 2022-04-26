@@ -34,8 +34,9 @@ and typeT =
  | TypePrimitive of baseType
  | TypeX of typeId
 
-and variable =
-   Variables of varId
+and mVarId =
+   MutVar of mUT * varId
+ | ImmutVar of varId
 
 and declare =
    DecFunc of fUN * varId * args * retType
@@ -63,24 +64,24 @@ and methods =
 
 and methodT =
    InterfaceMethod of fUN * varId * args * retType
- | ADTMethod of fUN * varId * args * retType * code list
+ | ADTMethod of fUN * varId * args * retType * statement list
 
 and define =
    DefFunc of functionT
  | ADT of tYPE * typeId * constructor list
  | Struct of tYPE * typeId * structField list
- | DefVar of lET * typedMatcher * rHS
- | DefMutVar of lET * mUT * typedMatcher * rHS
+ | DefVar of lET * mutFlag * typedMatcher * rHS
  | DefType of tYPE * typeId * args
  | InterfaceImpl of iMPL * interfaceName * fOR * typeT * functions
  | RawImpl of iMPL * typeT * functions
 
 and functionT =
    FuncUnit of fUN * varId * args * retType
- | Func of fUN * varId * args * retType * code list
+ | Func of fUN * varId * args * retType * statement list
 
 and constructor =
-   Constructors of typeId * field list
+   UnitCons of typeId
+ | ParamCons of typeId * field list
 
 and field =
    FieldCons of varId * typeT
@@ -93,15 +94,17 @@ and rHS =
    DefRHS of expression
  | NilRHS
 
+and mutFlag =
+   Mut of mUT
+ | Immut
+
 and functions =
    FunctionsUnit
  | FunctionsMany of functionT list
 
 and statement =
    Block of statement list
- | DefVarSt of lET * typedMatcher * rHS
- | DefMutVarSt of lET * mUT * typedMatcher * rHS
- | DefTypeSt of tYPE * typeId * args
+ | DefVarSt of lET * mutFlag * typedMatcher * rHS
  | ExprSt of expression
  | Return of expression
  | If of iF * expression * statement list * elseBody
@@ -123,7 +126,7 @@ and matchCase =
 and matcher =
    TypedMatchers of typedMatcher
  | TypelessMatchers of typelessMatcher
- | AsVarMatch of matcher * aS * varId
+ | AsVarMatch of matcher * aS * mVarId
 
 and typedMatcher =
    Typed of typelessMatcher * typeT
@@ -132,7 +135,7 @@ and typelessMatcher =
    WildCardMatch
  | ConsMatchUnit of typeId
  | ConsMatch of typeId * matcher
- | TypelessVarMatch of varId
+ | TypelessVarMatch of mVarId
  | UnitMatch
  | TupleMatch of matcher list
  | LiteralMatch of literal
@@ -143,16 +146,16 @@ and fieldMatcher =
    FieldMatchers of varId * typelessMatcher
 
 and expression =
-   ExpVar of variable
+   ExpVar of matcher
  | Literals of literal
  | Tuples of expression list
  | StructInit of typeId * fieldInit list
- | ExpAssignment of variable * expression
- | ExpAssignmentPlus of variable * expression
- | ExpAssignmentMinus of variable * expression
- | ExpAssignmentMul of variable * expression
- | ExpAssignmentDiv of variable * expression
- | ExpAssignmentMod of variable * expression
+ | ExpAssignment of varId * expression
+ | ExpAssignmentPlus of varId * expression
+ | ExpAssignmentMinus of varId * expression
+ | ExpAssignmentMul of varId * expression
+ | ExpAssignmentDiv of varId * expression
+ | ExpAssignmentMod of varId * expression
  | ExpLogicalOr of expression * expression
  | ExpLogicalAnd of expression * expression
  | ExpLogicalNot of expression
@@ -173,7 +176,7 @@ and expression =
  | ExpAppUnit of expression
  | ExpNewObj of typeId * expression list
  | ExpNewObjUnit of typeId
- | ExpMethod of expression * variable
+ | ExpMethod of expression * varId
  | ExpBracket of expression
 
 and literal =

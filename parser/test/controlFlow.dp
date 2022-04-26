@@ -1,5 +1,6 @@
 fun main(x : char, y : bool) {
-  let f : bool;
+  let mut f : bool;
+  let c : char = 'c';
   f = true;
 
   // meaningless if structure
@@ -17,7 +18,7 @@ fun main(x : char, y : bool) {
   }
 
   // meaningless while structure
-  let mut x: i32 = 0;
+  let mut (x, b): i32 = (0, 3);
   while (1 + x == 3) {
     return (0, (1.2, 'c'), "Abc");
   }

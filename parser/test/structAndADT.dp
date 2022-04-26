@@ -1,8 +1,9 @@
 // Some top-level declarations
 let mmzk: f64 = 3.14;
 type Shape [
-  Rectangle(width : U32, height : U32),
-  Circle(radius : U32)
+  Rectangle(width : u32, height : u32),
+  Circle(radius : u32),
+  Nothing
 ]
 
 type ColoredPoint {
@@ -14,5 +15,5 @@ fun main(x: char) {}
 
 // Some more top-level declarations
 let tsr: f64 = 2.72;
-let shape: Shape = new Circle(12);
-let point: Point = ColoredPoint { position : a, color : ColoredPoint { position : itmakesnosense, color : butsyntacticallycorrect } };
+let shape: Shape = Circle(12);
+let point: Point = ColoredPoint { position : mut a, color : ColoredPoint { position : itmakesnosense, color : butsyntacticallycorrect } };
