@@ -149,6 +149,7 @@ and expression =
    ExpVar of matcher
  | Literals of literal
  | Tuples of expression list
+ | Array of expression list
  | StructInit of typeId * fieldInit list
  | ExpAssignment of varId * expression
  | ExpAssignmentPlus of varId * expression
@@ -187,6 +188,7 @@ and literal =
  | True
  | False
  | LUnit
+ | AUnit
 
 and fieldInit =
    FieldInitCons of varId * expression

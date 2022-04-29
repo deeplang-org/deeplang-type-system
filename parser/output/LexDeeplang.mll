@@ -5,9 +5,9 @@
 open ParDeeplang
 open Lexing
 
-let symbol_table = Hashtbl.create 37
+let symbol_table = Hashtbl.create 38
 let _ = List.iter (fun (kwd, tok) -> Hashtbl.add symbol_table kwd tok)
-                  [(";", SYMB1);("[", SYMB2);("]", SYMB3);("->", SYMB4);("()", SYMB5);("(", SYMB6);(")", SYMB7);(",", SYMB8);(":", SYMB9);("{}", SYMB10);("{", SYMB11);("}", SYMB12);("=", SYMB13);("=>", SYMB14);("_", SYMB15);("+=", SYMB16);("-=", SYMB17);("*=", SYMB18);("/=", SYMB19);("%=", SYMB20);("||", SYMB21);("&&", SYMB22);("!", SYMB23);("<", SYMB24);("<=", SYMB25);(">", SYMB26);(">=", SYMB27);("==", SYMB28);("!=", SYMB29);("<<", SYMB30);(">>", SYMB31);("+", SYMB32);("-", SYMB33);("*", SYMB34);("/", SYMB35);("%", SYMB36);(".", SYMB37)]
+                  [(";", SYMB1);("[", SYMB2);("]", SYMB3);("->", SYMB4);("()", SYMB5);("(", SYMB6);(")", SYMB7);(",", SYMB8);(":", SYMB9);("{}", SYMB10);("{", SYMB11);("}", SYMB12);("=", SYMB13);("=>", SYMB14);("_", SYMB15);("[]", SYMB16);("+=", SYMB17);("-=", SYMB18);("*=", SYMB19);("/=", SYMB20);("%=", SYMB21);("||", SYMB22);("&&", SYMB23);("!", SYMB24);("<", SYMB25);("<=", SYMB26);(">", SYMB27);(">=", SYMB28);("==", SYMB29);("!=", SYMB30);("<<", SYMB31);(">>", SYMB32);("+", SYMB33);("-", SYMB34);("*", SYMB35);("/", SYMB36);("%", SYMB37);(".", SYMB38)]
 
 let resword_table = Hashtbl.create 3
 let _ = List.iter (fun (kwd, tok) -> Hashtbl.add resword_table kwd tok)
@@ -50,7 +50,7 @@ let _idchar = _letter | _digit | ['_' '\'']         (*  identifier character *)
 let _universal = _                                  (* universal: any character *)
 
 (* reserved words consisting of special symbols *)
-let rsyms = ";" | "[" | "]" | "->" | "()" | "(" | ")" | "," | ":" | "{}" | "{" | "}" | "=" | "=>" | "_" | "+=" | "-=" | "*=" | "/=" | "%=" | "||" | "&&" | "!" | "<" | "<=" | ">" | ">=" | "==" | "!=" | "<<" | ">>" | "+" | "-" | "*" | "/" | "%" | "."
+let rsyms = ";" | "[" | "]" | "->" | "()" | "(" | ")" | "," | ":" | "{}" | "{" | "}" | "=" | "=>" | "_" | "[]" | "+=" | "-=" | "*=" | "/=" | "%=" | "||" | "&&" | "!" | "<" | "<=" | ">" | ">=" | "==" | "!=" | "<<" | ">>" | "+" | "-" | "*" | "/" | "%" | "."
 (* user-defined token types *)
 let iF = "if"
 let eLSE = "else"

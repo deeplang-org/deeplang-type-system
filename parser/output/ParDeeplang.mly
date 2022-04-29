@@ -23,28 +23,29 @@ open Lexing
 %token SYMB13 /* = */
 %token SYMB14 /* => */
 %token SYMB15 /* _ */
-%token SYMB16 /* += */
-%token SYMB17 /* -= */
-%token SYMB18 /* *= */
-%token SYMB19 /* /= */
-%token SYMB20 /* %= */
-%token SYMB21 /* || */
-%token SYMB22 /* && */
-%token SYMB23 /* ! */
-%token SYMB24 /* < */
-%token SYMB25 /* <= */
-%token SYMB26 /* > */
-%token SYMB27 /* >= */
-%token SYMB28 /* == */
-%token SYMB29 /* != */
-%token SYMB30 /* << */
-%token SYMB31 /* >> */
-%token SYMB32 /* + */
-%token SYMB33 /* - */
-%token SYMB34 /* * */
-%token SYMB35 /* / */
-%token SYMB36 /* % */
-%token SYMB37 /* . */
+%token SYMB16 /* [] */
+%token SYMB17 /* += */
+%token SYMB18 /* -= */
+%token SYMB19 /* *= */
+%token SYMB20 /* /= */
+%token SYMB21 /* %= */
+%token SYMB22 /* || */
+%token SYMB23 /* && */
+%token SYMB24 /* ! */
+%token SYMB25 /* < */
+%token SYMB26 /* <= */
+%token SYMB27 /* > */
+%token SYMB28 /* >= */
+%token SYMB29 /* == */
+%token SYMB30 /* != */
+%token SYMB31 /* << */
+%token SYMB32 /* >> */
+%token SYMB33 /* + */
+%token SYMB34 /* - */
+%token SYMB35 /* * */
+%token SYMB36 /* / */
+%token SYMB37 /* % */
+%token SYMB38 /* . */
 
 %token TOK_EOF
 %token <string> TOK_Ident
@@ -272,51 +273,51 @@ expression : expression1 {  $1 }
 
 expression1 : expression2 {  $1 }
   | varId SYMB13 expression1 { ExpAssignment ($1, $3) }
-  | varId SYMB16 expression1 { ExpAssignmentPlus ($1, $3) }
-  | varId SYMB17 expression1 { ExpAssignmentMinus ($1, $3) }
-  | varId SYMB18 expression1 { ExpAssignmentMul ($1, $3) }
-  | varId SYMB19 expression1 { ExpAssignmentDiv ($1, $3) }
-  | varId SYMB20 expression1 { ExpAssignmentMod ($1, $3) }
+  | varId SYMB17 expression1 { ExpAssignmentPlus ($1, $3) }
+  | varId SYMB18 expression1 { ExpAssignmentMinus ($1, $3) }
+  | varId SYMB19 expression1 { ExpAssignmentMul ($1, $3) }
+  | varId SYMB20 expression1 { ExpAssignmentDiv ($1, $3) }
+  | varId SYMB21 expression1 { ExpAssignmentMod ($1, $3) }
 ;
 
 expression2 : expression3 {  $1 }
-  | expression2 SYMB21 expression3 { ExpLogicalOr ($1, $3) }
+  | expression2 SYMB22 expression3 { ExpLogicalOr ($1, $3) }
 ;
 
 expression3 : expression4 {  $1 }
-  | expression3 SYMB22 expression4 { ExpLogicalAnd ($1, $3) }
+  | expression3 SYMB23 expression4 { ExpLogicalAnd ($1, $3) }
 ;
 
 expression4 : expression5 {  $1 }
-  | SYMB23 expression4 { ExpLogicalNot $2 }
+  | SYMB24 expression4 { ExpLogicalNot $2 }
 ;
 
 expression5 : expression6 {  $1 }
-  | expression7 SYMB24 expression7 { ExpLt ($1, $3) }
-  | expression7 SYMB25 expression7 { ExpLeq ($1, $3) }
-  | expression7 SYMB26 expression7 { ExpGt ($1, $3) }
-  | expression7 SYMB27 expression7 { ExpGeq ($1, $3) }
+  | expression7 SYMB25 expression7 { ExpLt ($1, $3) }
+  | expression7 SYMB26 expression7 { ExpLeq ($1, $3) }
+  | expression7 SYMB27 expression7 { ExpGt ($1, $3) }
+  | expression7 SYMB28 expression7 { ExpGeq ($1, $3) }
 ;
 
 expression6 : expression7 {  $1 }
-  | expression7 SYMB28 expression7 { ExpEq ($1, $3) }
-  | expression7 SYMB29 expression7 { ExpNoteq ($1, $3) }
+  | expression7 SYMB29 expression7 { ExpEq ($1, $3) }
+  | expression7 SYMB30 expression7 { ExpNoteq ($1, $3) }
 ;
 
 expression7 : expression8 {  $1 }
-  | expression7 SYMB30 expression8 { ExpLeftShift ($1, $3) }
-  | expression7 SYMB31 expression8 { ExpRightShift ($1, $3) }
+  | expression7 SYMB31 expression8 { ExpLeftShift ($1, $3) }
+  | expression7 SYMB32 expression8 { ExpRightShift ($1, $3) }
 ;
 
 expression8 : expression9 {  $1 }
-  | expression8 SYMB32 expression9 { ExpAdd ($1, $3) }
-  | expression8 SYMB33 expression9 { ExpSub ($1, $3) }
+  | expression8 SYMB33 expression9 { ExpAdd ($1, $3) }
+  | expression8 SYMB34 expression9 { ExpSub ($1, $3) }
 ;
 
 expression9 : expression10 {  $1 }
-  | expression9 SYMB34 expression10 { ExpMul ($1, $3) }
-  | expression9 SYMB35 expression10 { ExpDiv ($1, $3) }
-  | expression9 SYMB36 expression10 { ExpMod ($1, $3) }
+  | expression9 SYMB35 expression10 { ExpMul ($1, $3) }
+  | expression9 SYMB36 expression10 { ExpDiv ($1, $3) }
+  | expression9 SYMB37 expression10 { ExpMod ($1, $3) }
 ;
 
 expression10 : expression11 {  $1 }
@@ -327,13 +328,14 @@ expression11 : expression12 {  $1 }
   | expression11 SYMB5 { ExpAppUnit $1 }
   | typeId SYMB6 expression_list SYMB7 { ExpNewObj ($1, $3) }
   | typeId SYMB5 { ExpNewObjUnit $1 }
-  | expression11 SYMB37 varId { ExpMethod ($1, $3) }
+  | expression11 SYMB38 varId { ExpMethod ($1, $3) }
 ;
 
 expression12 : expression13 {  $1 }
   | matcher { ExpVar $1 }
   | literal { Literals $1 }
   | SYMB6 expression_list SYMB7 { Tuples $2 }
+  | SYMB2 expression_list SYMB3 { Array $2 }
   | typeId SYMB11 fieldInit_list SYMB12 { StructInit ($1, $3) }
 ;
 
@@ -353,6 +355,7 @@ literal : string { String $1 }
   | KW_true { True  }
   | KW_false { False  }
   | SYMB5 { LUnit  }
+  | SYMB16 { AUnit  }
 ;
 
 fieldInit_list : fieldInit { (fun x -> [x]) $1 }

@@ -39,6 +39,7 @@ type token =
   | SYMB35
   | SYMB36
   | SYMB37
+  | SYMB38
   | TOK_EOF
   | TOK_Ident of (string)
   | TOK_Char of (char)

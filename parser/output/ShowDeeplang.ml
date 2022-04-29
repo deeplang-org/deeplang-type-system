@@ -212,6 +212,7 @@ and showExpression (e : AbsDeeplang.expression) : showable = match e with
        AbsDeeplang.ExpVar matcher -> s2s "ExpVar" >> c2s ' ' >> c2s '(' >> showMatcher matcher >> c2s ')'
   |    AbsDeeplang.Literals literal -> s2s "Literals" >> c2s ' ' >> c2s '(' >> showLiteral literal >> c2s ')'
   |    AbsDeeplang.Tuples expressions -> s2s "Tuples" >> c2s ' ' >> c2s '(' >> showList showExpression expressions >> c2s ')'
+  |    AbsDeeplang.Array expressions -> s2s "Array" >> c2s ' ' >> c2s '(' >> showList showExpression expressions >> c2s ')'
   |    AbsDeeplang.StructInit (typeid, fieldinits) -> s2s "StructInit" >> c2s ' ' >> c2s '(' >> showTypeId typeid  >> s2s ", " >>  showList showFieldInit fieldinits >> c2s ')'
   |    AbsDeeplang.ExpAssignment (varid, expression) -> s2s "ExpAssignment" >> c2s ' ' >> c2s '(' >> showVarId varid  >> s2s ", " >>  showExpression expression >> c2s ')'
   |    AbsDeeplang.ExpAssignmentPlus (varid, expression) -> s2s "ExpAssignmentPlus" >> c2s ' ' >> c2s '(' >> showVarId varid  >> s2s ", " >>  showExpression expression >> c2s ')'
@@ -251,6 +252,7 @@ and showLiteral (e : AbsDeeplang.literal) : showable = match e with
   |    AbsDeeplang.True  -> s2s "True"
   |    AbsDeeplang.False  -> s2s "False"
   |    AbsDeeplang.LUnit  -> s2s "LUnit"
+  |    AbsDeeplang.AUnit  -> s2s "AUnit"
 
 
 and showFieldInit (e : AbsDeeplang.fieldInit) : showable = match e with

@@ -319,6 +319,7 @@ and prtExpression (i:int) (e : AbsDeeplang.expression) : doc = match e with
        AbsDeeplang.ExpVar matcher -> prPrec i 12 (concatD [prtMatcher 0 matcher])
   |    AbsDeeplang.Literals literal -> prPrec i 12 (concatD [prtLiteral 0 literal])
   |    AbsDeeplang.Tuples expressions -> prPrec i 12 (concatD [render "(" ; prtExpressionListBNFC 0 expressions ; render ")"])
+  |    AbsDeeplang.Array expressions -> prPrec i 12 (concatD [render "[" ; prtExpressionListBNFC 0 expressions ; render "]"])
   |    AbsDeeplang.StructInit (typeid, fieldinits) -> prPrec i 12 (concatD [prtTypeId 0 typeid ; render "{" ; prtFieldInitListBNFC 0 fieldinits ; render "}"])
   |    AbsDeeplang.ExpAssignment (varid, expression) -> prPrec i 1 (concatD [prtVarId 0 varid ; render "=" ; prtExpression 1 expression])
   |    AbsDeeplang.ExpAssignmentPlus (varid, expression) -> prPrec i 1 (concatD [prtVarId 0 varid ; render "+=" ; prtExpression 1 expression])
@@ -361,6 +362,7 @@ and prtLiteral (i:int) (e : AbsDeeplang.literal) : doc = match e with
   |    AbsDeeplang.True  -> prPrec i 0 (concatD [render "true"])
   |    AbsDeeplang.False  -> prPrec i 0 (concatD [render "false"])
   |    AbsDeeplang.LUnit  -> prPrec i 0 (concatD [render "()"])
+  |    AbsDeeplang.AUnit  -> prPrec i 0 (concatD [render "[]"])
 
 
 and prtFieldInit (i:int) (e : AbsDeeplang.fieldInit) : doc = match e with

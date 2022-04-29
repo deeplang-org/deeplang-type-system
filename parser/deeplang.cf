@@ -205,6 +205,7 @@ coercions Expression 13;
 ExpVar. Expression12 ::= Matcher;
 Literals. Expression12 ::= Literal; -- 字面量
 Tuples. Expression12 ::= "(" [Expression] ")";
+Array. Expression12 ::= "[" [Expression] "]";
 StructInit. Expression12 ::= TypeId "{" [FieldInit] "}";
 String. Literal ::= String;
 Char. Literal ::= Char;
@@ -213,6 +214,7 @@ Float. Literal ::= Double;
 True. Literal ::= "true";
 False. Literal ::= "false";
 LUnit. Literal ::= "()";
+AUnit. Literal ::= "[]";
 
 (:[]). [FieldInit] ::= FieldInit;
 (:). [FieldInit] ::= FieldInit "," [FieldInit];

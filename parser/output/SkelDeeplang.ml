@@ -233,6 +233,7 @@ and transExpression (x : expression) : result = match x with
     ExpVar matcher -> failure x
   | Literals literal -> failure x
   | Tuples expressions -> failure x
+  | Array expressions -> failure x
   | StructInit (typeid, fieldinits) -> failure x
   | ExpAssignment (varid, expression) -> failure x
   | ExpAssignmentPlus (varid, expression) -> failure x
@@ -272,6 +273,7 @@ and transLiteral (x : literal) : result = match x with
   | True  -> failure x
   | False  -> failure x
   | LUnit  -> failure x
+  | AUnit  -> failure x
 
 
 and transFieldInit (x : fieldInit) : result = match x with
