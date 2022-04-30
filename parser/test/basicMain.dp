@@ -2,6 +2,7 @@ fun main(x: char) {
   let a: i32;
   let b: f32;
   a = 3;
+  b = a % 2;
 
   let arr: [FooType; 10] = [1, 2, [3, 4], Point()];
 }

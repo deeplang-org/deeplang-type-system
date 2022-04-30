@@ -37,7 +37,7 @@ position token BaseType ( {"i8"} | {"i16"} | {"i32"} | {"i64"} | {"u8"} | {"u16"
 TypeFixLenArray. Type ::= "[" Type ";" Integer "]";
 -- TypeVarLenArray. Type ::= "[" Type "]";
 TypeArrow. Type ::= Type "->" Type;
-TypeUnit1. Type ::= "()";
+TypeUnit. Type ::= "()";
 TypeUnit2. Type ::= "(" ")";
 TypeTuple. Type ::= "(" [Type] ")";
 (:[]). [Type] ::= Type;

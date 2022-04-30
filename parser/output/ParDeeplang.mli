@@ -38,7 +38,6 @@ type token =
   | SYMB34
   | SYMB35
   | SYMB36
-  | SYMB37
   | SYMB38
   | TOK_EOF
   | TOK_Ident of (string)
@@ -46,6 +45,8 @@ type token =
   | TOK_Double of (float)
   | TOK_Integer of (int)
   | TOK_String of (string)
+  | TOK_LBRACK of ((int * int) * string)
+  | TOK_RBRACK of ((int * int) * string)
   | TOK_IF of ((int * int) * string)
   | TOK_ELSE of ((int * int) * string)
   | TOK_WHILE of ((int * int) * string)
@@ -63,6 +64,7 @@ type token =
   | TOK_TypeId of ((int * int) * string)
   | TOK_BaseType of ((int * int) * string)
   | TOK_VarId of ((int * int) * string)
+  | TOK_Mod of ((int * int) * string)
 
 val pCode_list :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> AbsDeeplang.code list

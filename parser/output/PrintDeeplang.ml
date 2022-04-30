@@ -142,10 +142,10 @@ and prtCodeListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
   | (_,[x]) -> (concatD [prtCode 0 x])
   | (_,x::xs) -> (concatD [prtCode 0 x ; prtCodeListBNFC 0 xs])
-and prtTypeT (i:int) (e : AbsDeeplang.typeT) : doc = match e with
+and prtTypeT (i:int) (e : AbsDeeplang.typeT) : doc = match e.shape with
        AbsDeeplang.TypeFixLenArray (type_, integer) -> prPrec i 0 (concatD [render "[" ; prtTypeT 0 type_ ; render ";" ; prtInt 0 integer ; render "]"])
   |    AbsDeeplang.TypeArrow (type_1, type_2) -> prPrec i 0 (concatD [prtTypeT 0 type_1 ; render "->" ; prtTypeT 0 type_2])
-  |    AbsDeeplang.TypeUnit1  -> prPrec i 0 (concatD [render "()"])
+  |    AbsDeeplang.TypeUnit  -> prPrec i 0 (concatD [render "()"])
   |    AbsDeeplang.TypeUnit2  -> prPrec i 0 (concatD [render "(" ; render ")"])
   |    AbsDeeplang.TypeTuple types -> prPrec i 0 (concatD [render "(" ; prtTypeTListBNFC 0 types ; render ")"])
   |    AbsDeeplang.TypePrimitive basetype -> prPrec i 0 (concatD [prtBaseType 0 basetype])

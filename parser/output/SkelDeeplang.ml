@@ -84,10 +84,10 @@ and transCode (x : code) : result = match x with
   | Unit  -> failure x
 
 
-and transType (x : typeT) : result = match x with
+and transType (x : typeT) : result = match x.shape with
     TypeFixLenArray (type', integer) -> failure x
   | TypeArrow (type'0, type') -> failure x
-  | TypeUnit1  -> failure x
+  | TypeUnit  -> failure x
   | TypeUnit2  -> failure x
   | TypeTuple types -> failure x
   | TypePrimitive basetype -> failure x

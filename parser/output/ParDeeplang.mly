@@ -44,7 +44,6 @@ open Lexing
 %token SYMB34 /* - */
 %token SYMB35 /* * */
 %token SYMB36 /* / */
-%token SYMB37 /* % */
 %token SYMB38 /* . */
 
 %token TOK_EOF
@@ -53,6 +52,8 @@ open Lexing
 %token <float> TOK_Double
 %token <int> TOK_Integer
 %token <string> TOK_String
+%token <(int * int) * string> TOK_LBRACK
+%token <(int * int) * string> TOK_RBRACK
 %token <(int * int) * string> TOK_IF
 %token <(int * int) * string> TOK_ELSE
 %token <(int * int) * string> TOK_WHILE
@@ -70,6 +71,7 @@ open Lexing
 %token <(int * int) * string> TOK_TypeId
 %token <(int * int) * string> TOK_BaseType
 %token <(int * int) * string> TOK_VarId
+%token <(int * int) * string> TOK_Mod
 
 %start pCode_list
 %type <AbsDeeplang.code list> pCode_list
@@ -92,13 +94,13 @@ code : declare { Declares $1 }
   | /* empty */ { Unit  }
 ;
 
-typeT : SYMB2 typeT SYMB1 int SYMB3 { TypeFixLenArray ($2, $4) }
-  | typeT SYMB4 typeT { TypeArrow ($1, $3) }
-  | SYMB5 { TypeUnit1  }
-  | SYMB6 SYMB7 { TypeUnit2  }
-  | SYMB6 typeT_list SYMB7 { TypeTuple $2 }
-  | baseType { TypePrimitive $1 }
-  | typeId { TypeX $1 }
+typeT : SYMB2 typeT SYMB1 int SYMB3 { {span = $2.span; shape = TypeFixLenArray ($2, $4)} }
+  | typeT SYMB4 typeT { {span = (fst $1.span, snd $3.span); shape = TypeArrow ($1, $3)} }
+  | SYMB5 { {span = (0, 0); shape = TypeUnit} }
+  | SYMB6 SYMB7 { {span = (0, 0); shape = TypeUnit} }
+  | SYMB6 typeT_list SYMB7 { {span = (0, 0); shape = TypeTuple $2} }
+  | baseType { {span = (let BaseType (x, _) = $1 in x); shape = TypePrimitive $1} }
+  | typeId { {span = (let TypeId (x, _) = $1 in x) ; shape = TypeX $1} }
 ;
 
 typeT_list : typeT { (fun x -> [x]) $1 }
@@ -317,7 +319,7 @@ expression8 : expression9 {  $1 }
 expression9 : expression10 {  $1 }
   | expression9 SYMB35 expression10 { ExpMul ($1, $3) }
   | expression9 SYMB36 expression10 { ExpDiv ($1, $3) }
-  | expression9 SYMB37 expression10 { ExpMod ($1, $3) }
+  | expression9 mOD expression10 { ExpMod ($1, $3) }
 ;
 
 expression10 : expression11 {  $1 }
@@ -387,5 +389,4 @@ eXTENDS : TOK_EXTENDS { EXTENDS ($1)};
 typeId : TOK_TypeId { TypeId ($1)};
 baseType : TOK_BaseType { BaseType ($1)};
 varId : TOK_VarId { VarId ($1)};
-
-
+mOD : TOK_Mod {  }
