@@ -17,7 +17,7 @@ and eXTENDS = EXTENDS of ((int * int) * string)
 and typeId = TypeId of ((int * int) * string)
 and baseType = BaseType of ((int * int) * string)
 and varId = VarId of ((int * int) * string)
-and mOD = MOD of ((int * int) * string)
+and symbol = SYMBOL of ((int * int) * string)
 and code =
    Declares of declare
  | Defines of define

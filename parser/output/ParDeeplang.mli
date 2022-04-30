@@ -3,12 +3,7 @@ type token =
   | KW_true
   | KW_false
   | SYMB1
-  | SYMB2
-  | SYMB3
   | SYMB4
-  | SYMB5
-  | SYMB6
-  | SYMB7
   | SYMB8
   | SYMB9
   | SYMB10
@@ -45,8 +40,6 @@ type token =
   | TOK_Double of (float)
   | TOK_Integer of (int)
   | TOK_String of (string)
-  | TOK_LBRACK of ((int * int) * string)
-  | TOK_RBRACK of ((int * int) * string)
   | TOK_IF of ((int * int) * string)
   | TOK_ELSE of ((int * int) * string)
   | TOK_WHILE of ((int * int) * string)
@@ -64,6 +57,11 @@ type token =
   | TOK_TypeId of ((int * int) * string)
   | TOK_BaseType of ((int * int) * string)
   | TOK_VarId of ((int * int) * string)
+  | TOK_LBrack of ((int * int) * string)
+  | TOK_RBrack of ((int * int) * string)
+  | TOK_LParen of ((int * int) * string)
+  | TOK_RParen of ((int * int) * string)
+  | TOK_Unit of ((int * int) * string)
   | TOK_Mod of ((int * int) * string)
 
 val pCode_list :

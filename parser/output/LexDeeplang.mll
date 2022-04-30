@@ -7,7 +7,7 @@ open Lexing
 
 let symbol_table = Hashtbl.create 38
 let _ = List.iter (fun (kwd, tok) -> Hashtbl.add symbol_table kwd tok)
-                  [(";", SYMB1);("[", SYMB2);("]", SYMB3);("->", SYMB4);("()", SYMB5);("(", SYMB6);(")", SYMB7);(",", SYMB8);(":", SYMB9);("{}", SYMB10);("{", SYMB11);("}", SYMB12);("=", SYMB13);("=>", SYMB14);("_", SYMB15);("[]", SYMB16);("+=", SYMB17);("-=", SYMB18);("*=", SYMB19);("/=", SYMB20);("%=", SYMB21);("||", SYMB22);("&&", SYMB23);("!", SYMB24);("<", SYMB25);("<=", SYMB26);(">", SYMB27);(">=", SYMB28);("==", SYMB29);("!=", SYMB30);("<<", SYMB31);(">>", SYMB32);("+", SYMB33);("-", SYMB34);("*", SYMB35);("/", SYMB36);(".", SYMB38)]
+                  [(";", SYMB1);("->", SYMB4);(",", SYMB8);(":", SYMB9);("{}", SYMB10);("{", SYMB11);("}", SYMB12);("=", SYMB13);("=>", SYMB14);("_", SYMB15);("[]", SYMB16);("+=", SYMB17);("-=", SYMB18);("*=", SYMB19);("/=", SYMB20);("%=", SYMB21);("||", SYMB22);("&&", SYMB23);("!", SYMB24);("<", SYMB25);("<=", SYMB26);(">", SYMB27);(">=", SYMB28);("==", SYMB29);("!=", SYMB30);("<<", SYMB31);(">>", SYMB32);("+", SYMB33);("-", SYMB34);("*", SYMB35);("/", SYMB36);(".", SYMB38)]
 
 let resword_table = Hashtbl.create 3
 let _ = List.iter (fun (kwd, tok) -> Hashtbl.add resword_table kwd tok)
@@ -50,7 +50,7 @@ let _idchar = _letter | _digit | ['_' '\'']         (*  identifier character *)
 let _universal = _                                  (* universal: any character *)
 
 (* reserved words consisting of special symbols *)
-let rsyms = ";" | "[" | "]" | "->" | "()" | "(" | ")" | "," | ":" | "{}" | "{" | "}" | "=" | "=>" | "_" | "[]" | "+=" | "-=" | "*=" | "/=" | "%=" | "||" | "&&" | "!" | "<" | "<=" | ">" | ">=" | "==" | "!=" | "<<" | ">>" | "+" | "-" | "*" | "/" | "."
+let rsyms = ";" | "->" | "," | ":" | "{}" | "{" | "}" | "=" | "=>" | "_" | "[]" | "+=" | "-=" | "*=" | "/=" | "%=" | "||" | "&&" | "!" | "<" | "<=" | ">" | ">=" | "==" | "!=" | "<<" | ">>" | "+" | "-" | "*" | "/" | "."
 (* user-defined token types *)
 let iF = "if"
 let eLSE = "else"
@@ -66,6 +66,11 @@ let aS = "as"
 let mATCH = "match"
 let tYPE = "type"
 let eXTENDS = "extends"
+let lBRACK = "["
+let rBRACK = "]"
+let lPAREN = "("
+let rPAREN = ")"
+let uNIT = "()"
 let mOD = "%"
 let typeId = _upper ('_' | (_digit | _letter)) *
 let baseType = "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "f32" | "f64" | "char" | "This" | "bool"
@@ -97,6 +102,11 @@ rule token =
       | baseType
                 { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_BaseType ((lexeme_start lexbuf, lexeme_end lexbuf), l) }
       | varId   { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_VarId ((lexeme_start lexbuf, lexeme_end lexbuf), l) }
+      | lBRACK  { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_LBrack ((lexeme_start lexbuf, lexeme_end lexbuf), l) }
+      | rBRACK  { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_RBrack ((lexeme_start lexbuf, lexeme_end lexbuf), l) }
+      | lPAREN  { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_LParen ((lexeme_start lexbuf, lexeme_end lexbuf), l) }
+      | rPAREN  { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_RParen ((lexeme_start lexbuf, lexeme_end lexbuf), l) }
+      | uNIT    { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_Unit ((lexeme_start lexbuf, lexeme_end lexbuf), l) }
       | mOD     { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_Mod ((lexeme_start lexbuf, lexeme_end lexbuf), l) }
       | _letter _idchar*
                 { let l = lexeme lexbuf in try Hashtbl.find resword_table l with Not_found -> TOK_Ident l }

@@ -9,12 +9,7 @@ open Lexing
 %token KW_return KW_true KW_false
 
 %token SYMB1 /* ; */
-%token SYMB2 /* [ */
-%token SYMB3 /* ] */
 %token SYMB4 /* -> */
-%token SYMB5 /* () */
-%token SYMB6 /* ( */
-%token SYMB7 /* ) */
 %token SYMB8 /* , */
 %token SYMB9 /* : */
 %token SYMB10 /* {} */
@@ -52,8 +47,6 @@ open Lexing
 %token <float> TOK_Double
 %token <int> TOK_Integer
 %token <string> TOK_String
-%token <(int * int) * string> TOK_LBRACK
-%token <(int * int) * string> TOK_RBRACK
 %token <(int * int) * string> TOK_IF
 %token <(int * int) * string> TOK_ELSE
 %token <(int * int) * string> TOK_WHILE
@@ -71,6 +64,11 @@ open Lexing
 %token <(int * int) * string> TOK_TypeId
 %token <(int * int) * string> TOK_BaseType
 %token <(int * int) * string> TOK_VarId
+%token <(int * int) * string> TOK_LBrack
+%token <(int * int) * string> TOK_RBrack
+%token <(int * int) * string> TOK_LParen
+%token <(int * int) * string> TOK_RParen
+%token <(int * int) * string> TOK_Unit
 %token <(int * int) * string> TOK_Mod
 
 %start pCode_list
@@ -84,7 +82,7 @@ pCode_list : code_list TOK_EOF { $1 }
 
 code_list : code code_list { (fun (x,xs) -> x::xs) ($1, $2) }
   | code { (fun x -> [x]) $1 }
-  | /* empty */ { []  }
+  | /* empty */ { [] }
 ;
 
 code : declare { Declares $1 }
@@ -94,11 +92,11 @@ code : declare { Declares $1 }
   | /* empty */ { Unit  }
 ;
 
-typeT : SYMB2 typeT SYMB1 int SYMB3 { {span = $2.span; shape = TypeFixLenArray ($2, $4)} }
+typeT : lBRACK typeT SYMB1 int rBRACK { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $5 in (fst x, snd y)); shape = TypeFixLenArray ($2, $4)} }
   | typeT SYMB4 typeT { {span = (fst $1.span, snd $3.span); shape = TypeArrow ($1, $3)} }
-  | SYMB5 { {span = (0, 0); shape = TypeUnit} }
-  | SYMB6 SYMB7 { {span = (0, 0); shape = TypeUnit} }
-  | SYMB6 typeT_list SYMB7 { {span = (0, 0); shape = TypeTuple $2} }
+  | uNIT { {span = (let SYMBOL (x, _) = $1 in x); shape = TypeUnit} }
+  | lPAREN rPAREN { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $2 in (fst x, snd y)); shape = TypeUnit} }
+  | lPAREN typeT_list rPAREN { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $3 in (fst x, snd y)); shape = TypeTuple $2} }
   | baseType { {span = (let BaseType (x, _) = $1 in x); shape = TypePrimitive $1} }
   | typeId { {span = (let TypeId (x, _) = $1 in x) ; shape = TypeX $1} }
 ;
@@ -120,9 +118,9 @@ declare : fUN varId args retType { DecFunc ($1, $2, $3, $4) }
   | iNTERFACE interfaceName eXTENDS interfaceName_list methods { InterfaceExt ($1, $2, $3, $4, $5) }
 ;
 
-args : SYMB6 SYMB7 { ArgUnit  }
-  | SYMB5 { ArgUnit2  }
-  | SYMB6 arg_list SYMB7 { ArgExist $2 }
+args : lPAREN rPAREN { ArgUnit  }
+  | uNIT { ArgUnit2 }
+  | lPAREN arg_list rPAREN { ArgExist $2 }
 ;
 
 arg : varId SYMB9 typeT { ArgCons ($1, $3) }
@@ -157,7 +155,7 @@ methodT_list : /* empty */ { []  }
 ;
 
 define : functionT { DefFunc $1 }
-  | tYPE typeId SYMB2 constructor_list SYMB3 { ADT ($1, $2, $4) }
+  | tYPE typeId lBRACK constructor_list rBRACK { ADT ($1, $2, $4) }
   | tYPE typeId SYMB11 structField_list SYMB12 { Struct ($1, $2, $4) }
   | lET mutFlag typedMatcher rHS SYMB1 { DefVar ($1, $2, $3, $4) }
   | tYPE typeId args SYMB1 { DefType ($1, $2, $3) }
@@ -170,7 +168,7 @@ functionT : fUN varId args retType SYMB10 { FuncUnit ($1, $2, $3, $4) }
 ;
 
 constructor : typeId { UnitCons $1 }
-  | typeId SYMB6 field_list SYMB7 { ParamCons ($1, $3) }
+  | typeId lPAREN field_list rPAREN { ParamCons ($1, $3) }
 ;
 
 constructor_list : constructor { (fun x -> [x]) $1 }
@@ -213,10 +211,10 @@ statement : SYMB11 statement_list SYMB12 { Block $2 }
   | lET mutFlag typedMatcher rHS SYMB1 { DefVarSt ($1, $2, $3, $4) }
   | expression SYMB1 { ExprSt $1 }
   | KW_return expression SYMB1 { Return $2 }
-  | iF SYMB6 expression SYMB7 SYMB11 statement_list SYMB12 elseBody { If ($1, $3, $6, $8) }
-  | fOR SYMB6 matcher iN expression SYMB7 SYMB11 statement_list SYMB12 { For ($1, $3, $4, $5, $8) }
-  | wHILE SYMB6 expression SYMB7 SYMB11 statement_list SYMB12 { While ($1, $3, $6) }
-  | mATCH SYMB6 varId SYMB7 SYMB11 matchBody SYMB12 { Match ($1, $3, $6) }
+  | iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { If ($1, $3, $6, $8) }
+  | fOR lPAREN matcher iN expression rPAREN SYMB11 statement_list SYMB12 { For ($1, $3, $4, $5, $8) }
+  | wHILE lPAREN expression rPAREN SYMB11 statement_list SYMB12 { While ($1, $3, $6) }
+  | mATCH lPAREN varId rPAREN SYMB11 matchBody SYMB12 { Match ($1, $3, $6) }
 ;
 
 statement_list : statement { (fun x -> [x]) $1 }
@@ -224,7 +222,7 @@ statement_list : statement { (fun x -> [x]) $1 }
 ;
 
 elseBody : /* empty */ { NoElse  }
-  | eLSE iF SYMB6 expression SYMB7 SYMB11 statement_list SYMB12 elseBody { Elif ($1, $2, $4, $7, $9) }
+  | eLSE iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { Elif ($1, $2, $4, $7, $9) }
   | eLSE SYMB11 statement_list SYMB12 { Else ($1, $3) }
 ;
 
@@ -243,11 +241,11 @@ typedMatcher : typelessMatcher SYMB9 typeT { Typed ($1, $3) }
 ;
 
 typelessMatcher : SYMB15 { WildCardMatch  }
-  | typeId SYMB5 { ConsMatchUnit $1 }
-  | typeId SYMB6 matcher SYMB7 { ConsMatch ($1, $3) }
+  | typeId uNIT { ConsMatchUnit $1 }
+  | typeId lPAREN matcher rPAREN { ConsMatch ($1, $3) }
   | mVarId { TypelessVarMatch $1 }
-  | SYMB5 { UnitMatch  }
-  | SYMB6 matcher_list SYMB7 { TupleMatch $2 }
+  | uNIT { UnitMatch }
+  | lPAREN matcher_list rPAREN { TupleMatch $2 }
   | literal { LiteralMatch $1 }
   | typeId SYMB10 { FieldMatchUnit $1 }
   | typeId SYMB11 fieldMatcher_list SYMB12 { FieldMatch ($1, $3) }
@@ -325,27 +323,27 @@ expression9 : expression10 {  $1 }
 expression10 : expression11 {  $1 }
 ;
 
-expression11 : expression12 {  $1 }
-  | expression11 SYMB6 expression_list SYMB7 { ExpApp ($1, $3) }
-  | expression11 SYMB5 { ExpAppUnit $1 }
-  | typeId SYMB6 expression_list SYMB7 { ExpNewObj ($1, $3) }
-  | typeId SYMB5 { ExpNewObjUnit $1 }
+expression11 : expression12 { $1 }
+  | expression11 lPAREN expression_list rPAREN { ExpApp ($1, $3) }
+  | expression11 uNIT { ExpAppUnit $1 }
+  | typeId lPAREN expression_list rPAREN { ExpNewObj ($1, $3) }
+  | typeId uNIT { ExpNewObjUnit $1 }
   | expression11 SYMB38 varId { ExpMethod ($1, $3) }
 ;
 
 expression12 : expression13 {  $1 }
   | matcher { ExpVar $1 }
   | literal { Literals $1 }
-  | SYMB6 expression_list SYMB7 { Tuples $2 }
-  | SYMB2 expression_list SYMB3 { Array $2 }
+  | lPAREN expression_list rPAREN { Tuples $2 }
+  | lBRACK expression_list rBRACK { Array $2 }
   | typeId SYMB11 fieldInit_list SYMB12 { StructInit ($1, $3) }
 ;
 
-expression13 : SYMB6 expression SYMB7 {  $2 }
-  | SYMB6 expression SYMB7 { ExpBracket $2 }
+expression13 : lPAREN expression rPAREN {  $2 }
+  | lPAREN expression rPAREN { ExpBracket $2 }
 ;
 
-expression_list : /* empty */ { []  }
+expression_list : /* empty */ { [] }
   | expression { (fun x -> [x]) $1 }
   | expression SYMB8 expression_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
@@ -354,10 +352,10 @@ literal : string { String $1 }
   | char { Char $1 }
   | int { Integer $1 }
   | float { Float $1 }
-  | KW_true { True  }
-  | KW_false { False  }
-  | SYMB5 { LUnit  }
-  | SYMB16 { AUnit  }
+  | KW_true { True }
+  | KW_false { False }
+  | uNIT { LUnit }
+  | SYMB16 { AUnit }
 ;
 
 fieldInit_list : fieldInit { (fun x -> [x]) $1 }
@@ -389,4 +387,9 @@ eXTENDS : TOK_EXTENDS { EXTENDS ($1)};
 typeId : TOK_TypeId { TypeId ($1)};
 baseType : TOK_BaseType { BaseType ($1)};
 varId : TOK_VarId { VarId ($1)};
-mOD : TOK_Mod {  }
+lBRACK : TOK_LBrack { SYMBOL ($1) };
+rBRACK : TOK_RBrack { SYMBOL ($1) };
+lPAREN : TOK_LParen { SYMBOL ($1) };
+rPAREN : TOK_RParen { SYMBOL ($1) };
+uNIT : TOK_Unit { SYMBOL ($1) };
+mOD : TOK_Mod { SYMBOL ($1) };
