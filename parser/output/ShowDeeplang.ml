@@ -37,6 +37,8 @@ let showList (showFun : 'a -> showable) (xs : 'a list) : showable = fun buf ->
 let showInt (i:int) : showable = s2s (string_of_int i)
 let showFloat (f:float) : showable = s2s (string_of_float f)
 
+let showSpan (sp:(Lexing.position * Lexing.position)) : showable = s2s "{" >> showInt ((fst sp).pos_lnum) >> s2s ";" >> showInt ((fst sp).pos_cnum) >> s2s "-" >> showInt ((snd sp).pos_lnum) >> s2s ";" >> showInt ((snd sp).pos_cnum) >> s2s "}"
+
 let rec showIF (AbsDeeplang.IF (_,i)) : showable = s2s "IF " >> showString i
 let rec showELSE (AbsDeeplang.ELSE (_,i)) : showable = s2s "ELSE " >> showString i
 let rec showWHILE (AbsDeeplang.WHILE (_,i)) : showable = s2s "WHILE " >> showString i
@@ -63,7 +65,7 @@ let rec showCode (e : AbsDeeplang.code) : showable = match e with
   |    AbsDeeplang.Unit  -> s2s "Unit"
 
 
-and showTypeT (e : AbsDeeplang.typeT) : showable = s2s "{" >> showInt (fst e.span) >> s2s ", " >> showInt (snd e.span) >> s2s "}" >> 
+and showTypeT (e : AbsDeeplang.typeT) : showable = showSpan (e.span) >> 
 match e.shape with
        AbsDeeplang.TypeFixLenArray (type', integer) -> s2s "TypeFixLenArray" >> c2s ' ' >> c2s '(' >> showTypeT type'  >> s2s ", " >>  showInt integer >> c2s ')'
   |    AbsDeeplang.TypeArrow (type'0, type') -> s2s "TypeArrow" >> c2s ' ' >> c2s '(' >> showTypeT type'0  >> s2s ", " >>  showTypeT type' >> c2s ')'

@@ -92,13 +92,13 @@ code : declare { Declares $1 }
   | /* empty */ { Unit  }
 ;
 
-typeT : lBRACK typeT sCOLON int rBRACK { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $5 in (fst x, snd y)); shape = TypeFixLenArray ($2, $4)} }
-  | typeT aRROW typeT { {span = (fst $1.span, snd $3.span); shape = TypeArrow ($1, $3)} }
-  | uNIT { {span = (let SYMBOL (x, _) = $1 in x); shape = TypeUnit} }
-  | lPAREN rPAREN { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $2 in (fst x, snd y)); shape = TypeUnit} }
-  | lPAREN typeT_list rPAREN { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $3 in (fst x, snd y)); shape = TypeTuple $2} }
-  | baseType { {span = (let BaseType (x, _) = $1 in x); shape = TypePrimitive $1} }
-  | typeId { {span = (let TypeId (x, _) = $1 in x) ; shape = TypeX $1} }
+typeT : lBRACK typeT sCOLON int rBRACK { {span = (Parsing.symbol_start_pos (), Parsing.symbol_start_pos ()); shape = TypeFixLenArray ($2, $4)} }
+  | typeT aRROW typeT { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeArrow ($1, $3)} }
+  | uNIT { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeUnit} }
+  | lPAREN rPAREN { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeUnit} }
+  | lPAREN typeT_list rPAREN { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeTuple $2} }
+  | baseType { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypePrimitive $1} }
+  | typeId { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; shape = TypeX $1} }
 ;
 
 typeT_list : typeT { (fun x -> [x]) $1 }
