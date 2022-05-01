@@ -248,3 +248,20 @@ crc or lrc: 98
 
 遗留问题：if 和match是expression还是statement？
 
+### 2022.5.1例会纪要
+
+练琪灏：编译原理的课程设计。https://github.com/deeplang-org/deeplang-type-system/blob/dev/table/Walker.ml deeplang ast的遍历，需要review。
+
+陈亦棠：刷新deeplang主仓的readme，最新代码会有PR。 
+
+陈楷骐:  CPU作业。
+
+刘请：写borrowchecker的实现。已经提交一部分。表达式的borrowchecker已经写完。https://v2.ocaml.org/api/Parsing.html ocmal token的行列号。
+
+魏韧韬：编译大作业。
+
+秦嘉俊：bnf，bnfc，ocaml编程语言。
+
+邱日宏：deeplang的讨论， ast树。
+
+遗留问题：if 和match是expression还是statement？
