@@ -8,8 +8,6 @@ open Lexing
 
 %token KW_return KW_true KW_false
 
-%token SYMB1 /* ; */
-%token SYMB4 /* -> */
 %token SYMB8 /* , */
 %token SYMB9 /* : */
 %token SYMB10 /* {} */
@@ -64,6 +62,8 @@ open Lexing
 %token <(int * int) * string> TOK_TypeId
 %token <(int * int) * string> TOK_BaseType
 %token <(int * int) * string> TOK_VarId
+%token <(int * int) * string> TOK_SColon
+%token <(int * int) * string> TOK_Arrow
 %token <(int * int) * string> TOK_LBrack
 %token <(int * int) * string> TOK_RBrack
 %token <(int * int) * string> TOK_LParen
@@ -88,12 +88,12 @@ code_list : code code_list { (fun (x,xs) -> x::xs) ($1, $2) }
 code : declare { Declares $1 }
   | define { Defines $1 }
   | statement { Statements $1 }
-  | expression SYMB1 { Expressions $1 }
+  | expression sCOLON { Expressions $1 }
   | /* empty */ { Unit  }
 ;
 
-typeT : lBRACK typeT SYMB1 int rBRACK { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $5 in (fst x, snd y)); shape = TypeFixLenArray ($2, $4)} }
-  | typeT SYMB4 typeT { {span = (fst $1.span, snd $3.span); shape = TypeArrow ($1, $3)} }
+typeT : lBRACK typeT sCOLON int rBRACK { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $5 in (fst x, snd y)); shape = TypeFixLenArray ($2, $4)} }
+  | typeT aRROW typeT { {span = (fst $1.span, snd $3.span); shape = TypeArrow ($1, $3)} }
   | uNIT { {span = (let SYMBOL (x, _) = $1 in x); shape = TypeUnit} }
   | lPAREN rPAREN { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $2 in (fst x, snd y)); shape = TypeUnit} }
   | lPAREN typeT_list rPAREN { {span = (let SYMBOL (x, _) = $1 in let SYMBOL (y, _) = $3 in (fst x, snd y)); shape = TypeTuple $2} }
@@ -131,7 +131,7 @@ arg_list : arg { (fun x -> [x]) $1 }
 ;
 
 retType : /* empty */ { RetUnit  }
-  | SYMB4 typeT { RetExist $2 }
+  | aRROW typeT { RetExist $2 }
 ;
 
 interfaceName : typeId { InterfaceNames $1 }
@@ -145,7 +145,7 @@ methods : SYMB10 { InterfaceMethodUnit  }
   | SYMB11 methodT_list SYMB12 { InterfaceMethodExist $2 }
 ;
 
-methodT : fUN varId args retType SYMB1 { InterfaceMethod ($1, $2, $3, $4) }
+methodT : fUN varId args retType sCOLON { InterfaceMethod ($1, $2, $3, $4) }
   | fUN varId args retType SYMB11 statement_list SYMB12 { ADTMethod ($1, $2, $3, $4, $6) }
 ;
 
@@ -157,8 +157,8 @@ methodT_list : /* empty */ { []  }
 define : functionT { DefFunc $1 }
   | tYPE typeId lBRACK constructor_list rBRACK { ADT ($1, $2, $4) }
   | tYPE typeId SYMB11 structField_list SYMB12 { Struct ($1, $2, $4) }
-  | lET mutFlag typedMatcher rHS SYMB1 { DefVar ($1, $2, $3, $4) }
-  | tYPE typeId args SYMB1 { DefType ($1, $2, $3) }
+  | lET mutFlag typedMatcher rHS sCOLON { DefVar ($1, $2, $3, $4) }
+  | tYPE typeId args sCOLON { DefType ($1, $2, $3) }
   | iMPL interfaceName fOR typeT functions { InterfaceImpl ($1, $2, $3, $4, $5) }
   | iMPL typeT functions { RawImpl ($1, $2, $3) }
 ;
@@ -208,9 +208,9 @@ functionT_list : /* empty */ { []  }
 ;
 
 statement : SYMB11 statement_list SYMB12 { Block $2 }
-  | lET mutFlag typedMatcher rHS SYMB1 { DefVarSt ($1, $2, $3, $4) }
-  | expression SYMB1 { ExprSt $1 }
-  | KW_return expression SYMB1 { Return $2 }
+  | lET mutFlag typedMatcher rHS sCOLON { DefVarSt ($1, $2, $3, $4) }
+  | expression sCOLON { ExprSt $1 }
+  | KW_return expression sCOLON { Return $2 }
   | iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { If ($1, $3, $6, $8) }
   | fOR lPAREN matcher iN expression rPAREN SYMB11 statement_list SYMB12 { For ($1, $3, $4, $5, $8) }
   | wHILE lPAREN expression rPAREN SYMB11 statement_list SYMB12 { While ($1, $3, $6) }
@@ -387,6 +387,8 @@ eXTENDS : TOK_EXTENDS { EXTENDS ($1)};
 typeId : TOK_TypeId { TypeId ($1)};
 baseType : TOK_BaseType { BaseType ($1)};
 varId : TOK_VarId { VarId ($1)};
+sCOLON : TOK_SColon { SYMBOL ($1)};
+aRROW : TOK_Arrow { SYMBOL ($1)};
 lBRACK : TOK_LBrack { SYMBOL ($1) };
 rBRACK : TOK_RBrack { SYMBOL ($1) };
 lPAREN : TOK_LParen { SYMBOL ($1) };

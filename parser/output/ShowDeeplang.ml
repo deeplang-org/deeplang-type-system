@@ -63,7 +63,8 @@ let rec showCode (e : AbsDeeplang.code) : showable = match e with
   |    AbsDeeplang.Unit  -> s2s "Unit"
 
 
-and showTypeT (e : AbsDeeplang.typeT) : showable = showInt (fst e.span) >> match e.shape with
+and showTypeT (e : AbsDeeplang.typeT) : showable = s2s "{" >> showInt (fst e.span) >> s2s ", " >> showInt (snd e.span) >> s2s "}" >> 
+match e.shape with
        AbsDeeplang.TypeFixLenArray (type', integer) -> s2s "TypeFixLenArray" >> c2s ' ' >> c2s '(' >> showTypeT type'  >> s2s ", " >>  showInt integer >> c2s ')'
   |    AbsDeeplang.TypeArrow (type'0, type') -> s2s "TypeArrow" >> c2s ' ' >> c2s '(' >> showTypeT type'0  >> s2s ", " >>  showTypeT type' >> c2s ')'
   |    AbsDeeplang.TypeUnit  -> s2s "TypeUnit"

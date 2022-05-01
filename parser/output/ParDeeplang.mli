@@ -2,8 +2,6 @@ type token =
   | KW_return
   | KW_true
   | KW_false
-  | SYMB1
-  | SYMB4
   | SYMB8
   | SYMB9
   | SYMB10
@@ -57,6 +55,8 @@ type token =
   | TOK_TypeId of ((int * int) * string)
   | TOK_BaseType of ((int * int) * string)
   | TOK_VarId of ((int * int) * string)
+  | TOK_SColon of ((int * int) * string)
+  | TOK_Arrow of ((int * int) * string)
   | TOK_LBrack of ((int * int) * string)
   | TOK_RBrack of ((int * int) * string)
   | TOK_LParen of ((int * int) * string)

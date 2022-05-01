@@ -25,7 +25,7 @@ and code =
  | Expressions of expression
  | Unit
 
-and typeT = { span : (int * int); shape : typeTShape }
+and typeT = { span : (int * int) ; shape : typeTShape }
 and typeTShape =
    TypeFixLenArray of typeT * int
  | TypeArrow of typeT * typeT
