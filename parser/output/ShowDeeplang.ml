@@ -66,7 +66,7 @@ let rec showCode (e : AbsDeeplang.code) : showable = match e with
 
 
 and showTypeT (e : AbsDeeplang.typeT) : showable = showSpan (e.span) >> 
-match e.shape with
+match e.typeTShape with
        AbsDeeplang.TypeFixLenArray (type', integer) -> s2s "TypeFixLenArray" >> c2s ' ' >> c2s '(' >> showTypeT type'  >> s2s ", " >>  showInt integer >> c2s ')'
   |    AbsDeeplang.TypeArrow (type'0, type') -> s2s "TypeArrow" >> c2s ' ' >> c2s '(' >> showTypeT type'0  >> s2s ", " >>  showTypeT type' >> c2s ')'
   |    AbsDeeplang.TypeUnit  -> s2s "TypeUnit"
@@ -76,9 +76,10 @@ match e.shape with
   |    AbsDeeplang.TypeX typeid -> s2s "TypeX" >> c2s ' ' >> c2s '(' >> showTypeId typeid >> c2s ')'
 
 
-and showMVarId (e : AbsDeeplang.mVarId) : showable = match e with
-       AbsDeeplang.MutVar (mut, varid) -> s2s "MutVar" >> c2s ' ' >> c2s '(' >> showMUT mut  >> s2s ", " >>  showVarId varid >> c2s ')'
-  |    AbsDeeplang.ImmutVar varid -> s2s "ImmutVar" >> c2s ' ' >> c2s '(' >> showVarId varid >> c2s ')'
+and showMVarId (e : AbsDeeplang.mVarId) : showable = showSpan (e.span) >> 
+match e.mVarIdShape with
+       (true, varid) -> s2s "MVarId" >> c2s ' ' >> s2s "(mut" >> s2s " " >>  showVarId varid >> c2s ')'
+    |  (false, varid) -> s2s "MVarId" >> c2s ' ' >> s2s "(" >> showVarId varid >> c2s ')'
 
 
 and showDeclare (e : AbsDeeplang.declare) : showable = match e with

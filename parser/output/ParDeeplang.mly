@@ -92,13 +92,13 @@ code : declare { Declares $1 }
   | /* empty */ { Unit  }
 ;
 
-typeT : lBRACK typeT sCOLON int rBRACK { {span = (Parsing.symbol_start_pos (), Parsing.symbol_start_pos ()); shape = TypeFixLenArray ($2, $4)} }
-  | typeT aRROW typeT { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeArrow ($1, $3)} }
-  | uNIT { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeUnit} }
-  | lPAREN rPAREN { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeUnit} }
-  | lPAREN typeT_list rPAREN { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeTuple $2} }
-  | baseType { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypePrimitive $1} }
-  | typeId { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; shape = TypeX $1} }
+typeT : lBRACK typeT sCOLON int rBRACK { {span = (Parsing.symbol_start_pos (), Parsing.symbol_start_pos ()); typeTShape = TypeFixLenArray ($2, $4)} }
+  | typeT aRROW typeT { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); typeTShape = TypeArrow ($1, $3)} }
+  | uNIT { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); typeTShape = TypeUnit} }
+  | lPAREN rPAREN { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); typeTShape = TypeUnit} }
+  | lPAREN typeT_list rPAREN { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); typeTShape = TypeTuple $2} }
+  | baseType { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); typeTShape = TypePrimitive $1} }
+  | typeId { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typeTShape = TypeX $1} }
 ;
 
 typeT_list : typeT { (fun x -> [x]) $1 }
@@ -109,8 +109,8 @@ varId_list : varId { (fun x -> [x]) $1 }
   | varId SYMB8 varId_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-mVarId : mUT varId { MutVar ($1, $2) }
-  | varId { ImmutVar $1 }
+mVarId : mUT varId { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; mVarIdShape = (true, $2)} }
+  | varId { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; mVarIdShape = (false, $1)} }
 ;
 
 declare : fUN varId args retType { DecFunc ($1, $2, $3, $4) }

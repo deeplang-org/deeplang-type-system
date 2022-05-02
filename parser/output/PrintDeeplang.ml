@@ -142,7 +142,7 @@ and prtCodeListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
   | (_,[x]) -> (concatD [prtCode 0 x])
   | (_,x::xs) -> (concatD [prtCode 0 x ; prtCodeListBNFC 0 xs])
-and prtTypeT (i:int) (e : AbsDeeplang.typeT) : doc = match e.shape with
+and prtTypeT (i:int) (e : AbsDeeplang.typeT) : doc = match e.typeTShape with
        AbsDeeplang.TypeFixLenArray (type_, integer) -> prPrec i 0 (concatD [render "[" ; prtTypeT 0 type_ ; render ";" ; prtInt 0 integer ; render "]"])
   |    AbsDeeplang.TypeArrow (type_1, type_2) -> prPrec i 0 (concatD [prtTypeT 0 type_1 ; render "->" ; prtTypeT 0 type_2])
   |    AbsDeeplang.TypeUnit  -> prPrec i 0 (concatD [render "()"])
@@ -154,9 +154,9 @@ and prtTypeT (i:int) (e : AbsDeeplang.typeT) : doc = match e.shape with
 and prtTypeTListBNFC i es : doc = match (i, es) with
     (_,[x]) -> (concatD [prtTypeT 0 x])
   | (_,x::xs) -> (concatD [prtTypeT 0 x ; render "," ; prtTypeTListBNFC 0 xs])
-and prtMVarId (i:int) (e : AbsDeeplang.mVarId) : doc = match e with
-       AbsDeeplang.MutVar (mut, varid) -> prPrec i 0 (concatD [prtMUT 0 mut ; prtVarId 0 varid])
-  |    AbsDeeplang.ImmutVar varid -> prPrec i 0 (concatD [prtVarId 0 varid])
+and prtMVarId (i:int) (e : AbsDeeplang.mVarId) : doc = match e.mVarIdShape with
+       (true, varid) -> prPrec i 0 (concatD [prtString 0 "mut" ; prtVarId 0 varid])
+  |    (false, varid) -> prPrec i 0 (concatD [prtVarId 0 varid])
 
 
 and prtDeclare (i:int) (e : AbsDeeplang.declare) : doc = match e with

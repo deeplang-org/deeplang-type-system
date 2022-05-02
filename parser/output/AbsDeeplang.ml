@@ -27,7 +27,7 @@ and code =
  | Expressions of expression
  | Unit
 
-and typeT = { span : (position * position) ; shape : typeTShape }
+and typeT = { span : (position * position) ; typeTShape : typeTShape }
 and typeTShape =
    TypeFixLenArray of typeT * int
  | TypeArrow of typeT * typeT
@@ -37,9 +37,7 @@ and typeTShape =
  | TypePrimitive of baseType
  | TypeX of typeId
 
-and mVarId =
-   MutVar of mUT * varId
- | ImmutVar of varId
+and mVarId = { span : (position * position) ; mVarIdShape : bool * varId}
 
 and declare =
    DecFunc of fUN * varId * args * retType

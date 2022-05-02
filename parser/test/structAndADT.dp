@@ -15,5 +15,5 @@ fun main(x: char) {}
 
 // Some more top-level declarations
 let tsr: f64 = 2.72;
-let shape: Shape = Circle(12);
+let typeTShape: Shape = Circle(12);
 let point: Point = ColoredPoint { position : mut a, color : ColoredPoint { position : itmakesnosense, color : butsyntacticallycorrect } };

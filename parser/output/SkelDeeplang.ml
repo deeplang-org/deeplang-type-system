@@ -84,7 +84,7 @@ and transCode (x : code) : result = match x with
   | Unit  -> failure x
 
 
-and transType (x : typeT) : result = match x.shape with
+and transType (x : typeT) : result = match x.typeTShape with
     TypeFixLenArray (type', integer) -> failure x
   | TypeArrow (type'0, type') -> failure x
   | TypeUnit  -> failure x
@@ -94,9 +94,8 @@ and transType (x : typeT) : result = match x.shape with
   | TypeX typeid -> failure x
 
 
-and transMVarId (x : mVarId) : result = match x with
-    MutVar (mut, varid) -> failure x
-  | ImmutVar varid -> failure x
+and transMVarId (x : mVarId) : result = match x.mVarIdShape with
+    _ -> failure x
 
 
 and transDeclare (x : declare) : result = match x with

@@ -1,6 +1,6 @@
 fun main(x: char) {
   let a: i32;
-  let b: f32;
+  let mut b: f32;
   a = 3;
   b = a % 2;
 
