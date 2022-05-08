@@ -24,6 +24,10 @@ and transFOR (x : fOR) : result = match x with
     FOR string -> failure x
 
 
+and transIN (x : iN) : result = match x with
+    IN string -> failure x
+
+
 and transLET (x : lET) : result = match x with
     LET string -> failure x
 
@@ -80,24 +84,23 @@ and transCode (x : code) : result = match x with
   | Unit  -> failure x
 
 
-and transType (x : typeT) : result = match x with
+and transType (x : typeT) : result = match x.shape with
     TypeFixLenArray (type', integer) -> failure x
   | TypeArrow (type'0, type') -> failure x
-  | TypeUnit1  -> failure x
+  | TypeUnit  -> failure x
   | TypeUnit2  -> failure x
   | TypeTuple types -> failure x
   | TypePrimitive basetype -> failure x
   | TypeX typeid -> failure x
 
 
-and transVariable (x : variable) : result = match x with
-    Variables varid -> failure x
+and transMVarId (x : mVarId) : result = match x with
+    MutVar (mut, varid) -> failure x
+  | ImmutVar varid -> failure x
 
 
 and transDeclare (x : declare) : result = match x with
-    DecImmut (let', varid, type') -> failure x
-  | DecMut (let', mut, varid, type') -> failure x
-  | DecFunc (fun', varid, args, rettype) -> failure x
+    DecFunc (fun', varid, args, rettype) -> failure x
   | InterfaceNoExt (interface, interfacename, methods) -> failure x
   | InterfaceExt (interface, interfacename, extends, interfacenames, methods) -> failure x
 
@@ -128,14 +131,14 @@ and transMethods (x : methods) : result = match x with
 
 and transMethod (x : methodT) : result = match x with
     InterfaceMethod (fun', varid, args, rettype) -> failure x
-  | ADTMethod (fun', varid, args, rettype, codes) -> failure x
+  | ADTMethod (fun', varid, args, rettype, statements) -> failure x
 
 
 and transDefine (x : define) : result = match x with
     DefFunc function' -> failure x
   | ADT (type', typeid, constructors) -> failure x
   | Struct (type', typeid, structfields) -> failure x
-  | DefVar (let', typedvar, expression) -> failure x
+  | DefVar (let', mutflag, typedmatcher, rhs) -> failure x
   | DefType (type', typeid, args) -> failure x
   | InterfaceImpl (impl, interfacename, for', type', functions) -> failure x
   | RawImpl (impl, type', functions) -> failure x
@@ -143,11 +146,12 @@ and transDefine (x : define) : result = match x with
 
 and transFunction (x : functionT) : result = match x with
     FuncUnit (fun', varid, args, rettype) -> failure x
-  | Func (fun', varid, args, rettype, codes) -> failure x
+  | Func (fun', varid, args, rettype, statements) -> failure x
 
 
 and transConstructor (x : constructor) : result = match x with
-    Constructors (typeid, fields) -> failure x
+    UnitCons typeid -> failure x
+  | ParamCons (typeid, fields) -> failure x
 
 
 and transField (x : field) : result = match x with
@@ -159,9 +163,14 @@ and transStructField (x : structField) : result = match x with
   | DelegateStructField (as', field) -> failure x
 
 
-and transTypedVar (x : typedVar) : result = match x with
-    ImmutVar (varid, type') -> failure x
-  | MutVar (mut, varid, type') -> failure x
+and transRHS (x : rHS) : result = match x with
+    DefRHS expression -> failure x
+  | NilRHS  -> failure x
+
+
+and transMutFlag (x : mutFlag) : result = match x with
+    Mut mut -> failure x
+  | Immut  -> failure x
 
 
 and transFunctions (x : functions) : result = match x with
@@ -171,12 +180,11 @@ and transFunctions (x : functions) : result = match x with
 
 and transStatement (x : statement) : result = match x with
     Block statements -> failure x
-  | DefVarSt (let', typedvar, expression) -> failure x
-  | DefTypeSt (type', typeid, args) -> failure x
+  | DefVarSt (let', mutflag, typedmatcher, rhs) -> failure x
   | ExprSt expression -> failure x
   | Return expression -> failure x
   | If (if', expression, statements, elsebody) -> failure x
-  | For (for', matcher, expression, statements) -> failure x
+  | For (for', matcher, in', expression, statements) -> failure x
   | While (while', expression, statements) -> failure x
   | Match (match', varid, matchbody) -> failure x
 
@@ -196,10 +204,20 @@ and transMatchCase (x : matchCase) : result = match x with
 
 
 and transMatcher (x : matcher) : result = match x with
+    TypedMatchers typedmatcher -> failure x
+  | TypelessMatchers typelessmatcher -> failure x
+  | AsVarMatch (matcher, as', mvarid) -> failure x
+
+
+and transTypedMatcher (x : typedMatcher) : result = match x with
+    Typed (typelessmatcher, type') -> failure x
+
+
+and transTypelessMatcher (x : typelessMatcher) : result = match x with
     WildCardMatch  -> failure x
   | ConsMatchUnit typeid -> failure x
   | ConsMatch (typeid, matcher) -> failure x
-  | TypelessVarMatch varid -> failure x
+  | TypelessVarMatch mvarid -> failure x
   | UnitMatch  -> failure x
   | TupleMatch matchers -> failure x
   | LiteralMatch literal -> failure x
@@ -208,20 +226,21 @@ and transMatcher (x : matcher) : result = match x with
 
 
 and transFieldMatcher (x : fieldMatcher) : result = match x with
-    FieldMatchers (varid, matcher) -> failure x
+    FieldMatchers (varid, typelessmatcher) -> failure x
 
 
 and transExpression (x : expression) : result = match x with
-    ExpVar variable -> failure x
+    ExpVar matcher -> failure x
   | Literals literal -> failure x
   | Tuples expressions -> failure x
+  | Array expressions -> failure x
   | StructInit (typeid, fieldinits) -> failure x
-  | ExpAssignment (variable, expression) -> failure x
-  | ExpAssignmentPlus (variable, expression) -> failure x
-  | ExpAssignmentMinus (variable, expression) -> failure x
-  | ExpAssignmentMul (variable, expression) -> failure x
-  | ExpAssignmentDiv (variable, expression) -> failure x
-  | ExpAssignmentMod (variable, expression) -> failure x
+  | ExpAssignment (varid, expression) -> failure x
+  | ExpAssignmentPlus (varid, expression) -> failure x
+  | ExpAssignmentMinus (varid, expression) -> failure x
+  | ExpAssignmentMul (varid, expression) -> failure x
+  | ExpAssignmentDiv (varid, expression) -> failure x
+  | ExpAssignmentMod (varid, expression) -> failure x
   | ExpLogicalOr (expression0, expression) -> failure x
   | ExpLogicalAnd (expression0, expression) -> failure x
   | ExpLogicalNot expression -> failure x
@@ -242,7 +261,7 @@ and transExpression (x : expression) : result = match x with
   | ExpAppUnit expression -> failure x
   | ExpNewObj (typeid, expressions) -> failure x
   | ExpNewObjUnit typeid -> failure x
-  | ExpMethod (expression, variable) -> failure x
+  | ExpMethod (expression, varid) -> failure x
   | ExpBracket expression -> failure x
 
 
@@ -254,6 +273,7 @@ and transLiteral (x : literal) : result = match x with
   | True  -> failure x
   | False  -> failure x
   | LUnit  -> failure x
+  | AUnit  -> failure x
 
 
 and transFieldInit (x : fieldInit) : result = match x with

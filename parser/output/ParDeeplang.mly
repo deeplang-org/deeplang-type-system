@@ -6,15 +6,8 @@ open Lexing
 
 %}
 
-%token KW_return KW_true KW_false KW_new
+%token KW_return KW_true KW_false
 
-%token SYMB1 /* ; */
-%token SYMB2 /* [ */
-%token SYMB3 /* ] */
-%token SYMB4 /* -> */
-%token SYMB5 /* () */
-%token SYMB6 /* ( */
-%token SYMB7 /* ) */
 %token SYMB8 /* , */
 %token SYMB9 /* : */
 %token SYMB10 /* {} */
@@ -23,28 +16,28 @@ open Lexing
 %token SYMB13 /* = */
 %token SYMB14 /* => */
 %token SYMB15 /* _ */
-%token SYMB16 /* += */
-%token SYMB17 /* -= */
-%token SYMB18 /* *= */
-%token SYMB19 /* /= */
-%token SYMB20 /* %= */
-%token SYMB21 /* || */
-%token SYMB22 /* && */
-%token SYMB23 /* ! */
-%token SYMB24 /* < */
-%token SYMB25 /* <= */
-%token SYMB26 /* > */
-%token SYMB27 /* >= */
-%token SYMB28 /* == */
-%token SYMB29 /* != */
-%token SYMB30 /* << */
-%token SYMB31 /* >> */
-%token SYMB32 /* + */
-%token SYMB33 /* - */
-%token SYMB34 /* * */
-%token SYMB35 /* / */
-%token SYMB36 /* % */
-%token SYMB37 /* . */
+%token SYMB16 /* [] */
+%token SYMB17 /* += */
+%token SYMB18 /* -= */
+%token SYMB19 /* *= */
+%token SYMB20 /* /= */
+%token SYMB21 /* %= */
+%token SYMB22 /* || */
+%token SYMB23 /* && */
+%token SYMB24 /* ! */
+%token SYMB25 /* < */
+%token SYMB26 /* <= */
+%token SYMB27 /* > */
+%token SYMB28 /* >= */
+%token SYMB29 /* == */
+%token SYMB30 /* != */
+%token SYMB31 /* << */
+%token SYMB32 /* >> */
+%token SYMB33 /* + */
+%token SYMB34 /* - */
+%token SYMB35 /* * */
+%token SYMB36 /* / */
+%token SYMB38 /* . */
 
 %token TOK_EOF
 %token <string> TOK_Ident
@@ -56,6 +49,7 @@ open Lexing
 %token <(int * int) * string> TOK_ELSE
 %token <(int * int) * string> TOK_WHILE
 %token <(int * int) * string> TOK_FOR
+%token <(int * int) * string> TOK_IN
 %token <(int * int) * string> TOK_LET
 %token <(int * int) * string> TOK_FUN
 %token <(int * int) * string> TOK_MUT
@@ -68,274 +62,65 @@ open Lexing
 %token <(int * int) * string> TOK_TypeId
 %token <(int * int) * string> TOK_BaseType
 %token <(int * int) * string> TOK_VarId
+%token <(int * int) * string> TOK_SColon
+%token <(int * int) * string> TOK_Arrow
+%token <(int * int) * string> TOK_LBrack
+%token <(int * int) * string> TOK_RBrack
+%token <(int * int) * string> TOK_LParen
+%token <(int * int) * string> TOK_RParen
+%token <(int * int) * string> TOK_Unit
+%token <(int * int) * string> TOK_Mod
 
-%start pCode_list pCode pTypeT pTypeT_list pVariable pVariable_list pDeclare pArgs pArg pArg_list pRetType pInterfaceName pInterfaceName_list pMethods pMethodT pMethodT_list pDefine pFunctionT pConstructor pConstructor_list pField pField_list pStructField pStructField_list pTypedVar pFunctions pFunctionT_list pStatement pStatement_list pElseBody pMatchBody pMatchCase pMatcher pMatcher_list pFieldMatcher_list pFieldMatcher pMatchCase_list pExpression pExpression1 pExpression2 pExpression3 pExpression4 pExpression5 pExpression6 pExpression7 pExpression8 pExpression9 pExpression10 pExpression11 pExpression12 pExpression13 pExpression_list pLiteral pFieldInit_list pFieldInit
+%start pCode_list
 %type <AbsDeeplang.code list> pCode_list
-%type <AbsDeeplang.code> pCode
-%type <AbsDeeplang.typeT> pTypeT
-%type <AbsDeeplang.typeT list> pTypeT_list
-%type <AbsDeeplang.variable> pVariable
-%type <AbsDeeplang.variable list> pVariable_list
-%type <AbsDeeplang.declare> pDeclare
-%type <AbsDeeplang.args> pArgs
-%type <AbsDeeplang.arg> pArg
-%type <AbsDeeplang.arg list> pArg_list
-%type <AbsDeeplang.retType> pRetType
-%type <AbsDeeplang.interfaceName> pInterfaceName
-%type <AbsDeeplang.interfaceName list> pInterfaceName_list
-%type <AbsDeeplang.methods> pMethods
-%type <AbsDeeplang.methodT> pMethodT
-%type <AbsDeeplang.methodT list> pMethodT_list
-%type <AbsDeeplang.define> pDefine
-%type <AbsDeeplang.functionT> pFunctionT
-%type <AbsDeeplang.constructor> pConstructor
-%type <AbsDeeplang.constructor list> pConstructor_list
-%type <AbsDeeplang.field> pField
-%type <AbsDeeplang.field list> pField_list
-%type <AbsDeeplang.structField> pStructField
-%type <AbsDeeplang.structField list> pStructField_list
-%type <AbsDeeplang.typedVar> pTypedVar
-%type <AbsDeeplang.functions> pFunctions
-%type <AbsDeeplang.functionT list> pFunctionT_list
-%type <AbsDeeplang.statement> pStatement
-%type <AbsDeeplang.statement list> pStatement_list
-%type <AbsDeeplang.elseBody> pElseBody
-%type <AbsDeeplang.matchBody> pMatchBody
-%type <AbsDeeplang.matchCase> pMatchCase
-%type <AbsDeeplang.matcher> pMatcher
-%type <AbsDeeplang.matcher list> pMatcher_list
-%type <AbsDeeplang.fieldMatcher list> pFieldMatcher_list
-%type <AbsDeeplang.fieldMatcher> pFieldMatcher
-%type <AbsDeeplang.matchCase list> pMatchCase_list
-%type <AbsDeeplang.expression> pExpression
-%type <AbsDeeplang.expression> pExpression1
-%type <AbsDeeplang.expression> pExpression2
-%type <AbsDeeplang.expression> pExpression3
-%type <AbsDeeplang.expression> pExpression4
-%type <AbsDeeplang.expression> pExpression5
-%type <AbsDeeplang.expression> pExpression6
-%type <AbsDeeplang.expression> pExpression7
-%type <AbsDeeplang.expression> pExpression8
-%type <AbsDeeplang.expression> pExpression9
-%type <AbsDeeplang.expression> pExpression10
-%type <AbsDeeplang.expression> pExpression11
-%type <AbsDeeplang.expression> pExpression12
-%type <AbsDeeplang.expression> pExpression13
-%type <AbsDeeplang.expression list> pExpression_list
-%type <AbsDeeplang.literal> pLiteral
-%type <AbsDeeplang.fieldInit list> pFieldInit_list
-%type <AbsDeeplang.fieldInit> pFieldInit
 
 
 %%
 pCode_list : code_list TOK_EOF { $1 }
   | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
 
-pCode : code TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pTypeT : typeT TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pTypeT_list : typeT_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pVariable : variable TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pVariable_list : variable_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pDeclare : declare TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pArgs : args TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pArg : arg TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pArg_list : arg_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pRetType : retType TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pInterfaceName : interfaceName TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pInterfaceName_list : interfaceName_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pMethods : methods TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pMethodT : methodT TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pMethodT_list : methodT_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pDefine : define TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pFunctionT : functionT TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pConstructor : constructor TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pConstructor_list : constructor_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pField : field TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pField_list : field_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pStructField : structField TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pStructField_list : structField_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pTypedVar : typedVar TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pFunctions : functions TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pFunctionT_list : functionT_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pStatement : statement TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pStatement_list : statement_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pElseBody : elseBody TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pMatchBody : matchBody TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pMatchCase : matchCase TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pMatcher : matcher TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pMatcher_list : matcher_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pFieldMatcher_list : fieldMatcher_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pFieldMatcher : fieldMatcher TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pMatchCase_list : matchCase_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression : expression TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression1 : expression1 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression2 : expression2 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression3 : expression3 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression4 : expression4 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression5 : expression5 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression6 : expression6 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression7 : expression7 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression8 : expression8 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression9 : expression9 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression10 : expression10 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression11 : expression11 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression12 : expression12 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression13 : expression13 TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pExpression_list : expression_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pLiteral : literal TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pFieldInit_list : fieldInit_list TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
-pFieldInit : fieldInit TOK_EOF { $1 }
-  | error { raise (BNFC_Util.Parse_error (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ())) };
-
 
 code_list : code code_list { (fun (x,xs) -> x::xs) ($1, $2) }
   | code { (fun x -> [x]) $1 }
-  | /* empty */ { []  }
+  | /* empty */ { [] }
 ;
 
 code : declare { Declares $1 }
   | define { Defines $1 }
   | statement { Statements $1 }
-  | expression SYMB1 { Expressions $1 }
+  | expression sCOLON { Expressions $1 }
   | /* empty */ { Unit  }
 ;
 
-typeT : SYMB2 typeT SYMB1 int SYMB3 { TypeFixLenArray ($2, $4) }
-  | typeT SYMB4 typeT { TypeArrow ($1, $3) }
-  | SYMB5 { TypeUnit1  }
-  | SYMB6 SYMB7 { TypeUnit2  }
-  | SYMB6 typeT_list SYMB7 { TypeTuple $2 }
-  | baseType { TypePrimitive $1 }
-  | typeId { TypeX $1 }
+typeT : lBRACK typeT sCOLON int rBRACK { {span = (Parsing.symbol_start_pos (), Parsing.symbol_start_pos ()); shape = TypeFixLenArray ($2, $4)} }
+  | typeT aRROW typeT { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeArrow ($1, $3)} }
+  | uNIT { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeUnit} }
+  | lPAREN rPAREN { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeUnit} }
+  | lPAREN typeT_list rPAREN { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypeTuple $2} }
+  | baseType { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()); shape = TypePrimitive $1} }
+  | typeId { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; shape = TypeX $1} }
 ;
 
 typeT_list : typeT { (fun x -> [x]) $1 }
   | typeT SYMB8 typeT_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-variable : varId { Variables $1 }
+varId_list : varId { (fun x -> [x]) $1 }
+  | varId SYMB8 varId_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-variable_list : variable { (fun x -> [x]) $1 }
-  | variable SYMB8 variable_list { (fun (x,xs) -> x::xs) ($1, $3) }
+mVarId : mUT varId { MutVar ($1, $2) }
+  | varId { ImmutVar $1 }
 ;
 
-declare : lET varId SYMB9 typeT SYMB1 { DecImmut ($1, $2, $4) }
-  | lET mUT varId SYMB9 typeT SYMB1 { DecMut ($1, $2, $3, $5) }
-  | fUN varId args retType { DecFunc ($1, $2, $3, $4) }
+declare : fUN varId args retType { DecFunc ($1, $2, $3, $4) }
   | iNTERFACE interfaceName methods { InterfaceNoExt ($1, $2, $3) }
   | iNTERFACE interfaceName eXTENDS interfaceName_list methods { InterfaceExt ($1, $2, $3, $4, $5) }
 ;
 
-args : SYMB6 SYMB7 { ArgUnit  }
-  | SYMB5 { ArgUnit2  }
-  | SYMB6 arg_list SYMB7 { ArgExist $2 }
+args : lPAREN rPAREN { ArgUnit  }
+  | uNIT { ArgUnit2 }
+  | lPAREN arg_list rPAREN { ArgExist $2 }
 ;
 
 arg : varId SYMB9 typeT { ArgCons ($1, $3) }
@@ -346,7 +131,7 @@ arg_list : arg { (fun x -> [x]) $1 }
 ;
 
 retType : /* empty */ { RetUnit  }
-  | SYMB4 typeT { RetExist $2 }
+  | aRROW typeT { RetExist $2 }
 ;
 
 interfaceName : typeId { InterfaceNames $1 }
@@ -360,8 +145,8 @@ methods : SYMB10 { InterfaceMethodUnit  }
   | SYMB11 methodT_list SYMB12 { InterfaceMethodExist $2 }
 ;
 
-methodT : fUN varId args retType SYMB1 { InterfaceMethod ($1, $2, $3, $4) }
-  | fUN varId args retType SYMB11 code_list SYMB12 { ADTMethod ($1, $2, $3, $4, $6) }
+methodT : fUN varId args retType sCOLON { InterfaceMethod ($1, $2, $3, $4) }
+  | fUN varId args retType SYMB11 statement_list SYMB12 { ADTMethod ($1, $2, $3, $4, $6) }
 ;
 
 methodT_list : /* empty */ { []  }
@@ -370,19 +155,20 @@ methodT_list : /* empty */ { []  }
 ;
 
 define : functionT { DefFunc $1 }
-  | tYPE typeId SYMB2 constructor_list SYMB3 { ADT ($1, $2, $4) }
+  | tYPE typeId lBRACK constructor_list rBRACK { ADT ($1, $2, $4) }
   | tYPE typeId SYMB11 structField_list SYMB12 { Struct ($1, $2, $4) }
-  | lET typedVar SYMB13 expression SYMB1 { DefVar ($1, $2, $4) }
-  | tYPE typeId args SYMB1 { DefType ($1, $2, $3) }
+  | lET mutFlag typedMatcher rHS sCOLON { DefVar ($1, $2, $3, $4) }
+  | tYPE typeId args sCOLON { DefType ($1, $2, $3) }
   | iMPL interfaceName fOR typeT functions { InterfaceImpl ($1, $2, $3, $4, $5) }
   | iMPL typeT functions { RawImpl ($1, $2, $3) }
 ;
 
 functionT : fUN varId args retType SYMB10 { FuncUnit ($1, $2, $3, $4) }
-  | fUN varId args retType SYMB11 code_list SYMB12 { Func ($1, $2, $3, $4, $6) }
+  | fUN varId args retType SYMB11 statement_list SYMB12 { Func ($1, $2, $3, $4, $6) }
 ;
 
-constructor : typeId SYMB6 field_list SYMB7 { Constructors ($1, $3) }
+constructor : typeId { UnitCons $1 }
+  | typeId lPAREN field_list rPAREN { ParamCons ($1, $3) }
 ;
 
 constructor_list : constructor { (fun x -> [x]) $1 }
@@ -404,8 +190,12 @@ structField_list : structField { (fun x -> [x]) $1 }
   | structField SYMB8 structField_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-typedVar : varId SYMB9 typeT { ImmutVar ($1, $3) }
-  | mUT varId SYMB9 typeT { MutVar ($1, $2, $4) }
+rHS : SYMB13 expression { DefRHS $2 }
+  | /* empty */ { NilRHS  }
+;
+
+mutFlag : mUT { Mut $1 }
+  | /* empty */ { Immut  }
 ;
 
 functions : SYMB10 { FunctionsUnit  }
@@ -418,14 +208,13 @@ functionT_list : /* empty */ { []  }
 ;
 
 statement : SYMB11 statement_list SYMB12 { Block $2 }
-  | lET typedVar SYMB13 expression SYMB1 { DefVarSt ($1, $2, $4) }
-  | tYPE typeId args SYMB1 { DefTypeSt ($1, $2, $3) }
-  | expression SYMB1 { ExprSt $1 }
-  | KW_return expression SYMB1 { Return $2 }
-  | iF SYMB6 expression SYMB7 SYMB11 statement_list SYMB12 elseBody { If ($1, $3, $6, $8) }
-  | fOR SYMB6 matcher SYMB9 expression SYMB7 SYMB11 statement_list SYMB12 { For ($1, $3, $5, $8) }
-  | wHILE SYMB6 expression SYMB7 SYMB11 statement_list SYMB12 { While ($1, $3, $6) }
-  | mATCH SYMB6 varId SYMB7 SYMB11 matchBody SYMB12 { Match ($1, $3, $6) }
+  | lET mutFlag typedMatcher rHS sCOLON { DefVarSt ($1, $2, $3, $4) }
+  | expression sCOLON { ExprSt $1 }
+  | KW_return expression sCOLON { Return $2 }
+  | iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { If ($1, $3, $6, $8) }
+  | fOR lPAREN matcher iN expression rPAREN SYMB11 statement_list SYMB12 { For ($1, $3, $4, $5, $8) }
+  | wHILE lPAREN expression rPAREN SYMB11 statement_list SYMB12 { While ($1, $3, $6) }
+  | mATCH lPAREN varId rPAREN SYMB11 matchBody SYMB12 { Match ($1, $3, $6) }
 ;
 
 statement_list : statement { (fun x -> [x]) $1 }
@@ -433,7 +222,7 @@ statement_list : statement { (fun x -> [x]) $1 }
 ;
 
 elseBody : /* empty */ { NoElse  }
-  | eLSE iF SYMB6 expression SYMB7 SYMB11 statement_list SYMB12 elseBody { Elif ($1, $2, $4, $7, $9) }
+  | eLSE iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { Elif ($1, $2, $4, $7, $9) }
   | eLSE SYMB11 statement_list SYMB12 { Else ($1, $3) }
 ;
 
@@ -443,12 +232,20 @@ matchBody : matchCase_list { MatchBodys $1 }
 matchCase : matcher SYMB14 SYMB11 statement_list SYMB12 { MatchCases ($1, $4) }
 ;
 
-matcher : SYMB15 { WildCardMatch  }
-  | typeId SYMB5 { ConsMatchUnit $1 }
-  | typeId SYMB6 matcher SYMB7 { ConsMatch ($1, $3) }
-  | varId { TypelessVarMatch $1 }
-  | SYMB5 { UnitMatch  }
-  | SYMB6 matcher_list SYMB7 { TupleMatch $2 }
+matcher : typedMatcher { TypedMatchers $1 }
+  | typelessMatcher { TypelessMatchers $1 }
+  | matcher aS mVarId { AsVarMatch ($1, $2, $3) }
+;
+
+typedMatcher : typelessMatcher SYMB9 typeT { Typed ($1, $3) }
+;
+
+typelessMatcher : SYMB15 { WildCardMatch  }
+  | typeId uNIT { ConsMatchUnit $1 }
+  | typeId lPAREN matcher rPAREN { ConsMatch ($1, $3) }
+  | mVarId { TypelessVarMatch $1 }
+  | uNIT { UnitMatch }
+  | lPAREN matcher_list rPAREN { TupleMatch $2 }
   | literal { LiteralMatch $1 }
   | typeId SYMB10 { FieldMatchUnit $1 }
   | typeId SYMB11 fieldMatcher_list SYMB12 { FieldMatch ($1, $3) }
@@ -464,7 +261,7 @@ fieldMatcher_list : /* empty */ { []  }
   | fieldMatcher SYMB8 fieldMatcher_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-fieldMatcher : varId SYMB9 matcher { FieldMatchers ($1, $3) }
+fieldMatcher : varId SYMB9 typelessMatcher { FieldMatchers ($1, $3) }
 ;
 
 matchCase_list : matchCase { (fun x -> [x]) $1 }
@@ -475,77 +272,78 @@ expression : expression1 {  $1 }
 ;
 
 expression1 : expression2 {  $1 }
-  | variable SYMB13 expression1 { ExpAssignment ($1, $3) }
-  | variable SYMB16 expression1 { ExpAssignmentPlus ($1, $3) }
-  | variable SYMB17 expression1 { ExpAssignmentMinus ($1, $3) }
-  | variable SYMB18 expression1 { ExpAssignmentMul ($1, $3) }
-  | variable SYMB19 expression1 { ExpAssignmentDiv ($1, $3) }
-  | variable SYMB20 expression1 { ExpAssignmentMod ($1, $3) }
+  | varId SYMB13 expression1 { ExpAssignment ($1, $3) }
+  | varId SYMB17 expression1 { ExpAssignmentPlus ($1, $3) }
+  | varId SYMB18 expression1 { ExpAssignmentMinus ($1, $3) }
+  | varId SYMB19 expression1 { ExpAssignmentMul ($1, $3) }
+  | varId SYMB20 expression1 { ExpAssignmentDiv ($1, $3) }
+  | varId SYMB21 expression1 { ExpAssignmentMod ($1, $3) }
 ;
 
 expression2 : expression3 {  $1 }
-  | expression2 SYMB21 expression3 { ExpLogicalOr ($1, $3) }
+  | expression2 SYMB22 expression3 { ExpLogicalOr ($1, $3) }
 ;
 
 expression3 : expression4 {  $1 }
-  | expression3 SYMB22 expression4 { ExpLogicalAnd ($1, $3) }
+  | expression3 SYMB23 expression4 { ExpLogicalAnd ($1, $3) }
 ;
 
 expression4 : expression5 {  $1 }
-  | SYMB23 expression4 { ExpLogicalNot $2 }
+  | SYMB24 expression4 { ExpLogicalNot $2 }
 ;
 
 expression5 : expression6 {  $1 }
-  | expression7 SYMB24 expression7 { ExpLt ($1, $3) }
-  | expression7 SYMB25 expression7 { ExpLeq ($1, $3) }
-  | expression7 SYMB26 expression7 { ExpGt ($1, $3) }
-  | expression7 SYMB27 expression7 { ExpGeq ($1, $3) }
+  | expression7 SYMB25 expression7 { ExpLt ($1, $3) }
+  | expression7 SYMB26 expression7 { ExpLeq ($1, $3) }
+  | expression7 SYMB27 expression7 { ExpGt ($1, $3) }
+  | expression7 SYMB28 expression7 { ExpGeq ($1, $3) }
 ;
 
 expression6 : expression7 {  $1 }
-  | expression7 SYMB28 expression7 { ExpEq ($1, $3) }
-  | expression7 SYMB29 expression7 { ExpNoteq ($1, $3) }
+  | expression7 SYMB29 expression7 { ExpEq ($1, $3) }
+  | expression7 SYMB30 expression7 { ExpNoteq ($1, $3) }
 ;
 
 expression7 : expression8 {  $1 }
-  | expression7 SYMB30 expression8 { ExpLeftShift ($1, $3) }
-  | expression7 SYMB31 expression8 { ExpRightShift ($1, $3) }
+  | expression7 SYMB31 expression8 { ExpLeftShift ($1, $3) }
+  | expression7 SYMB32 expression8 { ExpRightShift ($1, $3) }
 ;
 
 expression8 : expression9 {  $1 }
-  | expression8 SYMB32 expression9 { ExpAdd ($1, $3) }
-  | expression8 SYMB33 expression9 { ExpSub ($1, $3) }
+  | expression8 SYMB33 expression9 { ExpAdd ($1, $3) }
+  | expression8 SYMB34 expression9 { ExpSub ($1, $3) }
 ;
 
 expression9 : expression10 {  $1 }
-  | expression9 SYMB34 expression10 { ExpMul ($1, $3) }
-  | expression9 SYMB35 expression10 { ExpDiv ($1, $3) }
-  | expression9 SYMB36 expression10 { ExpMod ($1, $3) }
+  | expression9 SYMB35 expression10 { ExpMul ($1, $3) }
+  | expression9 SYMB36 expression10 { ExpDiv ($1, $3) }
+  | expression9 mOD expression10 { ExpMod ($1, $3) }
 ;
 
 expression10 : expression11 {  $1 }
 ;
 
-expression11 : expression12 {  $1 }
-  | expression11 SYMB6 expression_list SYMB7 { ExpApp ($1, $3) }
-  | expression11 SYMB5 { ExpAppUnit $1 }
-  | KW_new typeId SYMB6 expression_list SYMB7 { ExpNewObj ($2, $4) }
-  | KW_new typeId SYMB5 { ExpNewObjUnit $2 }
-  | expression11 SYMB37 variable { ExpMethod ($1, $3) }
+expression11 : expression12 { $1 }
+  | expression11 lPAREN expression_list rPAREN { ExpApp ($1, $3) }
+  | expression11 uNIT { ExpAppUnit $1 }
+  | typeId lPAREN expression_list rPAREN { ExpNewObj ($1, $3) }
+  | typeId uNIT { ExpNewObjUnit $1 }
+  | expression11 SYMB38 varId { ExpMethod ($1, $3) }
 ;
 
 expression12 : expression13 {  $1 }
-  | variable { ExpVar $1 }
+  | matcher { ExpVar $1 }
   | literal { Literals $1 }
-  | SYMB6 expression_list SYMB7 { Tuples $2 }
+  | lPAREN expression_list rPAREN { Tuples $2 }
+  | lBRACK expression_list rBRACK { Array $2 }
   | typeId SYMB11 fieldInit_list SYMB12 { StructInit ($1, $3) }
 ;
 
-expression13 : SYMB6 expression SYMB7 {  $2 }
-  | SYMB6 expression SYMB7 { ExpBracket $2 }
+expression13 : lPAREN expression rPAREN {  $2 }
+  | lPAREN expression rPAREN { ExpBracket $2 }
 ;
 
-expression_list : /* empty */ { []  }
+expression_list : /* empty */ { [] }
   | expression { (fun x -> [x]) $1 }
   | expression SYMB8 expression_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
@@ -554,9 +352,10 @@ literal : string { String $1 }
   | char { Char $1 }
   | int { Integer $1 }
   | float { Float $1 }
-  | KW_true { True  }
-  | KW_false { False  }
-  | SYMB5 { LUnit  }
+  | KW_true { True }
+  | KW_false { False }
+  | uNIT { LUnit }
+  | SYMB16 { AUnit }
 ;
 
 fieldInit_list : fieldInit { (fun x -> [x]) $1 }
@@ -575,6 +374,7 @@ iF : TOK_IF { IF ($1)};
 eLSE : TOK_ELSE { ELSE ($1)};
 wHILE : TOK_WHILE { WHILE ($1)};
 fOR : TOK_FOR { FOR ($1)};
+iN : TOK_IN { IN ($1)};
 lET : TOK_LET { LET ($1)};
 fUN : TOK_FUN { FUN ($1)};
 mUT : TOK_MUT { MUT ($1)};
@@ -584,8 +384,14 @@ aS : TOK_AS { AS ($1)};
 mATCH : TOK_MATCH { MATCH ($1)};
 tYPE : TOK_TYPE { TYPE ($1)};
 eXTENDS : TOK_EXTENDS { EXTENDS ($1)};
-typeId : TOK_TypeId { TypeId ($1, 0)};
+typeId : TOK_TypeId { TypeId ($1)};
 baseType : TOK_BaseType { BaseType ($1)};
-varId : TOK_VarId { VarId ($1, 0)};
-
-
+varId : TOK_VarId { VarId ($1)};
+sCOLON : TOK_SColon { SYMBOL ($1)};
+aRROW : TOK_Arrow { SYMBOL ($1)};
+lBRACK : TOK_LBrack { SYMBOL ($1) };
+rBRACK : TOK_RBrack { SYMBOL ($1) };
+lPAREN : TOK_LParen { SYMBOL ($1) };
+rPAREN : TOK_RParen { SYMBOL ($1) };
+uNIT : TOK_Unit { SYMBOL ($1) };
+mOD : TOK_Mod { SYMBOL ($1) };
