@@ -167,7 +167,6 @@ and prtDeclare (i:int) (e : AbsDeeplang.declare) : doc = match e with
 
 and prtArgs (i:int) (e : AbsDeeplang.args) : doc = match e with
        AbsDeeplang.ArgUnit  -> prPrec i 0 (concatD [render "(" ; render ")"])
-  |    AbsDeeplang.ArgUnit2  -> prPrec i 0 (concatD [render "()"])
   |    AbsDeeplang.ArgExist args -> prPrec i 0 (concatD [render "(" ; prtArgListBNFC 0 args ; render ")"])
 
 

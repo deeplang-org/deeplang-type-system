@@ -1059,7 +1059,7 @@ let yyact = [|
     let _1 = (Parsing.peek_val __caml_parser_env 0 : 'uNIT) in
     Obj.repr(
 # 122 "ParDeeplang.mly"
-         ( ArgUnit2 )
+         ( ArgUnit )
 # 1064 "ParDeeplang.ml"
                : 'args))
 ; (fun __caml_parser_env ->

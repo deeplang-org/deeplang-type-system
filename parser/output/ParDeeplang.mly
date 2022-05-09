@@ -119,7 +119,7 @@ declare : fUN varId args retType { DecFunc ($1, $2, $3, $4) }
 ;
 
 args : lPAREN rPAREN { ArgUnit  }
-  | uNIT { ArgUnit2 }
+  | uNIT { ArgUnit }
   | lPAREN arg_list rPAREN { ArgExist $2 }
 ;
 

@@ -90,7 +90,6 @@ and showDeclare (e : AbsDeeplang.declare) : showable = match e with
 
 and showArgs (e : AbsDeeplang.args) : showable = match e with
        AbsDeeplang.ArgUnit  -> s2s "ArgUnit"
-  |    AbsDeeplang.ArgUnit2  -> s2s "ArgUnit2"
   |    AbsDeeplang.ArgExist args -> s2s "ArgExist" >> c2s ' ' >> c2s '(' >> showList showArg args >> c2s ')'
 
 

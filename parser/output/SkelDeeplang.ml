@@ -106,7 +106,6 @@ and transDeclare (x : declare) : result = match x with
 
 and transArgs (x : args) : result = match x with
     ArgUnit  -> failure x
-  | ArgUnit2  -> failure x
   | ArgExist args -> failure x
 
 

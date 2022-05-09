@@ -46,7 +46,6 @@ and declare =
 
 and args =
    ArgUnit
- | ArgUnit2
  | ArgExist of arg list
 
 and arg =
