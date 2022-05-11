@@ -61,7 +61,8 @@ and interfaceName =
 and methodT =
    InterfaceMethod of fUN * varId * args * retType
 
-and define =
+and define = { span : (position * position) ; defineShape : defineShape }
+and defineShape =
    DefFunc of functionT
  | ADT of tYPE * typeId * constructor list
  | Struct of tYPE * typeId * structField list
@@ -71,8 +72,7 @@ and define =
  | RawImpl of iMPL * typeT * functions
 
 and functionT =
-   FuncUnit of fUN * varId * args * retType
- | Func of fUN * varId * args * retType * statement list
+   Func of fUN * varId * args * retType * statement list
 
 and constructor =
    UnitCons of typeId

@@ -1181,7 +1181,7 @@ let yyact = [|
     let _1 = (Parsing.peek_val __caml_parser_env 0 : 'functionT) in
     Obj.repr(
 # 156 "ParDeeplang.mly"
-                   ( DefFunc _1 )
+                   ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = DefFunc _1 } )
 # 1186 "ParDeeplang.ml"
                : 'define))
 ; (fun __caml_parser_env ->
@@ -1192,7 +1192,7 @@ let yyact = [|
     let _5 = (Parsing.peek_val __caml_parser_env 0 : 'rBRACK) in
     Obj.repr(
 # 157 "ParDeeplang.mly"
-                                               ( ADT (_1, _2, _4) )
+                                               ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = ADT (_1, _2, _4) } )
 # 1197 "ParDeeplang.ml"
                : 'define))
 ; (fun __caml_parser_env ->
@@ -1201,7 +1201,7 @@ let yyact = [|
     let _4 = (Parsing.peek_val __caml_parser_env 1 : 'structField_list) in
     Obj.repr(
 # 158 "ParDeeplang.mly"
-                                               ( Struct (_1, _2, _4) )
+                                               ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = Struct (_1, _2, _4) } )
 # 1206 "ParDeeplang.ml"
                : 'define))
 ; (fun __caml_parser_env ->
@@ -1212,7 +1212,7 @@ let yyact = [|
     let _5 = (Parsing.peek_val __caml_parser_env 0 : 'sCOLON) in
     Obj.repr(
 # 159 "ParDeeplang.mly"
-                                        ( DefVar (_1, _2, _3, _4) )
+                                        ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = DefVar (_1, _2, _3, _4) } )
 # 1217 "ParDeeplang.ml"
                : 'define))
 ; (fun __caml_parser_env ->
@@ -1222,7 +1222,7 @@ let yyact = [|
     let _4 = (Parsing.peek_val __caml_parser_env 0 : 'sCOLON) in
     Obj.repr(
 # 160 "ParDeeplang.mly"
-                            ( DefType (_1, _2, _3) )
+                            ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = DefType (_1, _2, _3) } )
 # 1227 "ParDeeplang.ml"
                : 'define))
 ; (fun __caml_parser_env ->
@@ -1233,7 +1233,7 @@ let yyact = [|
     let _5 = (Parsing.peek_val __caml_parser_env 0 : 'functions) in
     Obj.repr(
 # 161 "ParDeeplang.mly"
-                                           ( InterfaceImpl (_1, _2, _3, _4, _5) )
+                                           ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = InterfaceImpl (_1, _2, _3, _4, _5) } )
 # 1238 "ParDeeplang.ml"
                : 'define))
 ; (fun __caml_parser_env ->
@@ -1242,7 +1242,7 @@ let yyact = [|
     let _3 = (Parsing.peek_val __caml_parser_env 0 : 'functions) in
     Obj.repr(
 # 162 "ParDeeplang.mly"
-                         ( RawImpl (_1, _2, _3) )
+                         ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = RawImpl (_1, _2, _3) } )
 # 1247 "ParDeeplang.ml"
                : 'define))
 ; (fun __caml_parser_env ->
@@ -1252,7 +1252,7 @@ let yyact = [|
     let _4 = (Parsing.peek_val __caml_parser_env 1 : 'retType) in
     Obj.repr(
 # 165 "ParDeeplang.mly"
-                                          ( FuncUnit (_1, _2, _3, _4) )
+                                          ( Func (_1, _2, _3, _4, []) )
 # 1257 "ParDeeplang.ml"
                : 'functionT))
 ; (fun __caml_parser_env ->

@@ -125,7 +125,7 @@ and transMethod (x : methodT) : result = match x with
     InterfaceMethod (fun', varid, args, rettype) -> failure x
 
 
-and transDefine (x : define) : result = match x with
+and transDefine (x : define) : result = match x.defineShape with
     DefFunc function' -> failure x
   | ADT (type', typeid, constructors) -> failure x
   | Struct (type', typeid, structfields) -> failure x
@@ -136,8 +136,7 @@ and transDefine (x : define) : result = match x with
 
 
 and transFunction (x : functionT) : result = match x with
-    FuncUnit (fun', varid, args, rettype) -> failure x
-  | Func (fun', varid, args, rettype, statements) -> failure x
+    Func (fun', varid, args, rettype, statements) -> failure x
 
 
 and transConstructor (x : constructor) : result = match x with

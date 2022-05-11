@@ -13,6 +13,10 @@ type ColoredPoint {
 
 fun main(x: char) {}
 
+fun niam(x: char) {
+  return 3;
+}
+
 // Some more top-level declarations
 let tsr: f64 = 2.72;
 let typeTShape: Shape = Circle(12);

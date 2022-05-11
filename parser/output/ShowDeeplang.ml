@@ -110,7 +110,8 @@ and showMethodT (e : AbsDeeplang.methodT) : showable = match e with
        AbsDeeplang.InterfaceMethod (fun', varid, args, rettype) -> s2s "InterfaceMethod" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype >> c2s ')'
 
 
-and showDefine (e : AbsDeeplang.define) : showable = match e with
+and showDefine (e : AbsDeeplang.define) : showable = showSpan (e.span) >>
+match e.defineShape with
        AbsDeeplang.DefFunc function' -> s2s "DefFunc" >> c2s ' ' >> c2s '(' >> showFunctionT function' >> c2s ')'
   |    AbsDeeplang.ADT (type', typeid, constructors) -> s2s "ADT" >> c2s ' ' >> c2s '(' >> showTYPE type'  >> s2s ", " >>  showTypeId typeid  >> s2s ", " >>  showList showConstructor constructors >> c2s ')'
   |    AbsDeeplang.Struct (type', typeid, structfields) -> s2s "Struct" >> c2s ' ' >> c2s '(' >> showTYPE type'  >> s2s ", " >>  showTypeId typeid  >> s2s ", " >>  showList showStructField structfields >> c2s ')'
@@ -121,8 +122,7 @@ and showDefine (e : AbsDeeplang.define) : showable = match e with
 
 
 and showFunctionT (e : AbsDeeplang.functionT) : showable = match e with
-       AbsDeeplang.FuncUnit (fun', varid, args, rettype) -> s2s "FuncUnit" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype >> c2s ')'
-  |    AbsDeeplang.Func (fun', varid, args, rettype, statements) -> s2s "Func" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype  >> s2s ", " >>  showList showStatement statements >> c2s ')'
+       AbsDeeplang.Func (fun', varid, args, rettype, statements) -> s2s "Func" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype  >> s2s ", " >>  showList showStatement statements >> c2s ')'
 
 
 and showConstructor (e : AbsDeeplang.constructor) : showable = match e with

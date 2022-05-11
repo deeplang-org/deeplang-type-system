@@ -192,7 +192,7 @@ and prtMethodTListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
   | (_,[x]) -> (concatD [prtMethodT 0 x])
   | (_,x::xs) -> (concatD [prtMethodT 0 x ; prtMethodTListBNFC 0 xs])
-and prtDefine (i:int) (e : AbsDeeplang.define) : doc = match e with
+and prtDefine (i:int) (e : AbsDeeplang.define) : doc = match e.defineShape with
        AbsDeeplang.DefFunc function_ -> prPrec i 0 (concatD [prtFunctionT 0 function_])
   |    AbsDeeplang.ADT (type_, typeid, constructors) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; render "[" ; prtConstructorListBNFC 0 constructors ; render "]"])
   |    AbsDeeplang.Struct (type_, typeid, structfields) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; render "{" ; prtStructFieldListBNFC 0 structfields ; render "}"])
@@ -203,8 +203,7 @@ and prtDefine (i:int) (e : AbsDeeplang.define) : doc = match e with
 
 
 and prtFunctionT (i:int) (e : AbsDeeplang.functionT) : doc = match e with
-       AbsDeeplang.FuncUnit (fun_, varid, args, rettype) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{}"])
-  |    AbsDeeplang.Func (fun_, varid, args, rettype, statements) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{" ; prtStatementListBNFC 0 statements ; render "}"])
+       AbsDeeplang.Func (fun_, varid, args, rettype, statements) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{" ; prtStatementListBNFC 0 statements ; render "}"])
 
 and prtFunctionTListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
@@ -256,7 +255,8 @@ and prtStatement (i:int) (e : AbsDeeplang.statement) : doc = match e with
   |    AbsDeeplang.Match (match_, varid, matchbody) -> prPrec i 0 (concatD [prtMATCH 0 match_ ; render "(" ; prtVarId 0 varid ; render ")" ; render "{" ; prtMatchBody 0 matchbody ; render "}"])
 
 and prtStatementListBNFC i es : doc = match (i, es) with
-    (_,[x]) -> (concatD [prtStatement 0 x])
+    (_,[]) -> (concatD [])
+  | (_,[x]) -> (concatD [prtStatement 0 x])
   | (_,x::xs) -> (concatD [prtStatement 0 x ; prtStatementListBNFC 0 xs])
 and prtElseBody (i:int) (e : AbsDeeplang.elseBody) : doc = match e with
        AbsDeeplang.NoElse  -> prPrec i 0 (concatD [])

@@ -153,16 +153,16 @@ methodT_list : /* empty */ { []  }
   | methodT methodT_list { (fun (x,xs) -> x::xs) ($1, $2) }
 ;
 
-define : functionT { DefFunc $1 }
-  | tYPE typeId lBRACK constructor_list rBRACK { ADT ($1, $2, $4) }
-  | tYPE typeId SYMB11 structField_list SYMB12 { Struct ($1, $2, $4) }
-  | lET mutFlag typedMatcher rHS sCOLON { DefVar ($1, $2, $3, $4) }
-  | tYPE typeId args sCOLON { DefType ($1, $2, $3) }
-  | iMPL interfaceName fOR typeT functions { InterfaceImpl ($1, $2, $3, $4, $5) }
-  | iMPL typeT functions { RawImpl ($1, $2, $3) }
+define : functionT { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = DefFunc $1 } }
+  | tYPE typeId lBRACK constructor_list rBRACK { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = ADT ($1, $2, $4) } }
+  | tYPE typeId SYMB11 structField_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = Struct ($1, $2, $4) } }
+  | lET mutFlag typedMatcher rHS sCOLON { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = DefVar ($1, $2, $3, $4) } }
+  | tYPE typeId args sCOLON { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = DefType ($1, $2, $3) } }
+  | iMPL interfaceName fOR typeT functions { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = InterfaceImpl ($1, $2, $3, $4, $5) } }
+  | iMPL typeT functions { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = RawImpl ($1, $2, $3) } }
 ;
 
-functionT : fUN varId args retType SYMB10 { FuncUnit ($1, $2, $3, $4) }
+functionT : fUN varId args retType SYMB10 { Func ($1, $2, $3, $4, []) }
   | fUN varId args retType SYMB11 statement_list SYMB12 { Func ($1, $2, $3, $4, $6) }
 ;
 
