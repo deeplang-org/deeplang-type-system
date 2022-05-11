@@ -37,7 +37,7 @@ let showList (showFun : 'a -> showable) (xs : 'a list) : showable = fun buf ->
 let showInt (i:int) : showable = s2s (string_of_int i)
 let showFloat (f:float) : showable = s2s (string_of_float f)
 
-let showSpan (sp:(Lexing.position * Lexing.position)) : showable = s2s "{" >> showInt ((fst sp).pos_lnum) >> s2s ";" >> showInt ((fst sp).pos_cnum) >> s2s "-" >> showInt ((snd sp).pos_lnum) >> s2s ";" >> showInt ((snd sp).pos_cnum) >> s2s "}"
+let showSpan (sp:(Lexing.position * Lexing.position)) : showable = s2s "{" >> showInt ((fst sp).pos_lnum) >> s2s ";" >> showInt ((fst sp).pos_cnum - (fst sp).pos_bol) >> s2s "-" >> showInt ((snd sp).pos_lnum) >> s2s ";" >> showInt ((snd sp).pos_cnum - (snd sp).pos_bol) >> s2s "}"
 
 let rec showIF (AbsDeeplang.IF (_,i)) : showable = s2s "IF " >> showString i
 let rec showELSE (AbsDeeplang.ELSE (_,i)) : showable = s2s "ELSE " >> showString i
@@ -65,27 +65,27 @@ let rec showCode (e : AbsDeeplang.code) : showable = match e with
   |    AbsDeeplang.Unit  -> s2s "Unit"
 
 
-and showTypeT (e : AbsDeeplang.typeT) : showable = showSpan (e.span) >> 
+and showTypeT (e : AbsDeeplang.typeT) : showable = showSpan (e.span) >>
 match e.typeTShape with
        AbsDeeplang.TypeFixLenArray (type', integer) -> s2s "TypeFixLenArray" >> c2s ' ' >> c2s '(' >> showTypeT type'  >> s2s ", " >>  showInt integer >> c2s ')'
   |    AbsDeeplang.TypeArrow (type'0, type') -> s2s "TypeArrow" >> c2s ' ' >> c2s '(' >> showTypeT type'0  >> s2s ", " >>  showTypeT type' >> c2s ')'
   |    AbsDeeplang.TypeUnit  -> s2s "TypeUnit"
-  |    AbsDeeplang.TypeUnit2  -> s2s "TypeUnit2"
   |    AbsDeeplang.TypeTuple types -> s2s "TypeTuple" >> c2s ' ' >> c2s '(' >> showList showTypeT types >> c2s ')'
   |    AbsDeeplang.TypePrimitive basetype -> s2s "TypePrimitive" >> c2s ' ' >> c2s '(' >> showBaseType basetype >> c2s ')'
   |    AbsDeeplang.TypeX typeid -> s2s "TypeX" >> c2s ' ' >> c2s '(' >> showTypeId typeid >> c2s ')'
 
 
-and showMVarId (e : AbsDeeplang.mVarId) : showable = showSpan (e.span) >> 
+and showMVarId (e : AbsDeeplang.mVarId) : showable = showSpan (e.span) >>
 match e.mVarIdShape with
        (true, varid) -> s2s "MVarId" >> c2s ' ' >> s2s "(mut" >> s2s " " >>  showVarId varid >> c2s ')'
     |  (false, varid) -> s2s "MVarId" >> c2s ' ' >> s2s "(" >> showVarId varid >> c2s ')'
 
 
-and showDeclare (e : AbsDeeplang.declare) : showable = match e with
+and showDeclare (e : AbsDeeplang.declare) : showable = showSpan (e.span) >>
+match e.declareShape with
        AbsDeeplang.DecFunc (fun', varid, args, rettype) -> s2s "DecFunc" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype >> c2s ')'
-  |    AbsDeeplang.InterfaceNoExt (interface, interfacename, methods) -> s2s "InterfaceNoExt" >> c2s ' ' >> c2s '(' >> showINTERFACE interface  >> s2s ", " >>  showInterfaceName interfacename  >> s2s ", " >>  showMethods methods >> c2s ')'
-  |    AbsDeeplang.InterfaceExt (interface, interfacename, extends, interfacenames, methods) -> s2s "InterfaceExt" >> c2s ' ' >> c2s '(' >> showINTERFACE interface  >> s2s ", " >>  showInterfaceName interfacename  >> s2s ", " >>  showEXTENDS extends  >> s2s ", " >>  showList showInterfaceName interfacenames  >> s2s ", " >>  showMethods methods >> c2s ')'
+  |    AbsDeeplang.InterfaceNoExt (interface, interfacename, methods) -> s2s "InterfaceNoExt" >> c2s ' ' >> c2s '(' >> showINTERFACE interface  >> s2s ", " >>  showInterfaceName interfacename  >> s2s ", " >>  showList showMethodT methods >> c2s ')'
+  |    AbsDeeplang.InterfaceExt (interface, interfacename, interfacenames, methods) -> s2s "InterfaceExt" >> c2s ' ' >> c2s '(' >> showINTERFACE interface  >> s2s ", " >>  showInterfaceName interfacename  >> s2s ", " >> s2s ", " >>  showList showInterfaceName interfacenames  >> s2s ", " >>  showList showMethodT methods >> c2s ')'
 
 
 and showArgs (e : AbsDeeplang.args) : showable = match e with
@@ -106,14 +106,8 @@ and showInterfaceName (e : AbsDeeplang.interfaceName) : showable = match e with
        AbsDeeplang.InterfaceNames typeid -> s2s "InterfaceNames" >> c2s ' ' >> c2s '(' >> showTypeId typeid >> c2s ')'
 
 
-and showMethods (e : AbsDeeplang.methods) : showable = match e with
-       AbsDeeplang.InterfaceMethodUnit  -> s2s "InterfaceMethodUnit"
-  |    AbsDeeplang.InterfaceMethodExist methods -> s2s "InterfaceMethodExist" >> c2s ' ' >> c2s '(' >> showList showMethodT methods >> c2s ')'
-
-
 and showMethodT (e : AbsDeeplang.methodT) : showable = match e with
        AbsDeeplang.InterfaceMethod (fun', varid, args, rettype) -> s2s "InterfaceMethod" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype >> c2s ')'
-  |    AbsDeeplang.ADTMethod (fun', varid, args, rettype, statements) -> s2s "ADTMethod" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype  >> s2s ", " >>  showList showStatement statements >> c2s ')'
 
 
 and showDefine (e : AbsDeeplang.define) : showable = match e with

@@ -88,7 +88,6 @@ and transType (x : typeT) : result = match x.typeTShape with
     TypeFixLenArray (type', integer) -> failure x
   | TypeArrow (type'0, type') -> failure x
   | TypeUnit  -> failure x
-  | TypeUnit2  -> failure x
   | TypeTuple types -> failure x
   | TypePrimitive basetype -> failure x
   | TypeX typeid -> failure x
@@ -98,10 +97,10 @@ and transMVarId (x : mVarId) : result = match x.mVarIdShape with
     _ -> failure x
 
 
-and transDeclare (x : declare) : result = match x with
+and transDeclare (x : declare) : result = match x.declareShape with
     DecFunc (fun', varid, args, rettype) -> failure x
   | InterfaceNoExt (interface, interfacename, methods) -> failure x
-  | InterfaceExt (interface, interfacename, extends, interfacenames, methods) -> failure x
+  | InterfaceExt (interface, interfacename, interfacenames, methods) -> failure x
 
 
 and transArgs (x : args) : result = match x with
@@ -122,14 +121,8 @@ and transInterfaceName (x : interfaceName) : result = match x with
     InterfaceNames typeid -> failure x
 
 
-and transMethods (x : methods) : result = match x with
-    InterfaceMethodUnit  -> failure x
-  | InterfaceMethodExist methods -> failure x
-
-
 and transMethod (x : methodT) : result = match x with
     InterfaceMethod (fun', varid, args, rettype) -> failure x
-  | ADTMethod (fun', varid, args, rettype, statements) -> failure x
 
 
 and transDefine (x : define) : result = match x with

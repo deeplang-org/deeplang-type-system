@@ -116,9 +116,6 @@ let rec prtMATCH _ (AbsDeeplang.MATCH (_,i)) : doc = render i
 let rec prtTYPE _ (AbsDeeplang.TYPE (_,i)) : doc = render i
 
 
-let rec prtEXTENDS _ (AbsDeeplang.EXTENDS (_,i)) : doc = render i
-
-
 let rec prtTypeId _ (AbsDeeplang.TypeId (_,i)) : doc = render i
 
 
@@ -146,7 +143,6 @@ and prtTypeT (i:int) (e : AbsDeeplang.typeT) : doc = match e.typeTShape with
        AbsDeeplang.TypeFixLenArray (type_, integer) -> prPrec i 0 (concatD [render "[" ; prtTypeT 0 type_ ; render ";" ; prtInt 0 integer ; render "]"])
   |    AbsDeeplang.TypeArrow (type_1, type_2) -> prPrec i 0 (concatD [prtTypeT 0 type_1 ; render "->" ; prtTypeT 0 type_2])
   |    AbsDeeplang.TypeUnit  -> prPrec i 0 (concatD [render "()"])
-  |    AbsDeeplang.TypeUnit2  -> prPrec i 0 (concatD [render "(" ; render ")"])
   |    AbsDeeplang.TypeTuple types -> prPrec i 0 (concatD [render "(" ; prtTypeTListBNFC 0 types ; render ")"])
   |    AbsDeeplang.TypePrimitive basetype -> prPrec i 0 (concatD [prtBaseType 0 basetype])
   |    AbsDeeplang.TypeX typeid -> prPrec i 0 (concatD [prtTypeId 0 typeid])
@@ -159,10 +155,10 @@ and prtMVarId (i:int) (e : AbsDeeplang.mVarId) : doc = match e.mVarIdShape with
   |    (false, varid) -> prPrec i 0 (concatD [prtVarId 0 varid])
 
 
-and prtDeclare (i:int) (e : AbsDeeplang.declare) : doc = match e with
+and prtDeclare (i:int) (e : AbsDeeplang.declare) : doc = match e.declareShape with
        AbsDeeplang.DecFunc (fun_, varid, args, rettype) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype])
-  |    AbsDeeplang.InterfaceNoExt (interface, interfacename, methods) -> prPrec i 0 (concatD [prtINTERFACE 0 interface ; prtInterfaceName 0 interfacename ; prtMethods 0 methods])
-  |    AbsDeeplang.InterfaceExt (interface, interfacename, extends, interfacenames, methods) -> prPrec i 0 (concatD [prtINTERFACE 0 interface ; prtInterfaceName 0 interfacename ; prtEXTENDS 0 extends ; prtInterfaceNameListBNFC 0 interfacenames ; prtMethods 0 methods])
+  |    AbsDeeplang.InterfaceNoExt (interface, interfacename, methods) -> prPrec i 0 (concatD [prtINTERFACE 0 interface ; prtInterfaceName 0 interfacename ; prPrec i 0 (concatD [render "{" ; prtMethodTListBNFC 0 methods ; render "}"])])
+  |    AbsDeeplang.InterfaceExt (interface, interfacename, interfacenames, methods) -> prPrec i 0 (concatD [prtINTERFACE 0 interface ; prtInterfaceName 0 interfacename ; render "extends" ; prtInterfaceNameListBNFC 0 interfacenames ; prPrec i 0 (concatD [render "{" ; prtMethodTListBNFC 0 methods ; render "}"])])
 
 
 and prtArgs (i:int) (e : AbsDeeplang.args) : doc = match e with
@@ -187,14 +183,10 @@ and prtInterfaceName (i:int) (e : AbsDeeplang.interfaceName) : doc = match e wit
 and prtInterfaceNameListBNFC i es : doc = match (i, es) with
     (_,[x]) -> (concatD [prtInterfaceName 0 x])
   | (_,x::xs) -> (concatD [prtInterfaceName 0 x ; render "," ; prtInterfaceNameListBNFC 0 xs])
-and prtMethods (i:int) (e : AbsDeeplang.methods) : doc = match e with
-       AbsDeeplang.InterfaceMethodUnit  -> prPrec i 0 (concatD [render "{}"])
-  |    AbsDeeplang.InterfaceMethodExist methods -> prPrec i 0 (concatD [render "{" ; prtMethodTListBNFC 0 methods ; render "}"])
 
 
 and prtMethodT (i:int) (e : AbsDeeplang.methodT) : doc = match e with
        AbsDeeplang.InterfaceMethod (fun_, varid, args, rettype) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render ";"])
-  |    AbsDeeplang.ADTMethod (fun_, varid, args, rettype, statements) -> prPrec i 0 (concatD [prtFUN 0 fun_ ; prtVarId 0 varid ; prtArgs 0 args ; prtRetType 0 rettype ; render "{" ; prtStatementListBNFC 0 statements ; render "}"])
 
 and prtMethodTListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])

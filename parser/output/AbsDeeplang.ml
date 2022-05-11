@@ -32,17 +32,17 @@ and typeTShape =
    TypeFixLenArray of typeT * int
  | TypeArrow of typeT * typeT
  | TypeUnit
- | TypeUnit2
  | TypeTuple of typeT list
  | TypePrimitive of baseType
  | TypeX of typeId
 
-and mVarId = { span : (position * position) ; mVarIdShape : bool * varId}
+and mVarId = { span : (position * position) ; mVarIdShape : bool * varId }
 
-and declare =
+and declare = { span : (position * position) ; declareShape : declareShape }
+and declareShape =
    DecFunc of fUN * varId * args * retType
- | InterfaceNoExt of iNTERFACE * interfaceName * methods
- | InterfaceExt of iNTERFACE * interfaceName * eXTENDS * interfaceName list * methods
+ | InterfaceNoExt of iNTERFACE * interfaceName * methodT list
+ | InterfaceExt of iNTERFACE * interfaceName * interfaceName list * methodT list
 
 and args =
    ArgUnit
@@ -58,13 +58,8 @@ and retType =
 and interfaceName =
    InterfaceNames of typeId
 
-and methods =
-   InterfaceMethodUnit
- | InterfaceMethodExist of methodT list
-
 and methodT =
    InterfaceMethod of fUN * varId * args * retType
- | ADTMethod of fUN * varId * args * retType * statement list
 
 and define =
    DefFunc of functionT

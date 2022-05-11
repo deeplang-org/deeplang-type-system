@@ -113,12 +113,12 @@ mVarId : mUT varId { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_po
   | varId { {span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; mVarIdShape = (false, $1)} }
 ;
 
-declare : fUN varId args retType { DecFunc ($1, $2, $3, $4) }
-  | iNTERFACE interfaceName methods { InterfaceNoExt ($1, $2, $3) }
-  | iNTERFACE interfaceName eXTENDS interfaceName_list methods { InterfaceExt ($1, $2, $3, $4, $5) }
+declare : fUN varId args retType { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; declareShape = DecFunc ($1, $2, $3, $4) } }
+  | iNTERFACE interfaceName methods { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; declareShape = InterfaceNoExt ($1, $2, $3) } }
+  | iNTERFACE interfaceName eXTENDS interfaceName_list methods { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; declareShape = InterfaceExt ($1, $2, $4, $5) } }
 ;
 
-args : lPAREN rPAREN { ArgUnit  }
+args : lPAREN rPAREN { ArgUnit }
   | uNIT { ArgUnit }
   | lPAREN arg_list rPAREN { ArgExist $2 }
 ;
@@ -141,12 +141,11 @@ interfaceName_list : interfaceName { (fun x -> [x]) $1 }
   | interfaceName SYMB8 interfaceName_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-methods : SYMB10 { InterfaceMethodUnit  }
-  | SYMB11 methodT_list SYMB12 { InterfaceMethodExist $2 }
+methods : SYMB10 { [] }
+  | SYMB11 methodT_list SYMB12 { $2 }
 ;
 
 methodT : fUN varId args retType sCOLON { InterfaceMethod ($1, $2, $3, $4) }
-  | fUN varId args retType SYMB11 statement_list SYMB12 { ADTMethod ($1, $2, $3, $4, $6) }
 ;
 
 methodT_list : /* empty */ { []  }
@@ -219,6 +218,7 @@ statement : SYMB11 statement_list SYMB12 { Block $2 }
 
 statement_list : statement { (fun x -> [x]) $1 }
   | statement statement_list { (fun (x,xs) -> x::xs) ($1, $2) }
+  | /* empty */ { [] }
 ;
 
 elseBody : /* empty */ { NoElse  }
