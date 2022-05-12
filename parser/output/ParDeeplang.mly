@@ -166,7 +166,7 @@ functionT : fUN varId args retType SYMB10 { Func ($1, $2, $3, $4, []) }
   | fUN varId args retType SYMB11 statement_list SYMB12 { Func ($1, $2, $3, $4, $6) }
 ;
 
-constructor : typeId { UnitCons $1 }
+constructor : typeId { ParamCons ($1, []) }
   | typeId lPAREN field_list rPAREN { ParamCons ($1, $3) }
 ;
 
@@ -174,15 +174,15 @@ constructor_list : constructor { (fun x -> [x]) $1 }
   | constructor SYMB8 constructor_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-field : varId SYMB9 typeT { FieldCons ($1, $3) }
+field : varId SYMB9 typeT { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; fieldShape = ($1, $3) } }
 ;
 
 field_list : field { (fun x -> [x]) $1 }
   | field SYMB8 field_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-structField : field { BasicStructField $1 }
-  | aS field { DelegateStructField ($1, $2) }
+structField : field { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; structFieldShape = (false, $1) } }
+  | aS field { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; structFieldShape = (true, $2) } }
 ;
 
 structField_list : structField { (fun x -> [x]) $1 }

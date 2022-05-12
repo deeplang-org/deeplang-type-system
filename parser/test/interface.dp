@@ -15,7 +15,7 @@ impl Foo for Baz {
   }
 }
 
-type Duck [ BaseDuck ]
+type Duck [ BaseDuck, RubberDuck, MagicDuck(isSquib : Bool) ]
   impl Quack for Duck {
       fun quack() -> () {
           print("quaaaack");

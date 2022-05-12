@@ -75,15 +75,11 @@ and functionT =
    Func of fUN * varId * args * retType * statement list
 
 and constructor =
-   UnitCons of typeId
- | ParamCons of typeId * field list
+   ParamCons of typeId * field list
 
-and field =
-   FieldCons of varId * typeT
+and field = { span : (position * position) ; fieldShape : varId * typeT }
 
-and structField =
-   BasicStructField of field
- | DelegateStructField of aS * field
+and structField = { span : (position * position) ; structFieldShape : bool * field }
 
 and rHS =
    DefRHS of expression

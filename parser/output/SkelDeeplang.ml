@@ -140,17 +140,15 @@ and transFunction (x : functionT) : result = match x with
 
 
 and transConstructor (x : constructor) : result = match x with
-    UnitCons typeid -> failure x
-  | ParamCons (typeid, fields) -> failure x
+    ParamCons (typeid, fields) -> failure x
 
 
-and transField (x : field) : result = match x with
-    FieldCons (varid, type') -> failure x
+and transField (x : field) : result = match x.fieldShape with
+    (varid, type') -> failure x
 
 
-and transStructField (x : structField) : result = match x with
-    BasicStructField field -> failure x
-  | DelegateStructField (as', field) -> failure x
+and transStructField (x : structField) : result = match x.structFieldShape with
+    (_, field) -> failure x
 
 
 and transRHS (x : rHS) : result = match x with

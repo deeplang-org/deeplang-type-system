@@ -126,17 +126,18 @@ and showFunctionT (e : AbsDeeplang.functionT) : showable = match e with
 
 
 and showConstructor (e : AbsDeeplang.constructor) : showable = match e with
-       AbsDeeplang.UnitCons typeid -> s2s "UnitCons" >> c2s ' ' >> c2s '(' >> showTypeId typeid >> c2s ')'
   |    AbsDeeplang.ParamCons (typeid, fields) -> s2s "ParamCons" >> c2s ' ' >> c2s '(' >> showTypeId typeid  >> s2s ", " >>  showList showField fields >> c2s ')'
 
 
-and showField (e : AbsDeeplang.field) : showable = match e with
-       AbsDeeplang.FieldCons (varid, type') -> s2s "FieldCons" >> c2s ' ' >> c2s '(' >> showVarId varid  >> s2s ", " >>  showTypeT type' >> c2s ')'
+and showField (e : AbsDeeplang.field) : showable = showSpan (e.span) >>
+match e.fieldShape with
+       (varid, type') -> s2s "FieldCons" >> c2s ' ' >> c2s '(' >> showVarId varid  >> s2s ", " >>  showTypeT type' >> c2s ')'
 
 
-and showStructField (e : AbsDeeplang.structField) : showable = match e with
-       AbsDeeplang.BasicStructField field -> s2s "BasicStructField" >> c2s ' ' >> c2s '(' >> showField field >> c2s ')'
-  |    AbsDeeplang.DelegateStructField (as', field) -> s2s "DelegateStructField" >> c2s ' ' >> c2s '(' >> showAS as'  >> s2s ", " >>  showField field >> c2s ')'
+and showStructField (e : AbsDeeplang.structField) : showable = showSpan (e.span) >>
+match e.structFieldShape with
+       (false, field) -> s2s "StructField" >> c2s ' ' >> c2s '(' >> showField field >> c2s ')'
+  |    (true, field) -> s2s "StructField" >> c2s ' ' >> c2s '(' >> s2s "AS " >> showField field >> c2s ')'
 
 
 and showRHS (e : AbsDeeplang.rHS) : showable = match e with

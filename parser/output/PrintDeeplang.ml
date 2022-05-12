@@ -210,21 +210,22 @@ and prtFunctionTListBNFC i es : doc = match (i, es) with
   | (_,[x]) -> (concatD [prtFunctionT 0 x])
   | (_,x::xs) -> (concatD [prtFunctionT 0 x ; prtFunctionTListBNFC 0 xs])
 and prtConstructor (i:int) (e : AbsDeeplang.constructor) : doc = match e with
-       AbsDeeplang.UnitCons typeid -> prPrec i 0 (concatD [prtTypeId 0 typeid])
-  |    AbsDeeplang.ParamCons (typeid, fields) -> prPrec i 0 (concatD [prtTypeId 0 typeid ; render "(" ; prtFieldListBNFC 0 fields ; render ")"])
+     AbsDeeplang.ParamCons (typeid, []) -> prPrec i 0 (concatD [prtTypeId 0 typeid])
+  |  AbsDeeplang.ParamCons (typeid, fields) -> prPrec i 0 (concatD [prtTypeId 0 typeid ; render "(" ; prtFieldListBNFC 0 fields ; render ")"])
 
 and prtConstructorListBNFC i es : doc = match (i, es) with
     (_,[x]) -> (concatD [prtConstructor 0 x])
   | (_,x::xs) -> (concatD [prtConstructor 0 x ; render "," ; prtConstructorListBNFC 0 xs])
-and prtField (i:int) (e : AbsDeeplang.field) : doc = match e with
-       AbsDeeplang.FieldCons (varid, type_) -> prPrec i 0 (concatD [prtVarId 0 varid ; render ":" ; prtTypeT 0 type_])
+and prtField (i:int) (e : AbsDeeplang.field) : doc = match e.fieldShape with
+       (varid, type_) -> prPrec i 0 (concatD [prtVarId 0 varid ; render ":" ; prtTypeT 0 type_])
 
 and prtFieldListBNFC i es : doc = match (i, es) with
-    (_,[x]) -> (concatD [prtField 0 x])
+    (_,[]) -> (concatD [])
+  | (_,[x]) -> (concatD [prtField 0 x])
   | (_,x::xs) -> (concatD [prtField 0 x ; render "," ; prtFieldListBNFC 0 xs])
-and prtStructField (i:int) (e : AbsDeeplang.structField) : doc = match e with
-       AbsDeeplang.BasicStructField field -> prPrec i 0 (concatD [prtField 0 field])
-  |    AbsDeeplang.DelegateStructField (as_, field) -> prPrec i 0 (concatD [prtAS 0 as_ ; prtField 0 field])
+and prtStructField (i:int) (e : AbsDeeplang.structField) : doc = match e.structFieldShape with
+       (false, field) -> prPrec i 0 (concatD [prtField 0 field])
+  |    (true, field) -> prPrec i 0 (concatD [render " as "; prtField 0 field])
 
 and prtStructFieldListBNFC i es : doc = match (i, es) with
     (_,[x]) -> (concatD [prtStructField 0 x])

@@ -1270,7 +1270,7 @@ let yyact = [|
     let _1 = (Parsing.peek_val __caml_parser_env 0 : 'typeId) in
     Obj.repr(
 # 169 "ParDeeplang.mly"
-                     ( UnitCons _1 )
+                     ( ParamCons (_1, []) )
 # 1275 "ParDeeplang.ml"
                : 'constructor))
 ; (fun __caml_parser_env ->
@@ -1303,7 +1303,7 @@ let yyact = [|
     let _3 = (Parsing.peek_val __caml_parser_env 0 : 'typeT) in
     Obj.repr(
 # 177 "ParDeeplang.mly"
-                          ( FieldCons (_1, _3) )
+                          ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; fieldShape = (_1, _3) } )
 # 1308 "ParDeeplang.ml"
                : 'field))
 ; (fun __caml_parser_env ->
@@ -1325,7 +1325,7 @@ let yyact = [|
     let _1 = (Parsing.peek_val __caml_parser_env 0 : 'field) in
     Obj.repr(
 # 184 "ParDeeplang.mly"
-                    ( BasicStructField _1 )
+                    ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; structFieldShape = (false, _1) } )
 # 1330 "ParDeeplang.ml"
                : 'structField))
 ; (fun __caml_parser_env ->
@@ -1333,7 +1333,7 @@ let yyact = [|
     let _2 = (Parsing.peek_val __caml_parser_env 0 : 'field) in
     Obj.repr(
 # 185 "ParDeeplang.mly"
-             ( DelegateStructField (_1, _2) )
+             ( { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; structFieldShape = (true, _2) } )
 # 1338 "ParDeeplang.ml"
                : 'structField))
 ; (fun __caml_parser_env ->
