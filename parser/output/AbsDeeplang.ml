@@ -66,10 +66,10 @@ and defineShape =
    DefFunc of functionT
  | ADT of tYPE * typeId * constructor list
  | Struct of tYPE * typeId * structField list
- | DefVar of lET * mutFlag * typedMatcher * rHS
+ | DefVar of lET * bool * typedMatcher * rHS
  | DefType of tYPE * typeId * args
- | InterfaceImpl of iMPL * interfaceName * fOR * typeT * functions
- | RawImpl of iMPL * typeT * functions
+ | InterfaceImpl of iMPL * interfaceName * fOR * typeT * functionT list
+ | RawImpl of iMPL * typeT * functionT list
 
 and functionT =
    Func of fUN * varId * args * retType * statement list
@@ -85,17 +85,9 @@ and rHS =
    DefRHS of expression
  | NilRHS
 
-and mutFlag =
-   Mut of mUT
- | Immut
-
-and functions =
-   FunctionsUnit
- | FunctionsMany of functionT list
-
 and statement =
    Block of statement list
- | DefVarSt of lET * mutFlag * typedMatcher * rHS
+ | DefVarSt of lET * bool * typedMatcher * rHS
  | ExprSt of expression
  | Return of expression
  | If of iF * expression * statement list * elseBody

@@ -156,16 +156,6 @@ and transRHS (x : rHS) : result = match x with
   | NilRHS  -> failure x
 
 
-and transMutFlag (x : mutFlag) : result = match x with
-    Mut mut -> failure x
-  | Immut  -> failure x
-
-
-and transFunctions (x : functions) : result = match x with
-    FunctionsUnit  -> failure x
-  | FunctionsMany functions -> failure x
-
-
 and transStatement (x : statement) : result = match x with
     Block statements -> failure x
   | DefVarSt (let', mutflag, typedmatcher, rhs) -> failure x

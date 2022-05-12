@@ -193,12 +193,12 @@ rHS : SYMB13 expression { DefRHS $2 }
   | /* empty */ { NilRHS  }
 ;
 
-mutFlag : mUT { Mut $1 }
-  | /* empty */ { Immut  }
+mutFlag : mUT { true }
+  | /* empty */ { false  }
 ;
 
-functions : SYMB10 { FunctionsUnit  }
-  | SYMB11 functionT_list SYMB12 { FunctionsMany $2 }
+functions : SYMB10 { [] }
+  | SYMB11 functionT_list SYMB12 { $2 }
 ;
 
 functionT_list : /* empty */ { []  }

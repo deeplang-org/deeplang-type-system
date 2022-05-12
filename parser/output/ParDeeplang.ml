@@ -1368,26 +1368,26 @@ let yyact = [|
     let _1 = (Parsing.peek_val __caml_parser_env 0 : 'mUT) in
     Obj.repr(
 # 196 "ParDeeplang.mly"
-              ( Mut _1 )
+              ( true )
 # 1373 "ParDeeplang.ml"
                : 'mutFlag))
 ; (fun __caml_parser_env ->
     Obj.repr(
 # 197 "ParDeeplang.mly"
-                ( Immut  )
+                ( false  )
 # 1379 "ParDeeplang.ml"
                : 'mutFlag))
 ; (fun __caml_parser_env ->
     Obj.repr(
 # 200 "ParDeeplang.mly"
-                   ( FunctionsUnit  )
+                   ( [] )
 # 1385 "ParDeeplang.ml"
                : 'functions))
 ; (fun __caml_parser_env ->
     let _2 = (Parsing.peek_val __caml_parser_env 1 : 'functionT_list) in
     Obj.repr(
 # 201 "ParDeeplang.mly"
-                                 ( FunctionsMany _2 )
+                                 ( _2 )
 # 1392 "ParDeeplang.ml"
                : 'functions))
 ; (fun __caml_parser_env ->

@@ -196,10 +196,10 @@ and prtDefine (i:int) (e : AbsDeeplang.define) : doc = match e.defineShape with
        AbsDeeplang.DefFunc function_ -> prPrec i 0 (concatD [prtFunctionT 0 function_])
   |    AbsDeeplang.ADT (type_, typeid, constructors) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; render "[" ; prtConstructorListBNFC 0 constructors ; render "]"])
   |    AbsDeeplang.Struct (type_, typeid, structfields) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; render "{" ; prtStructFieldListBNFC 0 structfields ; render "}"])
-  |    AbsDeeplang.DefVar (let_, mutflag, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; prtMutFlag 0 mutflag ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
+  |    AbsDeeplang.DefVar (let_, isMut, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; render (if isMut then "mut" else "") ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
   |    AbsDeeplang.DefType (type_, typeid, args) -> prPrec i 0 (concatD [prtTYPE 0 type_ ; prtTypeId 0 typeid ; prtArgs 0 args ; render ";"])
-  |    AbsDeeplang.InterfaceImpl (impl, interfacename, for_, type_, functions) -> prPrec i 0 (concatD [prtIMPL 0 impl ; prtInterfaceName 0 interfacename ; prtFOR 0 for_ ; prtTypeT 0 type_ ; prtFunctions 0 functions])
-  |    AbsDeeplang.RawImpl (impl, type_, functions) -> prPrec i 0 (concatD [prtIMPL 0 impl ; prtTypeT 0 type_ ; prtFunctions 0 functions])
+  |    AbsDeeplang.InterfaceImpl (impl, interfacename, for_, type_, functions) -> prPrec i 0 (concatD [prtIMPL 0 impl ; prtInterfaceName 0 interfacename ; prtFOR 0 for_ ; prtTypeT 0 type_ ; prPrec i 0 (concatD [render "{" ; prtFunctionTListBNFC 0 functions ; render "}"])])
+  |    AbsDeeplang.RawImpl (impl, type_, functions) -> prPrec i 0 (concatD [prtIMPL 0 impl ; prtTypeT 0 type_ ; prPrec i 0 (concatD [render "{" ; prtFunctionTListBNFC 0 functions ; render "}"])])
 
 
 and prtFunctionT (i:int) (e : AbsDeeplang.functionT) : doc = match e with
@@ -235,19 +235,9 @@ and prtRHS (i:int) (e : AbsDeeplang.rHS) : doc = match e with
   |    AbsDeeplang.NilRHS  -> prPrec i 0 (concatD [])
 
 
-and prtMutFlag (i:int) (e : AbsDeeplang.mutFlag) : doc = match e with
-       AbsDeeplang.Mut mut -> prPrec i 0 (concatD [prtMUT 0 mut])
-  |    AbsDeeplang.Immut  -> prPrec i 0 (concatD [])
-
-
-and prtFunctions (i:int) (e : AbsDeeplang.functions) : doc = match e with
-       AbsDeeplang.FunctionsUnit  -> prPrec i 0 (concatD [render "{}"])
-  |    AbsDeeplang.FunctionsMany functions -> prPrec i 0 (concatD [render "{" ; prtFunctionTListBNFC 0 functions ; render "}"])
-
-
 and prtStatement (i:int) (e : AbsDeeplang.statement) : doc = match e with
        AbsDeeplang.Block statements -> prPrec i 0 (concatD [render "{" ; prtStatementListBNFC 0 statements ; render "}"])
-  |    AbsDeeplang.DefVarSt (let_, mutflag, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; prtMutFlag 0 mutflag ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
+  |    AbsDeeplang.DefVarSt (let_, isMut, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; render (if isMut then "mut" else "") ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
   |    AbsDeeplang.ExprSt expression -> prPrec i 0 (concatD [prtExpression 0 expression ; render ";"])
   |    AbsDeeplang.Return expression -> prPrec i 0 (concatD [render "return" ; prtExpression 0 expression ; render ";"])
   |    AbsDeeplang.If (if_, expression, statements, elsebody) -> prPrec i 0 (concatD [prtIF 0 if_ ; render "(" ; prtExpression 0 expression ; render ")" ; render "{" ; prtStatementListBNFC 0 statements ; render "}" ; prtElseBody 0 elsebody])

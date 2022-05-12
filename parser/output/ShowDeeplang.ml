@@ -115,10 +115,10 @@ match e.defineShape with
        AbsDeeplang.DefFunc function' -> s2s "DefFunc" >> c2s ' ' >> c2s '(' >> showFunctionT function' >> c2s ')'
   |    AbsDeeplang.ADT (type', typeid, constructors) -> s2s "ADT" >> c2s ' ' >> c2s '(' >> showTYPE type'  >> s2s ", " >>  showTypeId typeid  >> s2s ", " >>  showList showConstructor constructors >> c2s ')'
   |    AbsDeeplang.Struct (type', typeid, structfields) -> s2s "Struct" >> c2s ' ' >> c2s '(' >> showTYPE type'  >> s2s ", " >>  showTypeId typeid  >> s2s ", " >>  showList showStructField structfields >> c2s ')'
-  |    AbsDeeplang.DefVar (let', mutflag, typedmatcher, rhs) -> s2s "DefVar" >> c2s ' ' >> c2s '(' >> showLET let'  >> s2s ", " >>  showMutFlag mutflag  >> s2s ", " >>  showTypedMatcher typedmatcher  >> s2s ", " >>  showRHS rhs >> c2s ')'
+  |    AbsDeeplang.DefVar (let', isMut, typedmatcher, rhs) -> s2s "DefVar" >> c2s ' ' >> c2s '(' >> showLET let'  >> s2s ", " >> s2s (if isMut then "MUT" else "IMMUT") >> s2s ", " >>  showTypedMatcher typedmatcher  >> s2s ", " >>  showRHS rhs >> c2s ')'
   |    AbsDeeplang.DefType (type', typeid, args) -> s2s "DefType" >> c2s ' ' >> c2s '(' >> showTYPE type'  >> s2s ", " >>  showTypeId typeid  >> s2s ", " >>  showArgs args >> c2s ')'
-  |    AbsDeeplang.InterfaceImpl (impl, interfacename, for', type', functions) -> s2s "InterfaceImpl" >> c2s ' ' >> c2s '(' >> showIMPL impl  >> s2s ", " >>  showInterfaceName interfacename  >> s2s ", " >>  showFOR for'  >> s2s ", " >>  showTypeT type'  >> s2s ", " >>  showFunctions functions >> c2s ')'
-  |    AbsDeeplang.RawImpl (impl, type', functions) -> s2s "RawImpl" >> c2s ' ' >> c2s '(' >> showIMPL impl  >> s2s ", " >>  showTypeT type'  >> s2s ", " >>  showFunctions functions >> c2s ')'
+  |    AbsDeeplang.InterfaceImpl (impl, interfacename, for', type', functions) -> s2s "InterfaceImpl" >> c2s ' ' >> c2s '(' >> showIMPL impl  >> s2s ", " >>  showInterfaceName interfacename  >> s2s ", " >>  showFOR for'  >> s2s ", " >>  showTypeT type'  >> s2s ", " >>  showList showFunctionT functions >> c2s ')'
+  |    AbsDeeplang.RawImpl (impl, type', functions) -> s2s "RawImpl" >> c2s ' ' >> c2s '(' >> showIMPL impl  >> s2s ", " >>  showTypeT type'  >> s2s ", " >>  showList showFunctionT functions >> c2s ')'
 
 
 and showFunctionT (e : AbsDeeplang.functionT) : showable = match e with
@@ -145,19 +145,9 @@ and showRHS (e : AbsDeeplang.rHS) : showable = match e with
   |    AbsDeeplang.NilRHS  -> s2s "NilRHS"
 
 
-and showMutFlag (e : AbsDeeplang.mutFlag) : showable = match e with
-       AbsDeeplang.Mut mut -> s2s "Mut" >> c2s ' ' >> c2s '(' >> showMUT mut >> c2s ')'
-  |    AbsDeeplang.Immut  -> s2s "Immut"
-
-
-and showFunctions (e : AbsDeeplang.functions) : showable = match e with
-       AbsDeeplang.FunctionsUnit  -> s2s "FunctionsUnit"
-  |    AbsDeeplang.FunctionsMany functions -> s2s "FunctionsMany" >> c2s ' ' >> c2s '(' >> showList showFunctionT functions >> c2s ')'
-
-
 and showStatement (e : AbsDeeplang.statement) : showable = match e with
        AbsDeeplang.Block statements -> s2s "Block" >> c2s ' ' >> c2s '(' >> showList showStatement statements >> c2s ')'
-  |    AbsDeeplang.DefVarSt (let', mutflag, typedmatcher, rhs) -> s2s "DefVarSt" >> c2s ' ' >> c2s '(' >> showLET let'  >> s2s ", " >>  showMutFlag mutflag  >> s2s ", " >>  showTypedMatcher typedmatcher  >> s2s ", " >>  showRHS rhs >> c2s ')'
+  |    AbsDeeplang.DefVarSt (let', isMut, typedmatcher, rhs) -> s2s "DefVarSt" >> c2s ' ' >> c2s '(' >> showLET let'  >> s2s ", " >> s2s (if isMut then "MUT" else "IMMUT") >> s2s ", " >>  showTypedMatcher typedmatcher  >> s2s ", " >>  showRHS rhs >> c2s ')'
   |    AbsDeeplang.ExprSt expression -> s2s "ExprSt" >> c2s ' ' >> c2s '(' >> showExpression expression >> c2s ')'
   |    AbsDeeplang.Return expression -> s2s "Return" >> c2s ' ' >> c2s '(' >> showExpression expression >> c2s ')'
   |    AbsDeeplang.If (if', expression, statements, elsebody) -> s2s "If" >> c2s ' ' >> c2s '(' >> showIF if'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements  >> s2s ", " >>  showElseBody elsebody >> c2s ')'
