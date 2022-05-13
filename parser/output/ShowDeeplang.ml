@@ -125,8 +125,9 @@ and showFunctionT (e : AbsDeeplang.functionT) : showable = match e with
        AbsDeeplang.Func (fun', varid, args, rettype, statements) -> s2s "Func" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype  >> s2s ", " >>  showList showStatement statements >> c2s ')'
 
 
-and showConstructor (e : AbsDeeplang.constructor) : showable = match e with
-  |    AbsDeeplang.ParamCons (typeid, fields) -> s2s "ParamCons" >> c2s ' ' >> c2s '(' >> showTypeId typeid  >> s2s ", " >>  showList showField fields >> c2s ')'
+and showConstructor (e : AbsDeeplang.constructor) : showable = showSpan (e.span) >>
+match e.constructorShape with
+  |    (typeid, fields) -> s2s "ParamCons" >> c2s ' ' >> c2s '(' >> showTypeId typeid  >> s2s ", " >>  showList showField fields >> c2s ')'
 
 
 and showField (e : AbsDeeplang.field) : showable = showSpan (e.span) >>
@@ -145,21 +146,16 @@ and showRHS (e : AbsDeeplang.rHS) : showable = match e with
   |    AbsDeeplang.NilRHS  -> s2s "NilRHS"
 
 
-and showStatement (e : AbsDeeplang.statement) : showable = match e with
+and showStatement (e : AbsDeeplang.statement) : showable = showSpan (e.span) >>
+match e.statementShape with
        AbsDeeplang.Block statements -> s2s "Block" >> c2s ' ' >> c2s '(' >> showList showStatement statements >> c2s ')'
   |    AbsDeeplang.DefVarSt (let', isMut, typedmatcher, rhs) -> s2s "DefVarSt" >> c2s ' ' >> c2s '(' >> showLET let'  >> s2s ", " >> s2s (if isMut then "MUT" else "IMMUT") >> s2s ", " >>  showTypedMatcher typedmatcher  >> s2s ", " >>  showRHS rhs >> c2s ')'
   |    AbsDeeplang.ExprSt expression -> s2s "ExprSt" >> c2s ' ' >> c2s '(' >> showExpression expression >> c2s ')'
   |    AbsDeeplang.Return expression -> s2s "Return" >> c2s ' ' >> c2s '(' >> showExpression expression >> c2s ')'
-  |    AbsDeeplang.If (if', expression, statements, elsebody) -> s2s "If" >> c2s ' ' >> c2s '(' >> showIF if'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements  >> s2s ", " >>  showElseBody elsebody >> c2s ')'
+  |    AbsDeeplang.If (if', expression, statements, elsebody) -> s2s "If" >> c2s ' ' >> c2s '(' >> showIF if'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements  >> s2s ", " >>  showList showStatement statements >> c2s ')'
   |    AbsDeeplang.For (for', matcher, in', expression, statements) -> s2s "For" >> c2s ' ' >> c2s '(' >> showFOR for'  >> s2s ", " >>  showMatcher matcher  >> s2s ", " >>  showIN in'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements >> c2s ')'
   |    AbsDeeplang.While (while', expression, statements) -> s2s "While" >> c2s ' ' >> c2s '(' >> showWHILE while'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements >> c2s ')'
   |    AbsDeeplang.Match (match', varid, matchbody) -> s2s "Match" >> c2s ' ' >> c2s '(' >> showMATCH match'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showMatchBody matchbody >> c2s ')'
-
-
-and showElseBody (e : AbsDeeplang.elseBody) : showable = match e with
-       AbsDeeplang.NoElse  -> s2s "NoElse"
-  |    AbsDeeplang.Elif (else', if', expression, statements, elsebody) -> s2s "Elif" >> c2s ' ' >> c2s '(' >> showELSE else'  >> s2s ", " >>  showIF if'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements  >> s2s ", " >>  showElseBody elsebody >> c2s ')'
-  |    AbsDeeplang.Else (else', statements) -> s2s "Else" >> c2s ' ' >> c2s '(' >> showELSE else'  >> s2s ", " >>  showList showStatement statements >> c2s ')'
 
 
 and showMatchBody (e : AbsDeeplang.matchBody) : showable = match e with

@@ -74,8 +74,7 @@ and defineShape =
 and functionT =
    Func of fUN * varId * args * retType * statement list
 
-and constructor =
-   ParamCons of typeId * field list
+and constructor = { span : (position * position) ; constructorShape : typeId * field list }
 
 and field = { span : (position * position) ; fieldShape : varId * typeT }
 
@@ -85,20 +84,16 @@ and rHS =
    DefRHS of expression
  | NilRHS
 
-and statement =
+and statement = { span : (position * position) ; statementShape : statementShape }
+and statementShape =
    Block of statement list
  | DefVarSt of lET * bool * typedMatcher * rHS
  | ExprSt of expression
  | Return of expression
- | If of iF * expression * statement list * elseBody
+ | If of iF * expression * statement list * statement list
  | For of fOR * matcher * iN * expression * statement list
  | While of wHILE * expression * statement list
  | Match of mATCH * varId * matchBody
-
-and elseBody =
-   NoElse
- | Elif of eLSE * iF * expression * statement list * elseBody
- | Else of eLSE * statement list
 
 and matchBody =
    MatchBodys of matchCase list

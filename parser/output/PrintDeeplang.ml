@@ -209,9 +209,9 @@ and prtFunctionTListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
   | (_,[x]) -> (concatD [prtFunctionT 0 x])
   | (_,x::xs) -> (concatD [prtFunctionT 0 x ; prtFunctionTListBNFC 0 xs])
-and prtConstructor (i:int) (e : AbsDeeplang.constructor) : doc = match e with
-     AbsDeeplang.ParamCons (typeid, []) -> prPrec i 0 (concatD [prtTypeId 0 typeid])
-  |  AbsDeeplang.ParamCons (typeid, fields) -> prPrec i 0 (concatD [prtTypeId 0 typeid ; render "(" ; prtFieldListBNFC 0 fields ; render ")"])
+and prtConstructor (i:int) (e : AbsDeeplang.constructor) : doc = match e.constructorShape with
+     (typeid, []) -> prPrec i 0 (concatD [prtTypeId 0 typeid])
+  |  (typeid, fields) -> prPrec i 0 (concatD [prtTypeId 0 typeid ; render "(" ; prtFieldListBNFC 0 fields ; render ")"])
 
 and prtConstructorListBNFC i es : doc = match (i, es) with
     (_,[x]) -> (concatD [prtConstructor 0 x])
@@ -235,12 +235,12 @@ and prtRHS (i:int) (e : AbsDeeplang.rHS) : doc = match e with
   |    AbsDeeplang.NilRHS  -> prPrec i 0 (concatD [])
 
 
-and prtStatement (i:int) (e : AbsDeeplang.statement) : doc = match e with
+and prtStatement (i:int) (e : AbsDeeplang.statement) : doc = match e.statementShape with
        AbsDeeplang.Block statements -> prPrec i 0 (concatD [render "{" ; prtStatementListBNFC 0 statements ; render "}"])
   |    AbsDeeplang.DefVarSt (let_, isMut, typedmatcher, rhs) -> prPrec i 0 (concatD [prtLET 0 let_ ; render (if isMut then "mut" else "") ; prtTypedMatcher 0 typedmatcher ; prtRHS 0 rhs ; render ";"])
   |    AbsDeeplang.ExprSt expression -> prPrec i 0 (concatD [prtExpression 0 expression ; render ";"])
   |    AbsDeeplang.Return expression -> prPrec i 0 (concatD [render "return" ; prtExpression 0 expression ; render ";"])
-  |    AbsDeeplang.If (if_, expression, statements, elsebody) -> prPrec i 0 (concatD [prtIF 0 if_ ; render "(" ; prtExpression 0 expression ; render ")" ; render "{" ; prtStatementListBNFC 0 statements ; render "}" ; prtElseBody 0 elsebody])
+  |    AbsDeeplang.If (if_, expression, statements, elsebody) -> prPrec i 0 (concatD [prtIF 0 if_ ; render "(" ; prtExpression 0 expression ; render ")" ; render "{" ; prtStatementListBNFC 0 statements ; render "}" ; render "else"; prPrec i 0 (concatD [render "{" ; prtStatementListBNFC 0 elsebody ; render "}"])])
   |    AbsDeeplang.For (for_, matcher, in_, expression, statements) -> prPrec i 0 (concatD [prtFOR 0 for_ ; render "(" ; prtMatcher 0 matcher ; prtIN 0 in_ ; prtExpression 0 expression ; render ")" ; render "{" ; prtStatementListBNFC 0 statements ; render "}"])
   |    AbsDeeplang.While (while_, expression, statements) -> prPrec i 0 (concatD [prtWHILE 0 while_ ; render "(" ; prtExpression 0 expression ; render ")" ; render "{" ; prtStatementListBNFC 0 statements ; render "}"])
   |    AbsDeeplang.Match (match_, varid, matchbody) -> prPrec i 0 (concatD [prtMATCH 0 match_ ; render "(" ; prtVarId 0 varid ; render ")" ; render "{" ; prtMatchBody 0 matchbody ; render "}"])
@@ -249,10 +249,10 @@ and prtStatementListBNFC i es : doc = match (i, es) with
     (_,[]) -> (concatD [])
   | (_,[x]) -> (concatD [prtStatement 0 x])
   | (_,x::xs) -> (concatD [prtStatement 0 x ; prtStatementListBNFC 0 xs])
-and prtElseBody (i:int) (e : AbsDeeplang.elseBody) : doc = match e with
+(* and prtElseBody (i:int) (e : AbsDeeplang.elseBody) : doc = match e with
        AbsDeeplang.NoElse  -> prPrec i 0 (concatD [])
   |    AbsDeeplang.Elif (else_, if_, expression, statements, elsebody) -> prPrec i 0 (concatD [prtELSE 0 else_ ; prtIF 0 if_ ; render "(" ; prtExpression 0 expression ; render ")" ; render "{" ; prtStatementListBNFC 0 statements ; render "}" ; prtElseBody 0 elsebody])
-  |    AbsDeeplang.Else (else_, statements) -> prPrec i 0 (concatD [prtELSE 0 else_ ; render "{" ; prtStatementListBNFC 0 statements ; render "}"])
+  |    AbsDeeplang.Else (else_, statements) -> prPrec i 0 (concatD [prtELSE 0 else_ ; render "{" ; prtStatementListBNFC 0 statements ; render "}"]) *)
 
 
 and prtMatchBody (i:int) (e : AbsDeeplang.matchBody) : doc = match e with

@@ -166,8 +166,8 @@ functionT : fUN varId args retType SYMB10 { Func ($1, $2, $3, $4, []) }
   | fUN varId args retType SYMB11 statement_list SYMB12 { Func ($1, $2, $3, $4, $6) }
 ;
 
-constructor : typeId { ParamCons ($1, []) }
-  | typeId lPAREN field_list rPAREN { ParamCons ($1, $3) }
+constructor : typeId { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; constructorShape = ($1, []) } }
+  | typeId lPAREN field_list rPAREN { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; constructorShape = ($1, $3) } }
 ;
 
 constructor_list : constructor { (fun x -> [x]) $1 }
@@ -206,14 +206,14 @@ functionT_list : /* empty */ { []  }
   | functionT functionT_list { (fun (x,xs) -> x::xs) ($1, $2) }
 ;
 
-statement : SYMB11 statement_list SYMB12 { Block $2 }
-  | lET mutFlag typedMatcher rHS sCOLON { DefVarSt ($1, $2, $3, $4) }
-  | expression sCOLON { ExprSt $1 }
-  | KW_return expression sCOLON { Return $2 }
-  | iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { If ($1, $3, $6, $8) }
-  | fOR lPAREN matcher iN expression rPAREN SYMB11 statement_list SYMB12 { For ($1, $3, $4, $5, $8) }
-  | wHILE lPAREN expression rPAREN SYMB11 statement_list SYMB12 { While ($1, $3, $6) }
-  | mATCH lPAREN varId rPAREN SYMB11 matchBody SYMB12 { Match ($1, $3, $6) }
+statement : SYMB11 statement_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = Block $2 } }
+  | lET mutFlag typedMatcher rHS sCOLON { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = DefVarSt ($1, $2, $3, $4) } }
+  | expression sCOLON { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = ExprSt $1 } }
+  | KW_return expression sCOLON { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = Return $2 } }
+  | iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = If ($1, $3, $6, $8) } }
+  | fOR lPAREN matcher iN expression rPAREN SYMB11 statement_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = For ($1, $3, $4, $5, $8) } }
+  | wHILE lPAREN expression rPAREN SYMB11 statement_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = While ($1, $3, $6) } }
+  | mATCH lPAREN varId rPAREN SYMB11 matchBody SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = Match ($1, $3, $6) } }
 ;
 
 statement_list : statement { (fun x -> [x]) $1 }
@@ -221,9 +221,9 @@ statement_list : statement { (fun x -> [x]) $1 }
   | /* empty */ { [] }
 ;
 
-elseBody : /* empty */ { NoElse  }
-  | eLSE iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { Elif ($1, $2, $4, $7, $9) }
-  | eLSE SYMB11 statement_list SYMB12 { Else ($1, $3) }
+elseBody : /* empty */ { [] }
+  | eLSE iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { [{ span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = If ($2, $4, $7, $9) }] }
+  | eLSE SYMB11 statement_list SYMB12 { $3 }
 ;
 
 matchBody : matchCase_list { MatchBodys $1 }

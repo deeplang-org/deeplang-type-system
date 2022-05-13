@@ -139,8 +139,8 @@ and transFunction (x : functionT) : result = match x with
     Func (fun', varid, args, rettype, statements) -> failure x
 
 
-and transConstructor (x : constructor) : result = match x with
-    ParamCons (typeid, fields) -> failure x
+and transConstructor (x : constructor) : result = match x.constructorShape with
+    (typeid, fields) -> failure x
 
 
 and transField (x : field) : result = match x.fieldShape with
@@ -156,7 +156,7 @@ and transRHS (x : rHS) : result = match x with
   | NilRHS  -> failure x
 
 
-and transStatement (x : statement) : result = match x with
+and transStatement (x : statement) : result = match x.statementShape with
     Block statements -> failure x
   | DefVarSt (let', mutflag, typedmatcher, rhs) -> failure x
   | ExprSt expression -> failure x
@@ -165,12 +165,6 @@ and transStatement (x : statement) : result = match x with
   | For (for', matcher, in', expression, statements) -> failure x
   | While (while', expression, statements) -> failure x
   | Match (match', varid, matchbody) -> failure x
-
-
-and transElseBody (x : elseBody) : result = match x with
-    NoElse  -> failure x
-  | Elif (else', if', expression, statements, elsebody) -> failure x
-  | Else (else', statements) -> failure x
 
 
 and transMatchBody (x : matchBody) : result = match x with
