@@ -121,8 +121,8 @@ and transInterfaceName (x : interfaceName) : result = match x with
     InterfaceNames typeid -> failure x
 
 
-and transMethod (x : methodT) : result = match x with
-    InterfaceMethod (fun', varid, args, rettype) -> failure x
+and transMethod (x : methodT) : result = match x.methodShape with
+    (fun', varid, args, rettype) -> failure x
 
 
 and transDefine (x : define) : result = match x.defineShape with
@@ -135,8 +135,8 @@ and transDefine (x : define) : result = match x.defineShape with
   | RawImpl (impl, type', functions) -> failure x
 
 
-and transFunction (x : functionT) : result = match x with
-    Func (fun', varid, args, rettype, statements) -> failure x
+and transFunction (x : functionT) : result = match x.functionShape with
+    (fun', varid, args, rettype, statements) -> failure x
 
 
 and transConstructor (x : constructor) : result = match x.constructorShape with
@@ -167,41 +167,31 @@ and transStatement (x : statement) : result = match x.statementShape with
   | Match (match', varid, matchbody) -> failure x
 
 
-and transMatchBody (x : matchBody) : result = match x with
-    MatchBodys matchcases -> failure x
+and transMatchCase (x : matchCase) : result = match x.matchCaseShape with
+    (matcher, statements) -> failure x
 
 
-and transMatchCase (x : matchCase) : result = match x with
-    MatchCases (matcher, statements) -> failure x
-
-
-and transMatcher (x : matcher) : result = match x with
+and transMatcher (x : matcher) : result = match x.matcherShape with
     TypedMatchers typedmatcher -> failure x
   | TypelessMatchers typelessmatcher -> failure x
   | AsVarMatch (matcher, as', mvarid) -> failure x
 
 
-and transTypedMatcher (x : typedMatcher) : result = match x with
-    Typed (typelessmatcher, type') -> failure x
+and transTypedMatcher (x : typedMatcher) : result = match x.typedMatcherShape with
+    (typelessmatcher, type') -> failure x
 
 
-and transTypelessMatcher (x : typelessMatcher) : result = match x with
+and transTypelessMatcher (x : typelessMatcher) : result = match x.typelessMatcherShape with
     WildCardMatch  -> failure x
   | ConsMatchUnit typeid -> failure x
   | ConsMatch (typeid, matcher) -> failure x
   | TypelessVarMatch mvarid -> failure x
-  | UnitMatch  -> failure x
   | TupleMatch matchers -> failure x
   | LiteralMatch literal -> failure x
-  | FieldMatchUnit typeid -> failure x
   | FieldMatch (typeid, fieldmatchers) -> failure x
 
 
-and transFieldMatcher (x : fieldMatcher) : result = match x with
-    FieldMatchers (varid, typelessmatcher) -> failure x
-
-
-and transExpression (x : expression) : result = match x with
+and transExpression (x : expression) : result = match x.expressionShape with
     ExpVar matcher -> failure x
   | Literals literal -> failure x
   | Tuples expressions -> failure x

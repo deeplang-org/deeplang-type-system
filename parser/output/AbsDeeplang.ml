@@ -58,8 +58,7 @@ and retType =
 and interfaceName =
    InterfaceNames of typeId
 
-and methodT =
-   InterfaceMethod of fUN * varId * args * retType
+and methodT = { span : (position * position) ; methodShape : fUN * varId * args * retType }
 
 and define = { span : (position * position) ; defineShape : defineShape }
 and defineShape =
@@ -71,8 +70,7 @@ and defineShape =
  | InterfaceImpl of iMPL * interfaceName * fOR * typeT * functionT list
  | RawImpl of iMPL * typeT * functionT list
 
-and functionT =
-   Func of fUN * varId * args * retType * statement list
+and functionT = { span : (position * position) ; functionShape : fUN * varId * args * retType * statement list}
 
 and constructor = { span : (position * position) ; constructorShape : typeId * field list }
 
@@ -93,37 +91,30 @@ and statementShape =
  | If of iF * expression * statement list * statement list
  | For of fOR * matcher * iN * expression * statement list
  | While of wHILE * expression * statement list
- | Match of mATCH * varId * matchBody
+ | Match of mATCH * varId * (matchCase list)
 
-and matchBody =
-   MatchBodys of matchCase list
+and matchCase = { span : (position * position) ; matchCaseShape : matcher * statement list }
 
-and matchCase =
-   MatchCases of matcher * statement list
-
-and matcher =
+and matcher = { span : (position * position) ; matcherShape : matcherShape }
+and matcherShape =
    TypedMatchers of typedMatcher
  | TypelessMatchers of typelessMatcher
  | AsVarMatch of matcher * aS * mVarId
 
-and typedMatcher =
-   Typed of typelessMatcher * typeT
+and typedMatcher = { span : (position * position) ; typedMatcherShape : typelessMatcher * typeT }
 
-and typelessMatcher =
+and typelessMatcher = { span : (position * position) ; typelessMatcherShape : typelessMatcherShape }
+and typelessMatcherShape =
    WildCardMatch
  | ConsMatchUnit of typeId
  | ConsMatch of typeId * matcher
  | TypelessVarMatch of mVarId
- | UnitMatch
  | TupleMatch of matcher list
  | LiteralMatch of literal
- | FieldMatchUnit of typeId
- | FieldMatch of typeId * fieldMatcher list
+ | FieldMatch of typeId * (varId * typelessMatcher) list
 
-and fieldMatcher =
-   FieldMatchers of varId * typelessMatcher
-
-and expression =
+and expression = { span : (position * position) ; expressionShape : expressionShape }
+and expressionShape =
    ExpVar of matcher
  | Literals of literal
  | Tuples of expression list

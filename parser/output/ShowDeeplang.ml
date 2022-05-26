@@ -106,8 +106,9 @@ and showInterfaceName (e : AbsDeeplang.interfaceName) : showable = match e with
        AbsDeeplang.InterfaceNames typeid -> s2s "InterfaceNames" >> c2s ' ' >> c2s '(' >> showTypeId typeid >> c2s ')'
 
 
-and showMethodT (e : AbsDeeplang.methodT) : showable = match e with
-       AbsDeeplang.InterfaceMethod (fun', varid, args, rettype) -> s2s "InterfaceMethod" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype >> c2s ')'
+and showMethodT (e : AbsDeeplang.methodT) : showable = showSpan (e.span) >>
+match e.methodShape with
+       (fun', varid, args, rettype) -> s2s "InterfaceMethod" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype >> c2s ')'
 
 
 and showDefine (e : AbsDeeplang.define) : showable = showSpan (e.span) >>
@@ -121,8 +122,9 @@ match e.defineShape with
   |    AbsDeeplang.RawImpl (impl, type', functions) -> s2s "RawImpl" >> c2s ' ' >> c2s '(' >> showIMPL impl  >> s2s ", " >>  showTypeT type'  >> s2s ", " >>  showList showFunctionT functions >> c2s ')'
 
 
-and showFunctionT (e : AbsDeeplang.functionT) : showable = match e with
-       AbsDeeplang.Func (fun', varid, args, rettype, statements) -> s2s "Func" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype  >> s2s ", " >>  showList showStatement statements >> c2s ')'
+and showFunctionT (e : AbsDeeplang.functionT) : showable = showSpan (e.span) >>
+match e.functionShape with
+       (fun', varid, args, rettype, statements) -> s2s "Func" >> c2s ' ' >> c2s '(' >> showFUN fun'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showArgs args  >> s2s ", " >>  showRetType rettype  >> s2s ", " >>  showList showStatement statements >> c2s ')'
 
 
 and showConstructor (e : AbsDeeplang.constructor) : showable = showSpan (e.span) >>
@@ -155,44 +157,43 @@ match e.statementShape with
   |    AbsDeeplang.If (if', expression, statements, elsebody) -> s2s "If" >> c2s ' ' >> c2s '(' >> showIF if'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements  >> s2s ", " >>  showList showStatement statements >> c2s ')'
   |    AbsDeeplang.For (for', matcher, in', expression, statements) -> s2s "For" >> c2s ' ' >> c2s '(' >> showFOR for'  >> s2s ", " >>  showMatcher matcher  >> s2s ", " >>  showIN in'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements >> c2s ')'
   |    AbsDeeplang.While (while', expression, statements) -> s2s "While" >> c2s ' ' >> c2s '(' >> showWHILE while'  >> s2s ", " >>  showExpression expression  >> s2s ", " >>  showList showStatement statements >> c2s ')'
-  |    AbsDeeplang.Match (match', varid, matchbody) -> s2s "Match" >> c2s ' ' >> c2s '(' >> showMATCH match'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showMatchBody matchbody >> c2s ')'
+  |    AbsDeeplang.Match (match', varid, matchbody) -> s2s "Match" >> c2s ' ' >> c2s '(' >> showMATCH match'  >> s2s ", " >>  showVarId varid  >> s2s ", " >>  showList showMatchCase matchbody >> c2s ')'
 
 
-and showMatchBody (e : AbsDeeplang.matchBody) : showable = match e with
-       AbsDeeplang.MatchBodys matchcases -> s2s "MatchBodys" >> c2s ' ' >> c2s '(' >> showList showMatchCase matchcases >> c2s ')'
+and showMatchCase (e : AbsDeeplang.matchCase) : showable = showSpan (e.span) >>
+match e.matchCaseShape with
+       (matcher, statements) -> s2s "MatchCases" >> c2s ' ' >> c2s '(' >> showMatcher matcher  >> s2s ", " >>  showList showStatement statements >> c2s ')'
 
 
-and showMatchCase (e : AbsDeeplang.matchCase) : showable = match e with
-       AbsDeeplang.MatchCases (matcher, statements) -> s2s "MatchCases" >> c2s ' ' >> c2s '(' >> showMatcher matcher  >> s2s ", " >>  showList showStatement statements >> c2s ')'
-
-
-and showMatcher (e : AbsDeeplang.matcher) : showable = match e with
+and showMatcher (e : AbsDeeplang.matcher) : showable = showSpan (e.span) >>
+match e.matcherShape with
        AbsDeeplang.TypedMatchers typedmatcher -> s2s "TypedMatchers" >> c2s ' ' >> c2s '(' >> showTypedMatcher typedmatcher >> c2s ')'
   |    AbsDeeplang.TypelessMatchers typelessmatcher -> s2s "TypelessMatchers" >> c2s ' ' >> c2s '(' >> showTypelessMatcher typelessmatcher >> c2s ')'
   |    AbsDeeplang.AsVarMatch (matcher, as', mvarid) -> s2s "AsVarMatch" >> c2s ' ' >> c2s '(' >> showMatcher matcher  >> s2s ", " >>  showAS as'  >> s2s ", " >>  showMVarId mvarid >> c2s ')'
 
 
-and showTypedMatcher (e : AbsDeeplang.typedMatcher) : showable = match e with
-       AbsDeeplang.Typed (typelessmatcher, type') -> s2s "Typed" >> c2s ' ' >> c2s '(' >> showTypelessMatcher typelessmatcher  >> s2s ", " >>  showTypeT type' >> c2s ')'
+and showTypedMatcher (e : AbsDeeplang.typedMatcher) : showable = showSpan (e.span) >>
+match e.typedMatcherShape with
+       (typelessmatcher, type') -> s2s "Typed" >> c2s ' ' >> c2s '(' >> showTypelessMatcher typelessmatcher  >> s2s ", " >>  showTypeT type' >> c2s ')'
 
 
-and showTypelessMatcher (e : AbsDeeplang.typelessMatcher) : showable = match e with
+and showTypelessMatcher (e : AbsDeeplang.typelessMatcher) : showable = showSpan (e.span) >>
+match e.typelessMatcherShape with
        AbsDeeplang.WildCardMatch  -> s2s "WildCardMatch"
   |    AbsDeeplang.ConsMatchUnit typeid -> s2s "ConsMatchUnit" >> c2s ' ' >> c2s '(' >> showTypeId typeid >> c2s ')'
   |    AbsDeeplang.ConsMatch (typeid, matcher) -> s2s "ConsMatch" >> c2s ' ' >> c2s '(' >> showTypeId typeid  >> s2s ", " >>  showMatcher matcher >> c2s ')'
   |    AbsDeeplang.TypelessVarMatch mvarid -> s2s "TypelessVarMatch" >> c2s ' ' >> c2s '(' >> showMVarId mvarid >> c2s ')'
-  |    AbsDeeplang.UnitMatch  -> s2s "UnitMatch"
   |    AbsDeeplang.TupleMatch matchers -> s2s "TupleMatch" >> c2s ' ' >> c2s '(' >> showList showMatcher matchers >> c2s ')'
   |    AbsDeeplang.LiteralMatch literal -> s2s "LiteralMatch" >> c2s ' ' >> c2s '(' >> showLiteral literal >> c2s ')'
-  |    AbsDeeplang.FieldMatchUnit typeid -> s2s "FieldMatchUnit" >> c2s ' ' >> c2s '(' >> showTypeId typeid >> c2s ')'
   |    AbsDeeplang.FieldMatch (typeid, fieldmatchers) -> s2s "FieldMatch" >> c2s ' ' >> c2s '(' >> showTypeId typeid  >> s2s ", " >>  showList showFieldMatcher fieldmatchers >> c2s ')'
 
 
-and showFieldMatcher (e : AbsDeeplang.fieldMatcher) : showable = match e with
-       AbsDeeplang.FieldMatchers (varid, typelessmatcher) -> s2s "FieldMatchers" >> c2s ' ' >> c2s '(' >> showVarId varid  >> s2s ", " >>  showTypelessMatcher typelessmatcher >> c2s ')'
+and showFieldMatcher (e : (AbsDeeplang.varId * AbsDeeplang.typelessMatcher)) : showable = match e with
+       (varid, typelessmatcher) -> s2s "FieldMatchers" >> c2s ' ' >> c2s '(' >> showVarId varid  >> s2s ", " >>  showTypelessMatcher typelessmatcher >> c2s ')'
 
 
-and showExpression (e : AbsDeeplang.expression) : showable = match e with
+and showExpression (e : AbsDeeplang.expression) : showable = showSpan (e.span) >>
+match e.expressionShape with
        AbsDeeplang.ExpVar matcher -> s2s "ExpVar" >> c2s ' ' >> c2s '(' >> showMatcher matcher >> c2s ')'
   |    AbsDeeplang.Literals literal -> s2s "Literals" >> c2s ' ' >> c2s '(' >> showLiteral literal >> c2s ')'
   |    AbsDeeplang.Tuples expressions -> s2s "Tuples" >> c2s ' ' >> c2s '(' >> showList showExpression expressions >> c2s ')'

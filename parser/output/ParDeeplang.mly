@@ -145,7 +145,7 @@ methods : SYMB10 { [] }
   | SYMB11 methodT_list SYMB12 { $2 }
 ;
 
-methodT : fUN varId args retType sCOLON { InterfaceMethod ($1, $2, $3, $4) }
+methodT : fUN varId args retType sCOLON { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; methodShape = ($1, $2, $3, $4) } }
 ;
 
 methodT_list : /* empty */ { []  }
@@ -162,8 +162,8 @@ define : functionT { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_p
   | iMPL typeT functions { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; defineShape = RawImpl ($1, $2, $3) } }
 ;
 
-functionT : fUN varId args retType SYMB10 { Func ($1, $2, $3, $4, []) }
-  | fUN varId args retType SYMB11 statement_list SYMB12 { Func ($1, $2, $3, $4, $6) }
+functionT : fUN varId args retType SYMB10 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; functionShape = ($1, $2, $3, $4, []) } }
+  | fUN varId args retType SYMB11 statement_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; functionShape = ($1, $2, $3, $4, $6) } }
 ;
 
 constructor : typeId { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; constructorShape = ($1, []) } }
@@ -213,7 +213,7 @@ statement : SYMB11 statement_list SYMB12 { { span = (Parsing.symbol_start_pos ()
   | iF lPAREN expression rPAREN SYMB11 statement_list SYMB12 elseBody { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = If ($1, $3, $6, $8) } }
   | fOR lPAREN matcher iN expression rPAREN SYMB11 statement_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = For ($1, $3, $4, $5, $8) } }
   | wHILE lPAREN expression rPAREN SYMB11 statement_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = While ($1, $3, $6) } }
-  | mATCH lPAREN varId rPAREN SYMB11 matchBody SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = Match ($1, $3, $6) } }
+  | mATCH lPAREN varId rPAREN SYMB11 matchCase_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; statementShape = Match ($1, $3, $6) } }
 ;
 
 statement_list : statement { (fun x -> [x]) $1 }
@@ -226,29 +226,26 @@ elseBody : /* empty */ { [] }
   | eLSE SYMB11 statement_list SYMB12 { $3 }
 ;
 
-matchBody : matchCase_list { MatchBodys $1 }
+matchCase : matcher SYMB14 SYMB11 statement_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; matchCaseShape = ($1, $4) } }
 ;
 
-matchCase : matcher SYMB14 SYMB11 statement_list SYMB12 { MatchCases ($1, $4) }
+matcher : typedMatcher { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; matcherShape = TypedMatchers $1 } }
+  | typelessMatcher { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; matcherShape = TypelessMatchers $1 } }
+  | matcher aS mVarId { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; matcherShape = AsVarMatch ($1, $2, $3) } }
 ;
 
-matcher : typedMatcher { TypedMatchers $1 }
-  | typelessMatcher { TypelessMatchers $1 }
-  | matcher aS mVarId { AsVarMatch ($1, $2, $3) }
+typedMatcher : typelessMatcher SYMB9 typeT { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typedMatcherShape = ($1, $3) } }
 ;
 
-typedMatcher : typelessMatcher SYMB9 typeT { Typed ($1, $3) }
-;
-
-typelessMatcher : SYMB15 { WildCardMatch  }
-  | typeId uNIT { ConsMatchUnit $1 }
-  | typeId lPAREN matcher rPAREN { ConsMatch ($1, $3) }
-  | mVarId { TypelessVarMatch $1 }
-  | uNIT { UnitMatch }
-  | lPAREN matcher_list rPAREN { TupleMatch $2 }
-  | literal { LiteralMatch $1 }
-  | typeId SYMB10 { FieldMatchUnit $1 }
-  | typeId SYMB11 fieldMatcher_list SYMB12 { FieldMatch ($1, $3) }
+typelessMatcher : SYMB15 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = WildCardMatch } }
+  | typeId uNIT { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = ConsMatchUnit $1 } }
+  | typeId lPAREN matcher rPAREN { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = ConsMatch ($1, $3) } }
+  | mVarId { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = TypelessVarMatch $1 } }
+  | uNIT { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = TupleMatch [] } }
+  | lPAREN matcher_list rPAREN { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = TupleMatch $2 } }
+  | literal { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = LiteralMatch $1 } }
+  | typeId SYMB10 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = FieldMatch ($1, []) } }
+  | typeId SYMB11 fieldMatcher_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; typelessMatcherShape = FieldMatch ($1, $3) } }
 ;
 
 matcher_list : /* empty */ { []  }
@@ -256,91 +253,91 @@ matcher_list : /* empty */ { []  }
   | matcher SYMB8 matcher_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-fieldMatcher_list : /* empty */ { []  }
+fieldMatcher_list : /* empty */ { [] }
   | fieldMatcher { (fun x -> [x]) $1 }
   | fieldMatcher SYMB8 fieldMatcher_list { (fun (x,xs) -> x::xs) ($1, $3) }
 ;
 
-fieldMatcher : varId SYMB9 typelessMatcher { FieldMatchers ($1, $3) }
+fieldMatcher : varId SYMB9 typelessMatcher { ($1, $3) }
 ;
 
 matchCase_list : matchCase { (fun x -> [x]) $1 }
   | matchCase matchCase_list { (fun (x,xs) -> x::xs) ($1, $2) }
 ;
 
-expression : expression1 {  $1 }
+expression : expression1 { $1 }
 ;
 
-expression1 : expression2 {  $1 }
-  | varId SYMB13 expression1 { ExpAssignment ($1, $3) }
-  | varId SYMB17 expression1 { ExpAssignmentPlus ($1, $3) }
-  | varId SYMB18 expression1 { ExpAssignmentMinus ($1, $3) }
-  | varId SYMB19 expression1 { ExpAssignmentMul ($1, $3) }
-  | varId SYMB20 expression1 { ExpAssignmentDiv ($1, $3) }
-  | varId SYMB21 expression1 { ExpAssignmentMod ($1, $3) }
+expression1 : expression2 { $1 }
+  | varId SYMB13 expression1 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpAssignment ($1, $3) } }
+  | varId SYMB17 expression1 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpAssignmentPlus ($1, $3) } }
+  | varId SYMB18 expression1 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpAssignmentMinus ($1, $3) } }
+  | varId SYMB19 expression1 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpAssignmentMul ($1, $3) } }
+  | varId SYMB20 expression1 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpAssignmentDiv ($1, $3) } }
+  | varId SYMB21 expression1 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpAssignmentMod ($1, $3) } }
 ;
 
-expression2 : expression3 {  $1 }
-  | expression2 SYMB22 expression3 { ExpLogicalOr ($1, $3) }
+expression2 : expression3 { $1 }
+  | expression2 SYMB22 expression3 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpLogicalOr ($1, $3) } }
 ;
 
-expression3 : expression4 {  $1 }
-  | expression3 SYMB23 expression4 { ExpLogicalAnd ($1, $3) }
+expression3 : expression4 { $1 }
+  | expression3 SYMB23 expression4 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpLogicalAnd ($1, $3) } }
 ;
 
-expression4 : expression5 {  $1 }
-  | SYMB24 expression4 { ExpLogicalNot $2 }
+expression4 : expression5 { $1 }
+  | SYMB24 expression4 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpLogicalNot $2 } }
 ;
 
-expression5 : expression6 {  $1 }
-  | expression7 SYMB25 expression7 { ExpLt ($1, $3) }
-  | expression7 SYMB26 expression7 { ExpLeq ($1, $3) }
-  | expression7 SYMB27 expression7 { ExpGt ($1, $3) }
-  | expression7 SYMB28 expression7 { ExpGeq ($1, $3) }
+expression5 : expression6 { $1 }
+  | expression7 SYMB25 expression7 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpLt ($1, $3) } }
+  | expression7 SYMB26 expression7 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpLeq ($1, $3) } }
+  | expression7 SYMB27 expression7 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpGt ($1, $3) } }
+  | expression7 SYMB28 expression7 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpGeq ($1, $3) } }
 ;
 
-expression6 : expression7 {  $1 }
-  | expression7 SYMB29 expression7 { ExpEq ($1, $3) }
-  | expression7 SYMB30 expression7 { ExpNoteq ($1, $3) }
+expression6 : expression7 { $1 }
+  | expression7 SYMB29 expression7 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpEq ($1, $3) } }
+  | expression7 SYMB30 expression7 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpNoteq ($1, $3) } }
 ;
 
-expression7 : expression8 {  $1 }
-  | expression7 SYMB31 expression8 { ExpLeftShift ($1, $3) }
-  | expression7 SYMB32 expression8 { ExpRightShift ($1, $3) }
+expression7 : expression8 { $1 }
+  | expression7 SYMB31 expression8 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpLeftShift ($1, $3) } }
+  | expression7 SYMB32 expression8 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpRightShift ($1, $3) } }
 ;
 
-expression8 : expression9 {  $1 }
-  | expression8 SYMB33 expression9 { ExpAdd ($1, $3) }
-  | expression8 SYMB34 expression9 { ExpSub ($1, $3) }
+expression8 : expression9 { $1 }
+  | expression8 SYMB33 expression9 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpAdd ($1, $3) } }
+  | expression8 SYMB34 expression9 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpSub ($1, $3) } }
 ;
 
-expression9 : expression10 {  $1 }
-  | expression9 SYMB35 expression10 { ExpMul ($1, $3) }
-  | expression9 SYMB36 expression10 { ExpDiv ($1, $3) }
-  | expression9 mOD expression10 { ExpMod ($1, $3) }
+expression9 : expression10 { $1 }
+  | expression9 SYMB35 expression10 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpMul ($1, $3) } }
+  | expression9 SYMB36 expression10 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpDiv ($1, $3) } }
+  | expression9 mOD expression10 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpMod ($1, $3) } }
 ;
 
-expression10 : expression11 {  $1 }
+expression10 : expression11 { $1 }
 ;
 
 expression11 : expression12 { $1 }
-  | expression11 lPAREN expression_list rPAREN { ExpApp ($1, $3) }
-  | expression11 uNIT { ExpAppUnit $1 }
-  | typeId lPAREN expression_list rPAREN { ExpNewObj ($1, $3) }
-  | typeId uNIT { ExpNewObjUnit $1 }
-  | expression11 SYMB38 varId { ExpMethod ($1, $3) }
+  | expression11 lPAREN expression_list rPAREN { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpApp ($1, $3) } }
+  | expression11 uNIT { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpAppUnit $1 } }
+  | typeId lPAREN expression_list rPAREN { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpNewObj ($1, $3) } }
+  | typeId uNIT { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpNewObjUnit $1 } }
+  | expression11 SYMB38 varId { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpMethod ($1, $3) } }
 ;
 
-expression12 : expression13 {  $1 }
-  | matcher { ExpVar $1 }
-  | literal { Literals $1 }
-  | lPAREN expression_list rPAREN { Tuples $2 }
-  | lBRACK expression_list rBRACK { Array $2 }
-  | typeId SYMB11 fieldInit_list SYMB12 { StructInit ($1, $3) }
+expression12 : expression13 { $1 }
+  | matcher { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpVar $1 } }
+  | literal { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = Literals $1 } }
+  | lPAREN expression_list rPAREN { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = Tuples $2 } }
+  | lBRACK expression_list rBRACK { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = Array $2 } }
+  | typeId SYMB11 fieldInit_list SYMB12 { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = StructInit ($1, $3) } }
 ;
 
-expression13 : lPAREN expression rPAREN {  $2 }
-  | lPAREN expression rPAREN { ExpBracket $2 }
+expression13 : lPAREN expression rPAREN { $2 }
+  | lPAREN expression rPAREN { { span = (Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()) ; expressionShape = ExpBracket $2 } }
 ;
 
 expression_list : /* empty */ { [] }
