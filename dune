@@ -1,7 +1,0 @@
-(data_only_dirs doc examples)
-
-(include_subdirs unqualified)
-
-(library
- (name deeplangType)
- (modules ParseTree Walker))
