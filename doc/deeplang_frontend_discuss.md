@@ -265,3 +265,26 @@ crc or lrc: 98
 邱日宏：deeplang的讨论， ast树。
 
 遗留问题：if 和match是expression还是statement？
+
+### 2022.6.12例会纪要
+framework:
+- parser 
+- type checker
+- codegen
+- deepvm
+
+done:
+1. bnfc parser -- 
+2. walker
+
+todo:
+1. dune project
+2. parser + walker api
+3. type checker
+4. ANF trans 第一次AST遍历，解析作用域之前，简单的IR，后面可以基于ANF变换后的tree进行type checker，codegen，https://github.com/Mepy/tc/blob/master/src/ast/api.hpp， stat expr需要ANF，ANF的数据结构需要设计。
+5. deeplang memory system，稍后计划。
+6. codegen, wasm bytecode
+7. deeplang highlighter plugin
+
+https://guest0x0.xyz/deeplang-borrow-checker-demo/demo.html
+
