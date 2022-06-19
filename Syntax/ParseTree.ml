@@ -6,16 +6,7 @@
 
 
 (** {1 Helper Definitions} *)
-
-
-(** [src_span] is a region in some source file.
-    Used to report error messages *)
-type src_span =
-    { file  : string (** source file name *)
-    ; row_s : int    (** row number of the start of the region *)
-    ; col_s : int    (** column number of the start of the region *)
-    ; row_e : int    (** row number of the end of the region *)
-    ; col_e : int    (** column number of the end of the region *) }
+open SyntaxError
 
 type variable     = string
 type func_name    = string
@@ -39,7 +30,6 @@ module NodeId = struct
     type expr    = ExprId of int [@@unboxed]
     type stmt    = StmtId of int [@@unboxed]
     type impl    = ImplId of int [@@unboxed]
-    type func    = FuncId of int [@@unboxed]
 end
 
 
@@ -56,7 +46,7 @@ type float_typ_size = FSize_32 | FSize_64
     [span] should be [None]. *)
 type typ =
     { shape : typ_shape
-    ; span  : src_span option }
+    ; span  : src_span }
 
 (** [typ_shape] declares the structure of deeplang types *)
 and typ_shape =
@@ -76,6 +66,15 @@ and typ_shape =
 
 (** {1 Patterns} *)
 
+type literal =
+    | LitUnit
+    | LitBool   of bool
+    | LitInt    of int
+    | LitFloat  of float
+    (** 16-bit *)
+    | LitChar   of int
+    | LitString of string
+
 type mutability = Imm | Mut
 
 type var_pattern =
@@ -91,6 +90,7 @@ type pattern =
 
 and pattern_shape =
     | PatWildcard
+    | PatLit    of literal
     | PatVar    of var_pattern
     | PatAs     of pattern * var_pattern
     | PatADT    of adt_label * pattern list
@@ -100,14 +100,6 @@ and pattern_shape =
 
 (** {1 Expressions} *)
 
-type literal =
-    | LitBool   of bool
-    | LitInt    of int
-    | LitFloat  of float
-    (** 16-bit *)
-    | LitChar   of int
-    | LitString of string
-
 
 
 type unary_op =
@@ -116,13 +108,13 @@ type unary_op =
 type compare_op = 
     | BinOpLt  | BinOpLeq | BinOpGt | BinOpGeq
     | BinOpEq | BinOpNeq
+    | BinOpLOr | BinOpLAnd | BinOpLXor
 (** note : BinOpLNot --modify--> BinOpLXor 
  *  optional : | BinOpBOr | BinOpBAnd | BinOpBXor
  *    B = bit, |   '|'    |    '&'    |    '^'
  *  it might be useful for IoT development
  *)
 type calculate_op =
-    | BinOpLOr | BinOpLAnd | BinOpLXor
     | BinOpBOr | BinOpBAnd | BinOpBXor
     | BinOpLShift | BinOpRShift
     | BinOpAdd | BinOpSub | BinOpMul | BinOpDiv | BinOpMod
@@ -132,9 +124,8 @@ type calculate_op =
     - Not all operators have corresponding assignment operators
     in the parser. This is just a simplification of AST definition *)
 type binary_op =
-    | BinOpCompare of compare_op
+    | BinOpCompare   of compare_op
     | BinOpCalculate of calculate_op
-    | BinOpAssign of calculate_op option
 
 
 
@@ -149,7 +140,7 @@ and expr_shape =
     | ExpUnOp   of unary_op * expr
     | ExpBinOp  of binary_op * expr * expr
     | ExpTuple  of expr list
-    | ExpAdt    of adt_label * expr list
+    | ExpADT    of adt_label * expr list
     | ExpStruct of typ_name * (struct_field * expr) list
     | ExpField  of expr * struct_field
     | ExpThis
@@ -168,15 +159,15 @@ type stmt =
     ; span    : src_span }
 
 and stmt_shape =
-    | StmtSeq      of stmt list
-    | StmtExpr     of expr
-    | StmtDecl     of pattern * expr
-    | StmtIf       of expr * stmt * stmt
-    | StmtFor      of (stmt * expr * stmt) * stmt
-    | StmtForRange of (pattern * expr) * stmt
-    | StmtWhile    of expr * stmt
-    | StmtMatch    of expr * (pattern * stmt) list
-    | StmtReturn   of expr
+    | StmtSeq    of stmt list
+    | StmtExpr   of expr
+    | StmtDecl   of pattern * expr
+    | StmtAssign of calculate_op option * variable * expr
+    | StmtIf     of expr * stmt * stmt option
+    | StmtFor    of pattern * expr * stmt
+    | StmtWhile  of expr * stmt
+    | StmtMatch  of expr * (pattern * stmt) list
+    | StmtReturn of expr
     | StmtBreak
     | StmtContinue
 
@@ -199,7 +190,6 @@ type func_arg =
 type func_decl =
     { func_decl_name : func_name
     ; func_decl_args : func_arg list
-    ; func_decl_id   : NodeId.func (* it seems not needed *)
     ; func_decl_ret  : typ }
 
 type func_impl = func_decl * stmt
