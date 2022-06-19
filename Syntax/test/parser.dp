@@ -1,0 +1,131 @@
+// comment line
+
+/* comment block */
+
+/* comment block
+multiline */
+
+/* comment block // with some strange "thing * inside /**/
+
+fun f(
+    // types
+    x1  : (),
+    x2  : Bool,
+    x3  : I8, x4 : U16, x5 : I32, x6 : U64,
+    x7  : F32, x8 : F64,
+    x9  : Char,
+    x10 : This,
+    x11 : SomeType, x12 : _SomeType,
+    x13 : [U8; 20],
+    x14 : [[U8; 20]; 5],
+    x15 : (I32, Char, [(U8, U8); 10], SomeType)
+) {
+    // literals
+    (); true; false;
+    1; 2.0; 'a'; 'b'; '"'; '\''; '\\'; '\n'; '\t'; '\r'; ' ';
+    "abc"; "'\n''\t''\r'"; "\"\\abc\\\"";
+
+    // patterns
+    match (1) {
+        _                     => return 0;
+        ()                    => return 1;
+        true                  => return 2;
+        1                     => return 3;
+        1.0                   => return 4;
+        'a'                   => return 5;
+        "abc"                 => return 6;
+        x                     => return 7;
+        y : U8                => return 8;
+        mut x                 => return 9;
+        mut y : U8            => return 10;
+        _ as x                => return 11;
+        _ as mut y : [U8; 10] => return 12;
+        Label                 => return 13;
+        Label(arg)            => return 14;
+        Struct {}             => return 15;
+        Struct { field1: 1, field2: x1 }           => return 16;
+        (x, "abc", Struct { field: _Label(x, y) }) => return 17;
+    }
+
+    // exprs
+    x; y; zwx; __xx;
+    !1; !cond; -2; -3.0; -x;
+    1 + 2 * 3 / 5 % 7 >> 3 || x && y > z;
+    (1, 2, x >> 3, 4 + 5);
+    None;
+    Some(someExpr, _LabelAgain);
+    Some((someExpr, _LabelAgain));
+    Point { x: 1, y: 2 };
+    StructName { field1: value1, field2: _trailingComma, };
+    someStructVariable.x.y.z;
+    this.method1().method2(function1(arg1), function2(arg1, Arg2));
+
+    // stmts
+    let x : I32 = 1;
+    let y = 2;
+    let (x : U8, mut y : [U16; 10], mut z) = someTuple;
+    let Some(x) = someOption;
+    x = 1;
+    y += 2;
+    binary |= mask;
+    this_is_not_monad >>= this_is_LShiftEq;
+    if (true)
+        print("?");
+
+    return 1;
+    return ("a", "tuple");
+    return ADT;
+    return Some { value: "struct" };
+    return whateverYouLike();
+
+    if (true)
+        print("?");
+    else
+        print("!");
+
+    if (condition1) {
+        branch1();
+    } else if (condition2) {
+        branch2();
+    } else if (condition3) {
+        branch3();
+    } else {
+        fallback();
+    }
+
+    if (whatever)
+        if (danglingElse)
+           whatever();
+        else
+           who_should_this_else_belongs();
+
+    for (i in range(1, 10))
+        print(i);
+
+    for ((k, v) in dict.iter()) {
+        doSome("crazy thing", "with", k, v);
+    }
+
+    while (true)
+        i_am_not_a_total_language_yeah();
+
+    while (i < array.length()) {
+        print(array.get(i));
+        array.set(i, 0);
+    }
+
+    while (some_condition) {
+        if (tired("of the", "loop"))
+            break;
+        if (cant("wait for", "next loop"))
+            continue;
+    }
+
+    match (someValueToMatch) {
+        pattern1 => noBrace();
+        pattern2 => { with(); brace(); }
+    }
+    match (Removing { the: parenthesis, around: "me" }) {
+        causes => ambiguity();
+    }
+}

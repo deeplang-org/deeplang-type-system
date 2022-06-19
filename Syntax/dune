@@ -1,0 +1,13 @@
+(library
+ (name Syntax)
+ (modules ParseTree SyntaxError Parser Lexer))
+
+(ocamlyacc Parser)
+(ocamllex  Lexer)
+
+
+(test
+ (name ParserTest)
+ (libraries Syntax)
+ (deps (file test/parser.dp))
+ (modules ParserTest))
