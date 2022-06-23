@@ -4,7 +4,6 @@
 {
 open ParseTree
 open Parser
-open Lexing
 
 let keyword_table = Hashtbl.of_seq @@ List.to_seq
     [ ("true"     , TOK_TRUE     )

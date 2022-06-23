@@ -442,7 +442,7 @@ atom_expr :
     | TOK_LowerIdent TOK_LPAREN expr_list TOK_RPAREN
         { mk_expr @@ ExpApp($1, $3) }
     | atom_expr TOK_DOT TOK_LowerIdent
-        { mk_expr @@ ExpField($1, $3) 
+        { mk_expr @@ ExpField($1, $3) }
     | atom_expr TOK_DOT TOK_LowerIdent TOK_LPAREN expr_list TOK_RPAREN
         { mk_expr @@ ExpMethod($1, $3, $5) }
 ;
