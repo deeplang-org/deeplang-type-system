@@ -1,4 +1,4 @@
-open ParseTree;;
+open Syntax.ParseTree;;
 
 (** This module walks AST from {! ParseTree},
     to do {b name resolution} and {b type checking} in one pass.
@@ -89,38 +89,50 @@ type table =
     };;
 
 (** {! BuiltinType} used in walker, which is not yet defined in [ParsingTree] *)
+
 module BuiltinType = struct
+    let position : Lexing.position = Parsing.symbol_start_pos();;
+    let _span : Syntax.SyntaxError.src_span = 
+        { span_start= position
+        ; span_end  = position
+        };;
+    
+    let unit : typ =
+        { shape = TyUnit
+        ; span  = _span
+        };;
     let bool : typ = 
         { shape = TyBool
-        ; span  = None
+        ; span  = _span
         };;
     let i32 : typ = 
         { shape = TyInt(Signed,ISize_32)
-        ; span  = None
+        ; span  = _span
         };;
     let f32 : typ =
         { shape = TyFloat(FSize_32)
-        ; span  = None }
+        ; span  = _span 
+        };;
     let char : typ =
         { shape = TyChar
-        ; span  = None
+        ; span  = _span
         };;
     let array (typ:typ) (size:int) : typ =
         { shape = TyArray(typ, size)
-        ; span  = None
+        ; span  = _span
         };;
     let tuple (typs:typ list) : typ =
         { shape = TyTuple(typs)
-        ; span  = None
+        ; span  = _span
         };;
     let var (name:typ_name) : typ =
         { shape = TyVar(name)
-        ; span  = None (* Discuss : maybe not*)
+        ; span  = _span (* Discuss : maybe not*)
         };;
     (** BuiltinType.this is just a hole *)
     let this : typ =
         { shape = TyThis
-        ; span  = None
+        ; span  = _span
         };;
 end
 
@@ -155,6 +167,7 @@ let walk_add_variable (symbol:symbol) (mut:mutability) (name:variable) (typo:typ
  *)
 let rec walk_pattern (pattern:pattern) (typ:typ) (table:table) (name_map:layered_name_map) : unit = match pattern.shape with
     | PatWildcard -> ()
+    | PatLit(_) -> () (* WARNING : Pattern Literal is dynamic semantics, not check here *)
     | PatVar(vpat) -> ( match vpat.vpat_typ with
         | None -> walk_add_variable vpat.vpat_symb vpat.vpat_mut vpat.vpat_name (Some typ) table name_map
         | Some(ty) -> 
@@ -175,7 +188,6 @@ let rec walk_pattern (pattern:pattern) (typ:typ) (table:table) (name_map:layered
             else
                 failwith("declared type doesn't match with the given expr")
         )
-    
     | PatADT(adt_label, patterns) -> ( match Hashtbl.find_opt table.adt adt_label with
         | None -> failwith("adt_lable" ^adt_label ^ "not found")
         | Some(data) ->  
@@ -218,6 +230,7 @@ let rec walk_pattern (pattern:pattern) (typ:typ) (table:table) (name_map:layered
  *)
 let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ): typ = match expr.shape with 
     | ExpLit(literal) -> ( match literal with
+        | LitUnit      -> BuiltinType.unit
         | LitBool(_)   -> BuiltinType.bool
         | LitInt(_)    -> BuiltinType.i32  (* Discuss *)
         | LitFloat(_)  -> BuiltinType.f32  (* Discuss *)
@@ -249,7 +262,21 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ):
     | ExpBinOp(op, left_e, right) ->
         let left  = walk_expr left_e table name_map type_this in
         let right = walk_expr right  table name_map type_this in
-        let calculate_op_check (op:calculate_op) : typ = ( match op with
+        ( match op with
+        | BinOpCompare(op) -> ( match op with
+            | BinOpLt | BinOpLeq | BinOpGt | BinOpGeq -> 
+                if left=right then ( match right.shape with
+                    | TyInt(_, _) | TyFloat(_) | TyChar      
+                        -> BuiltinType.bool
+                    | _ -> failwith(" ordering values from none of Int, Float, Char ")
+                )
+                else failwith(" ordering values from different types")
+            | BinOpEq | BinOpNeq -> 
+                if left=right then 
+                    BuiltinType.bool
+                else failwith(" equaling values from different types")
+            )
+        | BinOpCalculate(op) -> ( match op with
             | BinOpLOr | BinOpLAnd | BinOpLXor -> 
                 if left=right then ( match right.shape with
                     | TyBool      -> BuiltinType.bool
@@ -282,34 +309,10 @@ let rec walk_expr (expr:expr) (table:table) (name_map:name_map) (type_this:typ):
                     | _           -> failwith(" mod on non Int ")
                 )
                 else failwith(" mod on different types")
-            ) in
-        ( match op with
-        | BinOpCompare(op) -> ( match op with
-            | BinOpLt | BinOpLeq | BinOpGt | BinOpGeq -> 
-                if left=right then ( match right.shape with
-                    | TyInt(_, _) | TyFloat(_) | TyChar      
-                        -> BuiltinType.bool
-                    | _ -> failwith(" ordering values from none of Int, Float, Char ")
-                )
-                else failwith(" ordering values from different types")
-            | BinOpEq | BinOpNeq -> 
-                if left=right then 
-                    BuiltinType.bool
-                else failwith(" equaling values from different types")
-            )
-        | BinOpCalculate(op) -> calculate_op_check op
-        | BinOpAssign(opo) -> ( match left_e.shape with
-            | ExpVar(_) -> ()
-            | _         -> failwith(" assign a value to a non variable name")
-            );
-            ( match opo with
-            | None -> if left=right then right 
-                else failwith(" assign a value:T1 to a variable:T2, while T1!=T2")
-            | Some(op) -> calculate_op_check op
             )
         )
     | ExpTuple(exprs) -> BuiltinType.tuple ( List.map (fun expr -> walk_expr expr table name_map type_this) exprs )
-    | ExpAdt(label, exprs) -> ( match Hashtbl.find_opt table.adt label with
+    | ExpADT(label, exprs) -> ( match Hashtbl.find_opt table.adt label with
         | None       -> failwith(" ADT label " ^ label ^ " Not Found ")
         | Some(data) -> (
             if data.typ = List.map (fun expr -> walk_expr expr table name_map type_this) exprs then
@@ -494,29 +497,52 @@ let rec walk_stmt (stmt:stmt) (table:table) (name_map:layered_name_map) (type_th
     | StmtExpr(expr) ->  
         let _ = walk_expr expr table name_map.deep type_this in
         typo
+    | StmtAssign(_, left, right) -> let name = 
+        (   match left.shape with 
+        |   ExpVar(name) -> name
+        |   _ -> failwith(" assign to not a variable")
+        ) in
+        let symbol = 
+        (   match NameMap.find_opt name name_map.deep with 
+        |   Some(symbol) -> symbol
+        |   None -> failwith("varaible " ^ name ^ " Not Found")
+        )   in
+        let data = 
+        (   match Hashtbl.find_opt table.var symbol with
+            | None -> failwith("Impossible, symbol not found, DEBUG needed")
+            | Some(data) -> data
+        ) in
+
+        let _ = (* mutability check *)
+        (   match data.mut with
+        |   Imm -> failwith(" assign to a immutable variable " ^ name)
+        |   Mut -> ()
+        ) in
+        let var_ty = data.typ in
+        (* TODO : check for (left op right) *)
+        let res_ty = walk_expr right table name_map.deep type_this in
+        if var_ty=res_ty then typo
+        else failwith(" assign a value:T1 to a variable:T2, while T1!=T2")
     | StmtDecl(pattern, expr) -> 
         let typ = walk_expr expr table name_map.deep type_this in
         walk_pattern pattern typ table name_map; 
         typo
-    | StmtIf(cond, t_stmt, f_stmt) ->
+    | StmtIf(cond, t_stmt, f_stmto) ->
         let ty = walk_expr cond table name_map.deep type_this in
         (* WARNING, use '=' here ... *)
         if ty = BuiltinType.bool then ()
         else failwith(" cond of if-statement is not a boolean"); 
         let typo' = walk_stmt t_stmt table name_map type_this typo in
-        let typo' = walk_stmt f_stmt table name_map type_this typo' in
-        typo'
-    | StmtFor((init, cond, final), body) ->
-        let ty = walk_expr cond table name_map.deep type_this in
-        if ty = BuiltinType.bool then 
-            let typo' = walk_stmt init table name_map type_this typo  in
-            let typo' = walk_stmt body table name_map type_this typo' in
-            let typo' = walk_stmt final table name_map type_this typo' in
+        (   match f_stmto with 
+        |   None -> typo'
+        |   Some(f_stmt) -> 
+            let typo' = walk_stmt f_stmt table name_map type_this typo' in
             typo'
-        else failwith(" cond of if-statement is not a boolean"); 
-    
+        )
+        
+        
     (* REMAIN walk pattern FOR-RANGE *)
-    | StmtForRange((pattern, expr), body)->
+    | StmtFor(pattern, expr, body)->
         let typ = walk_expr expr table name_map.deep type_this in
         let _ = walk_pattern pattern typ table name_map in
         let typo' = walk_stmt body table name_map type_this typo in
@@ -756,41 +782,3 @@ let walk (context:context) (table:table) (clause:top_clause) =
 
 (** {1 TODO:Test Helper} *)
 
-
-let mk_id = let counter = ref 0 in
-    fun () -> incr counter; !counter
-    ;;
-let test_span : src_span = 
-    { file="test"
-    ; row_s=0
-    ; col_s=0
-    ; row_e=0
-    ; col_e=0
-    };;
-let top_clause_gen shape : top_clause = 
-    { shape=shape
-    ; span=test_span
-    };;
-let expr_gen shape : expr =
-    { shape=shape
-    ; expr_id= NodeId.ExprId (mk_id ())
-    ; span=test_span
-    };;
-let test_case = top_clause_gen (GlobalVarDef
-    { gvar_name="x"
-    ; gvar_id=Symbol (mk_id ())
-    ; gvar_value=expr_gen (ExpLit (LitInt 3))
-    });;
-
-let context : context = 
-    { name_map=NameMap.empty
-    };;
-let table : table = 
-    { var=Hashtbl.create 10
-    ; fnc=Hashtbl.create 10
-    ; typ=Hashtbl.create 10
-    ; adt=Hashtbl.create 10
-    ; ref=Hashtbl.create 10
-    };;
-walk context table test_case;;
-table;;

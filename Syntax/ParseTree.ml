@@ -106,15 +106,15 @@ type unary_op =
     | UnOpNeg | UnOpNot
 
 type compare_op = 
-    | BinOpLt  | BinOpLeq | BinOpGt | BinOpGeq
+    | BinOpLt | BinOpLeq | BinOpGt | BinOpGeq
     | BinOpEq | BinOpNeq
-    | BinOpLOr | BinOpLAnd | BinOpLXor
 (** note : BinOpLNot --modify--> BinOpLXor 
  *  optional : | BinOpBOr | BinOpBAnd | BinOpBXor
  *    B = bit, |   '|'    |    '&'    |    '^'
  *  it might be useful for IoT development
  *)
 type calculate_op =
+    | BinOpLOr | BinOpLAnd | BinOpLXor
     | BinOpBOr | BinOpBAnd | BinOpBXor
     | BinOpLShift | BinOpRShift
     | BinOpAdd | BinOpSub | BinOpMul | BinOpDiv | BinOpMod
@@ -162,7 +162,7 @@ and stmt_shape =
     | StmtSeq    of stmt list
     | StmtExpr   of expr
     | StmtDecl   of pattern * expr
-    | StmtAssign of calculate_op option * variable * expr
+    | StmtAssign of calculate_op option * expr * expr (* expr1 op?= expr2, where expr1 = ExpVar ONLY *)
     | StmtIf     of expr * stmt * stmt option
     | StmtFor    of pattern * expr * stmt
     | StmtWhile  of expr * stmt
