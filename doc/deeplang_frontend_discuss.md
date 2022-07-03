@@ -212,11 +212,11 @@ crc or lrc: 98
 
 ### 2022.3.27例会纪要
 
-练琪灏： 
+练琪灏：
 
 陈亦棠：
 
-陈楷骐:  
+陈楷骐:
 
 ### 2022.4.17例会纪要
 
@@ -238,7 +238,7 @@ crc or lrc: 98
 
 练琪灏： NA
 
-陈亦棠：for( : )换成 for( in )， 
+陈亦棠：for( : )换成 for( in )，
 
 陈楷骐:  NA
 
@@ -252,7 +252,7 @@ crc or lrc: 98
 
 练琪灏：编译原理的课程设计。https://github.com/deeplang-org/deeplang-type-system/blob/dev/table/Walker.ml deeplang ast的遍历，需要review。
 
-陈亦棠：刷新deeplang主仓的readme，最新代码会有PR。 
+陈亦棠：刷新deeplang主仓的readme，最新代码会有PR。
 
 陈楷骐:  CPU作业。
 
@@ -268,13 +268,13 @@ crc or lrc: 98
 
 ### 2022.6.12例会纪要
 framework:
-- parser 
+- parser
 - type checker
 - codegen
 - deepvm
 
 done:
-1. bnfc parser -- 
+1. bnfc parser --
 2. walker
 
 todo:
@@ -288,3 +288,23 @@ todo:
 
 https://guest0x0.xyz/deeplang-borrow-checker-demo/demo.html
 
+
+### 2022.7.3例会纪要
+1. ANF是否需要？
+  - ANF变换不是必须的工作。
+  - AST中已经有node_id，类似功能。
+  - 如果做的话，AST node_id删掉，做ANF parser。
+  - 收益不是很大，暂时不做。
+2. Walker合入dune工程的进展？
+  - AST适配，编译通过。
+  - 正在测试。
+3. 前端报错？
+  - parser报错结构，ocamlyacc的报错机制
+  - 增加错误语法匹配规则，调研一下ocamlyacc的报错机制（遗留问题）
+``` ocaml
+| TOK_LPAREN expr_list_nonempty TOK_RPAREN
+    { match $2 with [expr] -> expr
+                  | exprs -> mk_expr @@ ExpTuple exprs }
+| TOK_LPAREN expr_list_nonempty error {error @@ Expecting "norihgt xxx"}
+```
+4. walker存放sema文件夹中单独的库。
