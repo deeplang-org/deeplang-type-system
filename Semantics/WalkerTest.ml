@@ -1,33 +1,40 @@
-open Syntax.ParseTree
-open Semantics.Walker
-let mk_id = let counter = ref 0 in
-    fun () -> incr counter; !counter
-    ;;
-let test_span = BuiltinType._span ;;
-let top_clause_gen shape : top_clause = 
-    { shape=shape
-    ; span=test_span
-    };;
-let expr_gen shape : expr =
-    { shape=shape
-    ; expr_id= NodeId.ExprId (mk_id ())
-    ; span=test_span
-    };;
-let test_case = top_clause_gen (GlobalVarDef
-    { gvar_name="x"
-    ; gvar_id=Symbol (mk_id ())
-    ; gvar_value=expr_gen (ExpLit (LitInt 3))
-    });;
 
-let context : context = 
-    { name_map=NameMap.empty
-    };;
+let parse_file file : Syntax.ParseTree.top_clause list = 
+    let ch = open_in file in
+    let lexbuf = Lexing.from_channel ch in
+    Lexing.set_filename lexbuf file;
+    let program = Syntax.Parser.program Syntax.Lexer.token lexbuf in
+    program
+    ;;
+
+open Semantics.Walker
+open Semantics.Table
+
 let table : table = 
     { var=Hashtbl.create 10
     ; fnc=Hashtbl.create 10
     ; typ=Hashtbl.create 10
     ; adt=Hashtbl.create 10
     ; ref=Hashtbl.create 10
-    };;
-walk context table test_case;;
-table;;
+    }
+    ;;
+
+let context : context = 
+    { table   = table
+    ; nametbl = Hashtbl.create 10
+    ; scope   = []
+    ; this    = Semantics.Helper.unit
+    ; rety    = Semantics.Helper.unit
+    }
+    ;;
+let walk = walk_top context;;
+
+let clauses = try parse_file "test/type.dp" with
+    Syntax.SyntaxError.Error(span, err) ->
+        Format.printf "syntax error: %a@ in %a"
+            Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
+        exit 1
+    ;;
+
+let iterator clause = walk clause;;
+let _ = List.iter iterator clauses;;

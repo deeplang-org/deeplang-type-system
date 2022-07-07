@@ -188,8 +188,8 @@ struct_fields :
 ;
 
 struct_field :
-    | TOK_LowerIdent TOK_COLON typ        { StructField($1, $3) }
-    | TOK_AS TOK_LowerIdent TOK_COLON typ { StructDelegate($2, $4) }
+    | TOK_LowerIdent TOK_COLON typ        { ($1, $3, Struct_Field) }
+    | TOK_AS TOK_LowerIdent TOK_COLON typ { ($2, $4, Struct_Delegate) }
 ;
 
 
@@ -222,7 +222,7 @@ function_decl :
         function_decl_ret
         { { func_decl_name = $2
           ; func_decl_args = $4
-          ; func_decl_ret  = $6 } }
+          ; func_decl_rety = $6 } }
 ;
 
 function_decl_args :
@@ -293,7 +293,7 @@ stmt :
     | TOK_BREAK TOK_SEMICOLON       { mk_stmt @@ StmtBreak }
     | TOK_CONTINUE TOK_SEMICOLON    { mk_stmt @@ StmtContinue }
     | lvalue assignment_op expr TOK_SEMICOLON
-        { mk_stmt @@ StmtAssign($2, (mk_expr @@ ExpVar $1), $3) }
+        { mk_stmt @@ StmtAssign($2, $1, $3) }
     | TOK_LET pattern TOK_EQ expr TOK_SEMICOLON
         { mk_stmt @@ StmtDecl($2, $4) }
     | TOK_LBRACE stmt_list TOK_RBRACE { mk_stmt @@ StmtSeq $2 }
@@ -314,7 +314,7 @@ stmt :
 ;
 
 lvalue :
-    | TOK_LowerIdent { $1 }
+    | TOK_LowerIdent { mk_expr @@ ExpVar $1 }
 ;
 
 assignment_op :

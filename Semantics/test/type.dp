@@ -1,0 +1,14 @@
+// comment line
+
+/* comment block */
+
+/* comment block
+multiline */
+
+/* comment block // with some strange "thing * inside /**/
+
+fun f(x : ()) -> Unit
+{
+    let mut x = 1;
+    x = 2;
+}

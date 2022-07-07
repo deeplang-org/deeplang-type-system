@@ -190,15 +190,16 @@ type func_arg =
 type func_decl =
     { func_decl_name : func_name
     ; func_decl_args : func_arg list
-    ; func_decl_ret  : typ }
+    ; func_decl_rety : typ }
 
 type func_impl = func_decl * stmt
 
 
+type struct_def_field_attr =
+    | Struct_Field
+    | Struct_Delegate 
 
-type struct_def_field =
-    | StructField    of struct_field * typ
-    | StructDelegate of struct_field * typ
+type struct_def_field = struct_field * typ * struct_def_field_attr
 
 type struct_def =
     { struct_name   : typ_name
