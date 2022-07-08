@@ -89,7 +89,7 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
     | PatVar(vpat) -> ( match vpat.vpat_typ with
         | None -> add_variable context vpat.vpat_symb vpat.vpat_mut vpat.vpat_name (Some typ)
         | Some(ty) -> 
-            if ty = typ then 
+            if Helper.ty_eq ty typ then 
                 add_variable context vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ
             else
                 failwith("declared type doesn't match with the given expr")
@@ -245,8 +245,8 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         ))
     | ExpStruct(name, field_exprs) -> ( match Hashtbl.find_opt table.typ name with
         | None -> failwith(" type " ^ name ^ " Not Found ")
-        | Some(ADT_data(_)) -> failwith(" type " ^ name ^ " is not a Strcut but an ADT ")
-        | Some(Intf_data(_)) -> failwith(""^name ^ " is not a Strcut but an Interface ")
+        | Some(ADT_data(_)) -> failwith(" type " ^ name ^ " is not a Struct but an ADT ")
+        | Some(Intf_data(_)) -> failwith(""^name ^ " is not a Struct but an Interface ")
         | Some(Struct_data(data)) -> ( let def_fields = data.fields in
                 let map_def_field (def_field:struct_def_field) = match def_field with
                     | (field, typ, _) -> (field, typ)
@@ -611,7 +611,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
         ) in
         List.iter insert fields;
         Hashtbl.add table.typ name 
-            (Struct_data(
+            ( Struct_data(
             { intf = []
             ; meth = Hashtbl.create 10
             ; core = core
