@@ -2,5 +2,5 @@
 
 (library
  (name DeeplangType)
- (libraries Syntax)
+ (libraries Syntax Semantics)
  (modules DeeplangType))

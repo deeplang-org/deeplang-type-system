@@ -1,0 +1,12 @@
+(library
+    (name Semantics)
+    (libraries Syntax)
+    (modules Table Helper Walker)
+    )
+
+(test
+    (name WalkerTest)
+    (libraries Syntax Semantics)
+    (deps (file test/type.dp))
+    (modules WalkerTest)
+    )

@@ -188,8 +188,8 @@ struct_fields :
 ;
 
 struct_field :
-    | TOK_LowerIdent TOK_COLON typ        { StructField($1, $3) }
-    | TOK_AS TOK_LowerIdent TOK_COLON typ { StructDelegate($2, $4) }
+    | TOK_LowerIdent TOK_COLON typ        { ($1, $3, Struct_Field) }
+    | TOK_AS TOK_LowerIdent TOK_COLON typ { ($2, $4, Struct_Delegate) }
 ;
 
 
@@ -222,7 +222,7 @@ function_decl :
         function_decl_ret
         { { func_decl_name = $2
           ; func_decl_args = $4
-          ; func_decl_ret  = $6 } }
+          ; func_decl_rety = $6 } }
 ;
 
 function_decl_args :
@@ -314,7 +314,7 @@ stmt :
 ;
 
 lvalue :
-    | TOK_LowerIdent { $1 }
+    | TOK_LowerIdent { mk_expr @@ ExpVar $1 }
 ;
 
 assignment_op :
@@ -403,9 +403,9 @@ expr :
     | expr TOK_GTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGeq   , $1, $3) }
     | expr TOK_EQEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpEq    , $1, $3) }
     | expr TOK_BANGEQ expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpNeq   , $1, $3) }
-    | expr TOK_LOR    expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLOr   , $1, $3) }
-    | expr TOK_LAND   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLAnd  , $1, $3) }
-    | expr TOK_LXOR   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLXor  , $1, $3) }
+    | expr TOK_LOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLOr   , $1, $3) }
+    | expr TOK_LAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLAnd  , $1, $3) }
+    | expr TOK_LXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLXor  , $1, $3) }
     | expr TOK_BOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBOr   , $1, $3) }
     | expr TOK_BAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBAnd  , $1, $3) }
     | expr TOK_BXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBXor  , $1, $3) }

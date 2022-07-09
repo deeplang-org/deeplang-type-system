@@ -106,15 +106,15 @@ type unary_op =
     | UnOpNeg | UnOpNot
 
 type compare_op = 
-    | BinOpLt  | BinOpLeq | BinOpGt | BinOpGeq
+    | BinOpLt | BinOpLeq | BinOpGt | BinOpGeq
     | BinOpEq | BinOpNeq
-    | BinOpLOr | BinOpLAnd | BinOpLXor
 (** note : BinOpLNot --modify--> BinOpLXor 
  *  optional : | BinOpBOr | BinOpBAnd | BinOpBXor
  *    B = bit, |   '|'    |    '&'    |    '^'
  *  it might be useful for IoT development
  *)
 type calculate_op =
+    | BinOpLOr | BinOpLAnd | BinOpLXor
     | BinOpBOr | BinOpBAnd | BinOpBXor
     | BinOpLShift | BinOpRShift
     | BinOpAdd | BinOpSub | BinOpMul | BinOpDiv | BinOpMod
@@ -162,7 +162,7 @@ and stmt_shape =
     | StmtSeq    of stmt list
     | StmtExpr   of expr
     | StmtDecl   of pattern * expr
-    | StmtAssign of calculate_op option * variable * expr
+    | StmtAssign of calculate_op option * expr * expr (* expr1 op?= expr2, where expr1 = ExpVar ONLY *)
     | StmtIf     of expr * stmt * stmt option
     | StmtFor    of pattern * expr * stmt
     | StmtWhile  of expr * stmt
@@ -190,15 +190,16 @@ type func_arg =
 type func_decl =
     { func_decl_name : func_name
     ; func_decl_args : func_arg list
-    ; func_decl_ret  : typ }
+    ; func_decl_rety : typ }
 
 type func_impl = func_decl * stmt
 
 
+type struct_def_field_attr =
+    | Struct_Field
+    | Struct_Delegate 
 
-type struct_def_field =
-    | StructField    of struct_field * typ
-    | StructDelegate of struct_field * typ
+type struct_def_field = struct_field * typ * struct_def_field_attr
 
 type struct_def =
     { struct_name   : typ_name
