@@ -15,6 +15,8 @@ fun f(x : ()) -> ()
     return ();
 }
 
+type SomeType { x : I32 } 
+
 fun g(
     // types
     x1  : (),
@@ -28,5 +30,6 @@ fun g(
     x15 : (I32, Char, [(U8, U8); 10], SomeType)
 )
 {
-
+    let (_, _, _, some_type) = x15;
+    let mut field = some_type.x;
 }

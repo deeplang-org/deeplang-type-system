@@ -63,7 +63,11 @@ let rec pp_ty fmt (ty:typ) =
     | TyFloat(FSize_64) -> fprintf fmt "F64"
     | TyArray(ty, size) -> fprintf fmt "[%a ; %d]" pp_ty ty size
     | TyTuple(tys) -> pp_tys fmt tys
-    | TyNamed(name, tys) -> fprintf fmt "%s%a" name pp_tys tys
+    | TyNamed(name, tys) -> 
+        ( match tys with 
+        | [] -> fprintf fmt "%s" name
+        | _::_ -> fprintf fmt "%s%a" name pp_tys tys
+        ) 
     | TyVar(name) -> fprintf fmt "%s@," name
     )
 and 

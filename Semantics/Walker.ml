@@ -75,12 +75,36 @@ let find_var_opt (context:context) (name:variable) : symbol option =
 
 (** call add_variable 
     {[
-    # walk_pattern pattern typ table layered_name_map
+    # walk_pattern context pattern typ
     ]}
     [typ] is the type of expr corresponding to [pattern]
 
     In [ let (x, _) = (3, 1.1) ], [pattern] is [(x, _)], and [typ] is [(i64, f64)].
 *)
+
+let unsupport_generics (tys:typ list) = 
+    ( match tys with 
+    | [] -> () 
+    | _::_ -> failwith("Unsupport for Generics Programming")
+    )
+    ;;
+
+(** check TyNamed whether in context.typ *)
+let rec walk_type (context:context) (typ:typ) : bool =
+    let table = context.table.typ in
+    match typ.shape with 
+    | TyNamed(name, tys) -> 
+        unsupport_generics tys;
+        ( match Hashtbl.find_opt table name with
+        | None -> failwith("Type Named "^name^" Not Found")
+        | Some(_) -> true
+        )
+    | TyVar(_) -> failwith("Unsupport for Generics Programming")
+    | TyArray(typ, _) -> walk_type context typ
+    | TyTuple(tys) -> List.for_all (walk_type context) tys
+    | _ -> true
+    ;;
+
 let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit = 
     let table = context.table in 
     match pattern.shape with
@@ -139,10 +163,9 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
 
 (** Type Check implemented in [walk_expr]: 
     {[ 
-    # let ty = walk_expr expr table name_map type_this 
+    # let ty = walk_expr context expr
       val ty : typ = <...>
     ]} 
-    [type_this] is the type of [this] when in method scope.
 
     [ty] is the type of expr. 
  *)
@@ -239,7 +262,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         | None       -> failwith(" ADT label " ^ label ^ " Not Found ")
         | Some(data) -> (
             if data.typ = List.map (fun expr -> walk_expr context expr) exprs then
-                Helper.var data.sum
+                Helper.named data.sum []
             else
                 failwith(" types doesn't match with ADT label "^ label)
         ))
@@ -255,13 +278,14 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                     (field, walk_expr context expr)
                 in
                 if List.map map_def_field def_fields = List.map map_field_expr field_exprs then
-                    Helper.var name
+                    Helper.named name []
                 else
                     failwith(" types doesn't match with fields of Struct " ^ name)
         ))
     | ExpField(expr, field) -> let rec find_field (typ:typ) (field:struct_field) : typ option =
         ( match typ.shape with 
-        | TyVar(name) -> 
+        | TyNamed(name, tys) -> 
+            unsupport_generics tys;
             ( match Hashtbl.find_opt table.typ name with
             | Some(Struct_data(data)) -> 
                 let def_fields = data.fields in
@@ -287,7 +311,9 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         ) in 
         let typ = walk_expr context expr in
         ( match typ.shape with 
-        | TyVar(name) -> ( match Hashtbl.find_opt table.typ name with
+        | TyNamed(name, tys) -> 
+            unsupport_generics tys;
+            ( match Hashtbl.find_opt table.typ name with
             | None       -> failwith("It's impossible. DEBUG why struct name not found")
             | Some(ADT_data(_)) -> failwith(" ADT has no fields! ")
             | Some(Intf_data(_)) -> failwith(" Interface has no fields! ")
@@ -307,11 +333,15 @@ let rec walk_expr (context:context) (expr:expr) : typ =
             let ty_eq_with_intf (para_t:typ) (arg_t:typ) = 
                 if Helper.ty_eq para_t arg_t then true 
                 else match arg_t.shape with (* para_t = Type <: Intf = arg_t *)
-                | TyVar(intf_name) -> (match Hashtbl.find_opt table.typ intf_name with
+                | TyNamed(intf_name, tys) -> 
+                    unsupport_generics tys;
+                    ( match Hashtbl.find_opt table.typ intf_name with
                     | None -> failwith("Impossible, DEBUG please")
                     (* arg_t is a interface *)
                     | Some(Intf_data(_)) -> ( match para_t.shape with
-                        | TyVar(type_name) -> ( match Hashtbl.find_opt table.typ type_name with
+                        | TyNamed(type_name, tys) -> 
+                            unsupport_generics tys;
+                            ( match Hashtbl.find_opt table.typ type_name with
                             | None -> failwith("Impossible, DEBUG please")
                             | Some(Intf_data(_)) -> false (* REMAIN : interface subtyping here, currently reject *)
                             | Some(Struct_data(data)) -> List.exists (fun name->name=intf_name) data.intf;
@@ -333,8 +363,10 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         let typ = walk_expr context obj in
         let name =         
         ( match typ.shape with
-        | TyVar(name) -> name
-        | _ -> failwith(" Unsupported ") (* Discuss : Support impl for just TyVar currently *)
+        | TyNamed(name, tys) -> 
+            unsupport_generics tys;
+            name
+        | _ -> failwith(" Unsupported ") (* Discuss : Support impl for just TyNamed(name, []) currently *)
         ) in
         let methtbl = 
         ( match Hashtbl.find_opt table.typ name with
@@ -368,7 +400,9 @@ let rec walk_expr (context:context) (expr:expr) : typ =
          *)
         let typ = walk_expr context expr in
         ( match typ.shape with
-        | TyVar(name) -> ( match Hashtbl.find_opt table.typ name with
+        | TyNamed(name, tys) -> 
+            unsupport_generics tys;
+            ( match Hashtbl.find_opt table.typ name with
             | None       -> failwith("It's impossible. DEBUG why ADT name not found")
             | Some(Intf_data(_)) -> failwith("cannot match with Interface")
             | Some(Struct_data(_)) -> failwith(" cannot match with Struct")
@@ -494,19 +528,26 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
 
 (** check func name, and collect type info 
     {[
-    # walk_func_decl name parameters return_type table
+    # walk_func_decl context name parameters return_type
     ]}
 *)
 let walk_func_decl (context:context) (name:func_name) (args:func_arg list) (rety:typ) : unit =
     let table = context.table in 
     match Hashtbl.find_opt table.fnc name with
     | Some(_) -> failwith("function name " ^ name ^ " has been used")
-    | None -> ( Hashtbl.add table.fnc name
-        { args=List.map (fun (arg:func_arg)->arg.farg_typ) args
+    | None -> 
+        (* check TyNamed existence *)
+        let _ = walk_type context rety in
+        Hashtbl.add table.fnc name
+        { args=List.map 
+            (fun (arg:func_arg)->
+                (* check TyNamed existence *)
+                let _ = walk_type context arg.farg_typ in
+                arg.farg_typ
+            ) args
         ; rety=rety
         ; name=List.map (fun (arg:func_arg)->arg.farg_name) args
         }
-    )
     ;;
 
 (** simply walk function's body inductively  *)
@@ -567,12 +608,19 @@ let walk_method_decl (context:context) (typ:typ_name) (name:func_name) (args:fun
     in
     match Hashtbl.find_opt fun_table name with
     | Some(_) -> failwith("member function name " ^ name ^ " has been used")
-    | None -> ( Hashtbl.add fun_table name
-        { args=List.map (fun (arg:func_arg)->arg.farg_typ) args
+    | None -> 
+        (* check TyNamed existence *)
+        let _ = walk_type context rety in
+        Hashtbl.add fun_table name
+        { args=List.map
+            (fun (arg:func_arg)->
+                (* check TyNamed existence *)
+                let _ = walk_type context arg.farg_typ in
+                arg.farg_typ
+            ) args
         ; rety=rety
         ; name=List.map (fun (arg:func_arg)->arg.farg_name) args
         }
-    )
     ;;
 
 let walk_method_stmt = walk_func_stmt;;
@@ -605,10 +653,11 @@ let walk_top (context:context) (clause:top_clause) : unit =
         );
         let core = Hashtbl.create 10 in
         let fields = def.struct_fields in
-        let insert field = 
-        ( match field with
-        | (key, typ, attr) -> Hashtbl.add core key {typ=typ; attr=attr}
-        ) in
+        let insert (key, typ, attr) = 
+            (* check TyNamed existence *)
+            let _ = walk_type context typ in
+            Hashtbl.add core key {typ=typ; attr=attr}
+        in
         List.iter insert fields;
         Hashtbl.add table.typ name 
             ( Struct_data(
@@ -628,7 +677,10 @@ let walk_top (context:context) (clause:top_clause) : unit =
         let walk_iter ((label, typs)) = 
         ( match Hashtbl.find_opt table.adt label with
         | Some(_) -> failwith("The same ADT label")
-        | None    -> Hashtbl.add table.adt label
+        | None    -> 
+            (* check TyNamed existence *)
+            let _ = walk_type context (Helper.tuple typs) in
+            Hashtbl.add table.adt label
             { sum = name
             ; typ = typs
             }
@@ -678,7 +730,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
             let name = decl.func_decl_name in
             let rety = decl.func_decl_rety in
             walk_method_decl context typ name args rety;
-            context.this <- Helper.var typ;
+            context.this <- Helper.named typ [];
             walk_method_stmt context args rety stmt
         in
         List.iter walk_iter methods;
