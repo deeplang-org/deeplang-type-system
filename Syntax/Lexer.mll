@@ -143,7 +143,12 @@ rule token = parse
                 raise @@ SyntaxError.Error(
                     { span_start = Lexing.lexeme_start_p lexbuf
                     ; span_end   = Lexing.lexeme_end_p lexbuf },
-                    BadToken(Lexing.lexeme lexbuf)
+                    (* BadToken(Lexing.lexeme lexbuf) *)
+                    Basic(
+                        { unexpected = Some (Token (Lexing.lexeme lexbuf))
+                        ; expecting  = SyntaxError.ErrorElemSet.singleton (Label "operator")
+                        ; message    = None }
+                    )
                 ) }
     | '('  { TOK_LPAREN     }
     | ')'  { TOK_RPAREN     }
@@ -156,11 +161,25 @@ rule token = parse
     | '.'  { TOK_DOT        }
     | '_'  { TOK_UNDERSCORE }
     | ';'  { TOK_SEMICOLON  }
-    | _
+    | ['\000' - '\127'] 
+    | ['\192' - '\223']['\128' - '\191'] 
+    | ['\224' - '\239']['\128' - '\191']['\128' - '\191'] 
+    | ['\240' - '\247']['\128' - '\191']['\128' - '\191']['\128' - '\191']
         { raise @@ SyntaxError.Error(
             { span_start = Lexing.lexeme_start_p lexbuf
             ; span_end   = Lexing.lexeme_end_p lexbuf },
             Unexpected("character '" ^ Lexing.lexeme lexbuf ^ "'")
+        ) }
+    | _
+        { raise @@ SyntaxError.Error(
+            { span_start = Lexing.lexeme_start_p lexbuf
+            ; span_end   = Lexing.lexeme_end_p lexbuf },
+            (* Unexpected("character '" ^ Lexing.lexeme lexbuf ^ "'") *)
+            Basic(
+                { unexpected = Some (Token (Lexing.lexeme lexbuf))
+                ; expecting  = SyntaxError.ErrorElemSet.empty
+                ; message    = Some "Invalid UTF-8 character!" }
+            )
         ) }
 
 and comment_line = parse
