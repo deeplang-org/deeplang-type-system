@@ -308,3 +308,48 @@ https://guest0x0.xyz/deeplang-borrow-checker-demo/demo.html
 | TOK_LPAREN expr_list_nonempty error {error @@ Expecting "norihgt xxx"}
 ```
 4. walker存放sema文件夹中单独的库。
+
+
+### 2022.7.17 例会纪要
+报错规则讨论
+进展：
+    未完整代码报错
+    句号.报错显示
+    lexer错误报错基本覆盖
+    parser错误信息大部分覆盖
+        小部分等待开新的分支
+    结构体中逗号，分号的判断
+
+报错目前比较简单，只有unexpected，expected ...
+
+遇到哪个token出错的报错
+    增加一个rule将string捕捉
+    再看看Ocmal yacc自己的语法
+
+希望message能提供猜测用户想要写什么东西
+    例如，某个东西和另一个非常相似，然后就提供这样的报错
+
+lexer和parser对于字面量过大的检测
+    手动做计算检测字面量过大
+
+Syntax阶段的报错
+    比如用户自定义类型但未定义类型等待后续检查
+
+逗号之后的逗号，左右括号不匹配等细化的错误信息
+    使用带有局部输入的错误信息判断
+
+token和label的区别：
+    token：字面量，比如“operator”
+    label：代表一类的token，比如operator中具体的+,-,* ...
+
+变量变成表达式的方法
+    单独变量，加圆括号变为函数调用，加点变为方法...
+    变成表达式之后加分号
+    如果要匹配的话就需要每种情况都进行匹配
+
+看上去比较辅助性的错误可以先不必提供
+
+第42行 _as mul y: [U8: 10] => return 12; 的return未成功高亮
+
+多个下划线产生的错误
+    特殊处理，如bad token
