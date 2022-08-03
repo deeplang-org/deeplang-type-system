@@ -114,7 +114,7 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_TyBool
 %token TOK_TyChar
 %token TOK_TyThis
-%token <ParseTree.int_typ_sign * ParseTree.int_typ_size> TOK_TyInt 
+%token <ParseTree.int_typ_sign * ParseTree.int_typ_size> TOK_TyInt
 %token <ParseTree.float_typ_size> TOK_TyFloat
 
 %token TOK_TRUE TOK_FALSE
@@ -124,7 +124,7 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_WHILE TOK_FOR TOK_BREAK TOK_CONTINUE
 %token TOK_LET TOK_MUT TOK_IN
 %token TOK_MATCH
-%token TOK_FUN TOK_RETURN 
+%token TOK_FUN TOK_RETURN
 %token TOK_INTERFACE
 %token TOK_IMPL TOK_EXTENDS
 %token TOK_TYPE
@@ -148,10 +148,84 @@ let mk_top_clause shape = { shape; span = cur_span () }
 
 %%
 
+any_error : 
+    | TOK_TYPE { Some (Token "type") }
+    | TOK_TRUE { Some (Token "true") }
+    | TOK_THIS { Some (Token "this") }
+    | TOK_AS { Some (Token "as") }
+    | TOK_IF { Some (Token "if") }
+    | TOK_ELSE { Some (Token "else") }
+    | TOK_WHILE { Some (Token "while") }
+    | TOK_FOR { Some (Token "for") }
+    | TOK_BREAK { Some (Token "break") }
+    | TOK_CONTINUE { Some (Token "continue") }
+    | TOK_LET { Some (Token "let") }
+    | TOK_MUT { Some (Token "mut") }
+    | TOK_IN { Some (Token "in") }
+    | TOK_MATCH { Some (Token "match") }
+    | TOK_FUN { Some (Token "fun") }
+    | TOK_RETURN { Some (Token "return") }
+    | TOK_INTERFACE { Some (Token "interface") }
+    | TOK_IMPL { Some (Token "impl") }
+    | TOK_EXTENDS { Some (Token "extends") }
+    | TOK_TyBool { Some (Token "Bool") }
+    | TOK_TyChar { Some (Token "Char") }
+    | TOK_TyInt { Some (Token (string_of_int_type (fst $1) (snd $1))) }
+    | TOK_TyFloat { Some (Token (match $1 with | FSize_32 -> "32" | FSize_64 -> "64")) }
+    | TOK_EQGT { Some (Token "=>") }
+    | TOK_MINUSGT { Some (Token "->") }
+    | TOK_MINUS { Some (Token "-") }
+    | TOK_BANG { Some (Token "!") }
+    | TOK_LTEQ { Some (Token "<=") }
+    | TOK_LT { Some (Token "<") }
+    | TOK_GTEQ { Some (Token ">=") }
+    | TOK_GT { Some (Token ">") }
+    | TOK_EQEQ { Some (Token "==") }
+    | TOK_BANGEQ { Some (Token "!=") }
+    | TOK_LOR { Some (Token "||") }
+    | TOK_LAND { Some (Token "&&") }
+    | TOK_LXOR { Some (Token "^^") }
+    | TOK_BOR { Some (Token "|") }
+    | TOK_BAND { Some (Token "&") }
+    | TOK_BXOR { Some (Token "^") }
+    | TOK_LSHIFT { Some (Token "<<") }
+    | TOK_RSHIFT { Some (Token ">>") }
+    | TOK_ADD { Some (Token "+") }
+    | TOK_MUL { Some (Token "*") }
+    | TOK_DIV { Some (Token "/") }
+    | TOK_MOD { Some (Token "%") }
+    | TOK_BOREQ { Some (Token "!=") }
+    | TOK_BANDEQ { Some (Token "&=") }
+    | TOK_BXOREQ { Some (Token "^=") }
+    | TOK_LSHIFTEQ { Some (Token "<<=") }
+    | TOK_RSHIFTEQ { Some (Token ">>=") }
+    | TOK_ADDEQ { Some (Token "+=") }
+    | TOK_MINUSEQ { Some (Token "-=") }
+    | TOK_MULEQ { Some (Token "*=") }
+    | TOK_DIVEQ { Some (Token "/=") }
+    | TOK_MODEQ { Some (Token "%=") }
+    | TOK_EQ { Some (Token "=") }
+    | TOK_LPAREN { Some (Token "(") }
+    | TOK_RPAREN { Some (Token ")") }
+    | TOK_LBRACK { Some (Token "[") }
+    | TOK_RBRACK { Some (Token "]") }
+    | TOK_LBRACE { Some (Token "{") }
+    | TOK_RBRACE { Some (Token "}") }
+    | TOK_COLON { Some (Token ":") }
+    | TOK_COMMA { Some (Token ",") }
+    | TOK_DOT { Some (Token ".") }
+    | TOK_UNDERSCORE { Some (Token "_") }
+    | TOK_SEMICOLON { Some (Token ";") }
+    | TOK_Integer { Some (Token (string_of_int $1)) }
+    | TOK_Double { Some (Token (string_of_float $1)) }
+    | TOK_Char { Some (Token ("'" ^ String.make 1 (Char.chr $1) ^ "'")) }
+    | TOK_String { Some (Token ("\"" ^ $1 ^ "\"")) }
+    | TOK_LowerIdent { Some (Token $1) }
+    | TOK_UpperIdent { Some (Token $1) }
+
 program :
     | TOK_EOF            { [] }
     | top_clause program { $1 :: $2 }
-    | error              { error @@ Expecting "top level clause" }
 ;
 
 top_clause :
@@ -178,6 +252,12 @@ top_clause :
         { mk_top_clause @@ FunctionDef $1 }
     | TOK_LET TOK_LowerIdent TOK_EQ expr TOK_SEMICOLON
         { mk_top_clause @@ GlobalVarDef (mk_global_var $2 $4) }
+    | any_error
+        { error @@ Basic { unexpected = $1
+                         ; expecting = [Label "top level clause"]
+                         ; message = None } }
+    | error
+        { error @@ Expecting "top level clause" }
 ;
 
 
@@ -339,7 +419,7 @@ match_branches :
 match_branch :
     | pattern TOK_EQGT stmt { ($1, $3) }
 ;
-    
+
 
 literal :
     | TOK_LPAREN TOK_RPAREN { LitUnit }

@@ -13,15 +13,13 @@ type error_elem =
     | EndOfInput
 
 let pp_error_elem fmt elem = match elem with
-    | Token str  -> Format.fprintf fmt "\"%s\"" str
+    | Token str  -> Format.fprintf fmt "\"%s\"" (String.escaped str)
     | Label str  -> Format.fprintf fmt "%s" str
     | EndOfInput -> Format.fprintf fmt "[end of input]"
 
-module ErrorElemSet = Set.Make(struct type t = error_elem let compare = compare end)
-
 type error =
     | Basic      of { unexpected : error_elem option
-                    ; expecting  : ErrorElemSet.t
+                    ; expecting  : error_elem list
                     ; message    : string option }
     | Unclosed   of string
     | Expecting  of string
@@ -29,7 +27,6 @@ type error =
     | BadToken   of string
 
 exception Error of src_span * error
-
 
 let pp_span fmt span =
     Format.fprintf fmt "[file \"%s\", row %d, col %d to row %d, col %d]"
@@ -59,11 +56,11 @@ let pp_error fmt err =
                 | None       -> fprintf fmt ""
                 | Some token -> pp_error_elem fmt token;
                 fprintf fmt ".\n");
-            (if not (ErrorElemSet.is_empty expecting) then
-                fprintf fmt "Expecting ";
-                let exp_list = ErrorElemSet.elements expecting in
-                pp_error_elem fmt (List.hd exp_list);
-                expecting_helper fmt (List.tl exp_list);
+            (match expecting with
+            | [] -> ();
+            | _  -> fprintf fmt "Expecting ";
+                pp_error_elem fmt (List.hd expecting);
+                expecting_helper fmt (List.tl expecting);
                 fprintf fmt ".\n");
             (match message with
             | None   -> fprintf fmt ""

@@ -146,7 +146,7 @@ rule token = parse
                     (* BadToken(Lexing.lexeme lexbuf) *)
                     Basic(
                         { unexpected = Some (Token (Lexing.lexeme lexbuf))
-                        ; expecting  = SyntaxError.ErrorElemSet.singleton (Label "operator")
+                        ; expecting  = [Label "operator"]
                         ; message    = None }
                     )
                 ) }
@@ -177,7 +177,7 @@ rule token = parse
             (* Unexpected("character '" ^ Lexing.lexeme lexbuf ^ "'") *)
             Basic(
                 { unexpected = Some (Token (Lexing.lexeme lexbuf))
-                ; expecting  = SyntaxError.ErrorElemSet.empty
+                ; expecting  = []
                 ; message    = Some "Invalid UTF-8 character!" }
             )
         ) }
