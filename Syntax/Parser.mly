@@ -148,7 +148,7 @@ let mk_top_clause shape = { shape; span = cur_span () }
 
 %%
 
-any_error : 
+any_token : 
     | TOK_TYPE { Some (Token "type") }
     | TOK_TRUE { Some (Token "true") }
     | TOK_THIS { Some (Token "this") }
@@ -252,7 +252,7 @@ top_clause :
         { mk_top_clause @@ FunctionDef $1 }
     | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
         { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) $4) }
-    | any_error
+    | any_token
         { error @@ Basic { unexpected = $1
                          ; expecting = [Label "top level clause"]
                          ; message = None } }
@@ -541,9 +541,14 @@ struct_expr_field :
 expr_list_nonempty :
     | expr                              { [$1] }
     | expr TOK_COMMA expr_list_nonempty { $1 :: $3 }
+    | /* empty */ 
+        { error @@ Basic { unexpected = None
+                         ; expecting = []
+                         ; message = Some "Constructor cannot take zero arguments." } }
 ;
 
 expr_list :
-    | /* empty */        { [] }
-    | expr_list_nonempty { $1 }
+    | /* empty */              { [] }
+    | expr                     { [$1] }
+    | expr TOK_COMMA expr_list { $1 :: $3 }
 ;
