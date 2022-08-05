@@ -1,6 +1,6 @@
-fun main(x: char) {
-  let a: i32;
-  let b: f32;
+fun main(x: Char) {
+  let a: I32;
+  let b: F32;
   a = 3;
   b = a % 2;
 

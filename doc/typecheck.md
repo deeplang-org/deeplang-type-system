@@ -37,12 +37,12 @@ types ADT typecompare
 - primitive type
 - user defined type
 
-func a(a:i32, b:i32): i32
+func a(a:I32, b:I32): I32
 
 type interning
 functy
 paramlist ty return_ty
-(i32, i32) -> i32
+(I32, I32) -> I32
 
 
 ast context

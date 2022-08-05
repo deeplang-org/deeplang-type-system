@@ -9,5 +9,5 @@
 (test
  (name ParserTest)
  (libraries Syntax)
- (deps (file test/parser.dp))
+ (deps (file test/parser.dp) (file test/types.dp))
  (modules ParserTest))

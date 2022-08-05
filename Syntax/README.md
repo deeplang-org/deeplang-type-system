@@ -129,7 +129,7 @@ fun foo(bar: Bar) -> Foo {
 ```
 
 ```dp
-fun multiParam(x: i32, y: i32) {
+fun multiParam(x: , y: ) {
     ...
 }
 ```
@@ -370,6 +370,6 @@ Deeplang目前正处于活跃开发中。上述的设计和特性都尚未稳定
 Deeplang是一门面向IoT的语言，在IoT编程中一个十分重要的应用场景就是对各类二进制协议的高效解析。关于Deeplang中如何支持这一场景仍在讨论中。其中一个语言层面的方案是支持内建的数组操作宏，例如：
 
 ```dp
-let arr: [i32; 100] = [];
+let arr: [; 100] = [];
 arr@match([s] == 1, [s + 10] == 1);
 ```

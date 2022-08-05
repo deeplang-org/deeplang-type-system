@@ -250,8 +250,8 @@ top_clause :
         { mk_top_clause @@ MethodsImpl (mk_impl (Some $4) $2 $6) }
     | function_impl
         { mk_top_clause @@ FunctionDef $1 }
-    | TOK_LET TOK_LowerIdent TOK_EQ expr TOK_SEMICOLON
-        { mk_top_clause @@ GlobalVarDef (mk_global_var $2 $4) }
+    | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
+        { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) $4) }
     | any_error
         { error @@ Basic { unexpected = $1
                          ; expecting = [Label "top level clause"]
