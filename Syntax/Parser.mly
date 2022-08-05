@@ -148,7 +148,7 @@ let mk_top_clause shape = { shape; span = cur_span () }
 
 %%
 
-any_token : 
+any_token :
     | TOK_TYPE { Some (Token "type") }
     | TOK_TRUE { Some (Token "true") }
     | TOK_THIS { Some (Token "this") }
@@ -512,13 +512,17 @@ atom_expr :
     | literal        { mk_expr @@ ExpLit $1 }
     | TOK_LowerIdent { mk_expr @@ ExpVar $1 }
     | TOK_THIS       { mk_expr ExpThis }
-    | TOK_LPAREN expr_list_nonempty TOK_RPAREN
+    | TOK_LPAREN expr_list TOK_RPAREN
         { match $2 with [expr] -> expr
                       | exprs -> mk_expr @@ ExpTuple exprs }
     | TOK_UpperIdent
         { mk_expr @@ ExpADT($1, []) }
-    | TOK_UpperIdent TOK_LPAREN expr_list_nonempty TOK_RPAREN
-        { mk_expr @@ ExpADT($1, $3) }
+    | TOK_UpperIdent TOK_LPAREN expr_list TOK_RPAREN
+        { match $3 with [] ->
+            error @@ Basic { unexpected = None
+                           ; expecting = []
+                           ; message = Some "Constructor cannot take zero arguments." }
+                      | exprs -> mk_expr @@ ExpADT($1, exprs) }
     | TOK_LowerIdent TOK_LPAREN expr_list TOK_RPAREN
         { mk_expr @@ ExpApp($1, $3) }
     | atom_expr TOK_DOT TOK_LowerIdent
@@ -537,15 +541,6 @@ struct_expr_field :
     | TOK_LowerIdent TOK_COLON expr { ($1, $3) }
 ;
 
-
-expr_list_nonempty :
-    | expr                              { [$1] }
-    | expr TOK_COMMA expr_list_nonempty { $1 :: $3 }
-    | /* empty */ 
-        { error @@ Basic { unexpected = None
-                         ; expecting = []
-                         ; message = Some "Constructor cannot take zero arguments." } }
-;
 
 expr_list :
     | /* empty */              { [] }
