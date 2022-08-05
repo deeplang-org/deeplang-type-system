@@ -29,7 +29,9 @@ let test_invalid path =
 
 let _ =
     Format.printf "@[<v>";
-    if List.for_all Fun.id (List.map test_valid ["test/parser.dp"; "test/types.dp"] @ List.map test_invalid ["test/expressions/cons_no_args.dp"])
+    if List.for_all Fun.id (List.map test_valid ["test/parser.dp"; "test/types.dp"] 
+        @ List.map test_invalid [ "test/expressions/cons_no_args.dp"
+                                ; "test/expressions/bad_struct_field.dp"
+                                ; "test/expressions/bad_struct_field2.dp" ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)
- 

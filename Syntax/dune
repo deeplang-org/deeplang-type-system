@@ -9,5 +9,8 @@
 (test
  (name ParserTest)
  (libraries Syntax)
- (deps (file test/parser.dp) (file test/types.dp) (file test/expressions/cons_no_args.dp))
+ (deps (file test/parser.dp) (file test/types.dp) 
+       (file test/expressions/cons_no_args.dp)
+       (file test/expressions/bad_struct_field.dp)
+       (file test/expressions/bad_struct_field2.dp))
  (modules ParserTest))

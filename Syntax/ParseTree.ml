@@ -187,6 +187,7 @@ and stmt_shape =
 
 type global_variable_def =
     { gvar_name  : variable
+    ; gvar_typ   : typ option
     ; gvar_id    : symbol
     ; gvar_value : expr }
 

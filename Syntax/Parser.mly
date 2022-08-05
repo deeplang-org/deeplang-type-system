@@ -3,7 +3,6 @@
 open ParseTree
 open SyntaxError
 
-
 let cur_span () =
     { span_start = Parsing.symbol_start_pos ()
     ; span_end   = Parsing.symbol_end_pos () }
@@ -43,10 +42,11 @@ let mk_impl intf typ methods =
     ; impl_id      = NodeId.ImplId (new_impl_id ())
     ; impl_methods = methods }
 
-let mk_global_var name value =
+let mk_global_var name typ value =
     { gvar_name  = name
     ; gvar_id    = Symbol (new_symbol ())
-    ; gvar_value = value }
+    ; gvar_value = value
+    ; gvar_typ   = typ }
 
 let mk_top_clause shape = { shape; span = cur_span () }
 %}
@@ -140,7 +140,6 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %left     TOK_LSHIFT TOK_RSHIFT
 %left     TOK_ADD TOK_MINUS
 %left     TOK_MUL TOK_DIV TOK_MOD
-
 
 %start program
 %type <ParseTree.top_clause list> program
@@ -251,7 +250,7 @@ top_clause :
     | function_impl
         { mk_top_clause @@ FunctionDef $1 }
     | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
-        { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) $4) }
+        { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) ($2.vpat_typ) $4) }
     | any_token
         { error @@ Basic { unexpected = $1
                          ; expecting = [Label "top level clause"]
@@ -477,27 +476,27 @@ struct_pattern_field :
 
 expr :
     | small_expr           { $1 }
-    | expr TOK_LT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLt    , $1, $3) }
-    | expr TOK_LTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLeq   , $1, $3) }
-    | expr TOK_GT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGt    , $1, $3) }
-    | expr TOK_GTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGeq   , $1, $3) }
-    | expr TOK_EQEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpEq    , $1, $3) }
-    | expr TOK_BANGEQ expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpNeq   , $1, $3) }
-    | expr TOK_LOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLOr   , $1, $3) }
-    | expr TOK_LAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLAnd  , $1, $3) }
-    | expr TOK_LXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLXor  , $1, $3) }
-    | expr TOK_BOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBOr   , $1, $3) }
-    | expr TOK_BAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBAnd  , $1, $3) }
-    | expr TOK_BXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBXor  , $1, $3) }
-    | expr TOK_LSHIFT expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLShift, $1, $3) }
-    | expr TOK_RSHIFT expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpRShift, $1, $3) }
-    | expr TOK_ADD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpAdd   , $1, $3) }
-    | expr TOK_MINUS  expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpSub   , $1, $3) }
-    | expr TOK_MUL    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMul   , $1, $3) }
-    | expr TOK_DIV    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpDiv   , $1, $3) }
-    | expr TOK_MOD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMod   , $1, $3) }
-    | error
-        { error @@ Expecting "expression" }
+    | small_expr TOK_LT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLt    , $1, $3) }
+    | small_expr TOK_LTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLeq   , $1, $3) }
+    | small_expr TOK_GT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGt    , $1, $3) }
+    | small_expr TOK_GTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGeq   , $1, $3) }
+    | small_expr TOK_EQEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpEq    , $1, $3) }
+    | small_expr TOK_BANGEQ expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpNeq   , $1, $3) }
+    | small_expr TOK_LOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLOr   , $1, $3) }
+    | small_expr TOK_LAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLAnd  , $1, $3) }
+    | small_expr TOK_LXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLXor  , $1, $3) }
+    | small_expr TOK_BOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBOr   , $1, $3) }
+    | small_expr TOK_BAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBAnd  , $1, $3) }
+    | small_expr TOK_BXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBXor  , $1, $3) }
+    | small_expr TOK_LSHIFT expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLShift, $1, $3) }
+    | small_expr TOK_RSHIFT expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpRShift, $1, $3) }
+    | small_expr TOK_ADD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpAdd   , $1, $3) }
+    | small_expr TOK_MINUS  expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpSub   , $1, $3) }
+    | small_expr TOK_MUL    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMul   , $1, $3) }
+    | small_expr TOK_DIV    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpDiv   , $1, $3) }
+    | small_expr TOK_MOD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMod   , $1, $3) }
+    // | error
+    //     { error @@ Expecting "expression" }
 ;
 
 small_expr :
@@ -532,13 +531,20 @@ atom_expr :
 ;
 
 struct_expr_fields :
-    | /* empty */                                    { [] }
-    | struct_expr_field                              { [$1] }
     | struct_expr_field TOK_COMMA struct_expr_fields { $1 :: $3 }
+    | struct_expr_field                              { [$1] }
+    | /* empty */                                    { [] }
+    | error {error @@ Basic { unexpected = None
+                                            ; expecting = [Token ","]
+                                            ; message = None }}
 ;
 
 struct_expr_field :
-    | TOK_LowerIdent TOK_COLON expr { ($1, $3) }
+    | TOK_LowerIdent any_token expr
+        { match $2 with (Some (Token ":")) -> ($1, $3)
+                      | _ -> error @@ Basic { unexpected = $2
+                                            ; expecting = [Token ":"]
+                                            ; message = None } }
 ;
 
 
