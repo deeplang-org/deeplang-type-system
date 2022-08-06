@@ -114,7 +114,7 @@ rule token = parse
     | newline { Lexing.new_line lexbuf; token lexbuf }
     | dex_digit+
         { TOK_Integer (int_of_string @@ Lexing.lexeme lexbuf) }
-    | (dex_digit+)'.'(dex_digit*)
+    | (dex_digit+)'.'(dex_digit+)
         { TOK_Double (float_of_string @@ Lexing.lexeme lexbuf) }
     | '\"' (([^ '\"' '\\' '\n']) | ('\\' ('\"' | '\\' | '\'' | 'n' | 't' | 'r')))* '\"'
         { TOK_String (unescapeInitTail (Lexing.lexeme lexbuf)) }

@@ -41,7 +41,7 @@ let rec expecting_helper fmt exp_list =
     let open Format in
     match exp_list with
     | []      -> ();
-    | e :: [] -> fprintf fmt " or"; pp_error_elem fmt e;
+    | e :: [] -> fprintf fmt " or "; pp_error_elem fmt e;
     | e :: es -> fprintf fmt ", "; pp_error_elem fmt e; expecting_helper fmt es
 
 

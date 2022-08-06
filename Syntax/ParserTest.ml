@@ -32,6 +32,15 @@ let _ =
     if List.for_all Fun.id (List.map test_valid ["test/parser.dp"; "test/types.dp"] 
         @ List.map test_invalid [ "test/expressions/cons_no_args.dp"
                                 ; "test/expressions/bad_struct_field.dp"
-                                ; "test/expressions/bad_struct_field2.dp" ])
+                                ; "test/expressions/bad_struct_field2.dp"
+                                ; "test/expressions/bad_unary_op.dp"
+                                ; "test/expressions/bad_unary_op2.dp"
+                                ; "test/expressions/bad_unary_op3.dp"
+                                ; "test/expressions/bad_field_access.dp"
+                                ; "test/expressions/bad_field_access2.dp"
+                                ; "test/expressions/bad_method_access.dp"
+                                ; "test/expressions/bad_method_access2.dp"
+                                ; "test/expressions/bad_binary_op.dp"
+                                ; "test/expressions/bad_binary_op2.dp" ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)
