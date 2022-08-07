@@ -31,25 +31,25 @@ fun main( )
     let foo : Foo = new Foo ( );
     foo.fib(10);
 };
-let mut b : i32;
-fun foo( a : u32 )->In{ };
+let mut b : I32;
+fun foo( a : U32 )->In{ };
 type Show {
     show : This->String
 };
 
-fun bar( a: u32)->String{
+fun bar( a: U32)->String{
     let mut str : String;
 };
 
 type Shape [
-	Rectangle(width: i32, height: i32),
-	Circle(radius: i32)
+	Rectangle(width: I32, height: I32),
+	Circle(radius: I32)
 ]{};
 type Shape [
-	Rectangle(width: i32, height: i32),
-	Circle(radius: i32)
+	Rectangle(width: I32, height: I32),
+	Circle(radius: I32)
 ] {
-	fun area(this: This) -> i32 {
+	fun area(this: This) -> I32 {
 		match(this) {
 			Rectangle(width, height) {
 				;
@@ -76,9 +76,9 @@ type Sigma(string : String, as an :An) impl Show
 };
 
 // Delegate
-type Animal (weight: i32) {};
+type Animal (weight: I32) {};
 type Person (
-    age: i32, name: String,
+    age: I32, name: String,
     as animal: Animal // delegate
 ){};
 

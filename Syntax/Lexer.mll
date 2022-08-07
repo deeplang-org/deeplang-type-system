@@ -114,7 +114,7 @@ rule token = parse
     | newline { Lexing.new_line lexbuf; token lexbuf }
     | dex_digit+
         { TOK_Integer (int_of_string @@ Lexing.lexeme lexbuf) }
-    | (dex_digit+)'.'(dex_digit*)
+    | (dex_digit+)'.'(dex_digit+)
         { TOK_Double (float_of_string @@ Lexing.lexeme lexbuf) }
     | '\"' (([^ '\"' '\\' '\n']) | ('\\' ('\"' | '\\' | '\'' | 'n' | 't' | 'r')))* '\"'
         { TOK_String (unescapeInitTail (Lexing.lexeme lexbuf)) }
@@ -146,7 +146,7 @@ rule token = parse
                     (* BadToken(Lexing.lexeme lexbuf) *)
                     Basic(
                         { unexpected = Some (Token (Lexing.lexeme lexbuf))
-                        ; expecting  = SyntaxError.ErrorElemSet.singleton (Label "operator")
+                        ; expecting  = [Label "operator"]
                         ; message    = None }
                     )
                 ) }
@@ -177,7 +177,7 @@ rule token = parse
             (* Unexpected("character '" ^ Lexing.lexeme lexbuf ^ "'") *)
             Basic(
                 { unexpected = Some (Token (Lexing.lexeme lexbuf))
-                ; expecting  = SyntaxError.ErrorElemSet.empty
+                ; expecting  = []
                 ; message    = Some "Invalid UTF-8 character!" }
             )
         ) }

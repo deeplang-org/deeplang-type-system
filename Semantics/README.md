@@ -2,7 +2,7 @@
 
 ### Discuss, TODO and REMAIN list
 1. Discuss BuiltinType.var.span = None
-2. Discuss literal for int and float, i32? i64? f32? f64?
+2. Discuss literal for int and float, ? i64? ? f64?
 3. TODO method field 名字不重名检查 
 4. TODO Test
 5. REMAIN Pattern Exhaustivity
@@ -59,7 +59,7 @@ and struct_def_field =
 5. TODO method field 名字检查 
 6. DONE function retv check
 7. REMAIN ...
-8. Discuss literal for int and float, i32? i64? f32? f64?
+8. Discuss literal for int and float, ? i64? ? f64?
 9. Discuss : return x:Intf reject
    ```deeplang
    fun foo(x:intf){ // -> reject
