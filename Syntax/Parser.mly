@@ -531,9 +531,6 @@ expr :
     | small_expr TOK_MUL    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMul   , $1, $3) }
     | small_expr TOK_DIV    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpDiv   , $1, $3) }
     | small_expr TOK_MOD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMod   , $1, $3) }
-    | small_expr asgn_token { error @@ Basic { unexpected = $2
-                                 ; expecting = [Label "binary operator"]
-                                 ; message = None } }
     | small_expr arrow_token { error @@ Basic { unexpected = $2
                                   ; expecting = [Label "binary operator"]
                                   ; message = None } }

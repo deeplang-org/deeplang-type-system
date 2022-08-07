@@ -1,1 +1,1 @@
-let struct = MyStruct { f:Should_start_with_lowercase : haha };
+let struct = MyStruct { Should_start_with_lowercase : haha };
