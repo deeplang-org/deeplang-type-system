@@ -394,6 +394,7 @@ Deeplang项目安排
 
 
 
+
 ### 2022.8.7例会纪要
 
 进展汇报
@@ -433,6 +434,5 @@ Deeplang项目安排
 备注：
 
 ​	修改Parser.mly的内容之后需要在Syntax的dune文件和test里修改。此时，ParserTest里会同时测试正向用例和反向用例，如果返回OK则表示正常，否则需要进行一些修改。注意尽量不要产生conflict
-
 
 

@@ -1,6 +1,6 @@
-fun main(x : char, y : bool) {
-  let mut f : bool;
-  let c : char = 'c';
+fun main(x : Char, y : Bool) {
+  let mut f : Bool;
+  let c : Char = 'c';
   f = true;
 
   // meaningless if structure
@@ -18,13 +18,13 @@ fun main(x : char, y : bool) {
   }
 
   // meaningless while structure
-  let mut (x, b): i32 = (0, 3);
+  let mut (x, b): I32 = (0, 3);
   while (1 + x == 3) {
     return (0, (1.2, 'c'), "Abc");
   }
 
   // meaningless for structures
-  for (df: i32 in someThing) {
+  for (df: I32 in someThing) {
     return (0, (1.2, 'c'), "Abc");
   }
   for ((key, value) in someThing) {

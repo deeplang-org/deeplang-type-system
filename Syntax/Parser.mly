@@ -3,12 +3,14 @@
 open ParseTree
 open SyntaxError
 
-
 let cur_span () =
     { span_start = Parsing.symbol_start_pos ()
     ; span_end   = Parsing.symbol_end_pos () }
 
 let error err = raise(Error(cur_span (), err))
+
+let error_ i j err = raise(Error( { span_start = Parsing.rhs_start_pos i
+    ; span_end   = Parsing.rhs_end_pos j }, err))
 
 
 let make_id_generator () =
@@ -43,10 +45,11 @@ let mk_impl intf typ methods =
     ; impl_id      = NodeId.ImplId (new_impl_id ())
     ; impl_methods = methods }
 
-let mk_global_var name value =
+let mk_global_var name typ value =
     { gvar_name  = name
     ; gvar_id    = Symbol (new_symbol ())
-    ; gvar_value = value }
+    ; gvar_value = value
+    ; gvar_typ   = typ }
 
 let mk_top_clause shape = { shape; span = cur_span () }
 %}
@@ -114,7 +117,7 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_TyBool
 %token TOK_TyChar
 %token TOK_TyThis
-%token <ParseTree.int_typ_sign * ParseTree.int_typ_size> TOK_TyInt 
+%token <ParseTree.int_typ_sign * ParseTree.int_typ_size> TOK_TyInt
 %token <ParseTree.float_typ_size> TOK_TyFloat
 
 %token TOK_TRUE TOK_FALSE
@@ -124,7 +127,7 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_WHILE TOK_FOR TOK_BREAK TOK_CONTINUE
 %token TOK_LET TOK_MUT TOK_IN
 %token TOK_MATCH
-%token TOK_FUN TOK_RETURN 
+%token TOK_FUN TOK_RETURN
 %token TOK_INTERFACE
 %token TOK_IMPL TOK_EXTENDS
 %token TOK_TYPE
@@ -141,17 +144,123 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %left     TOK_ADD TOK_MINUS
 %left     TOK_MUL TOK_DIV TOK_MOD
 
-
 %start program
 %type <ParseTree.top_clause list> program
 
 
 %%
 
+brace_token :     
+    | TOK_LBRACE { Some (Token "{") }
+    | TOK_RBRACE { Some (Token "}") }
+;
+
+bi_op_token :
+    | TOK_LTEQ { Some (Token "<=") }
+    | TOK_LT { Some (Token "<") }
+    | TOK_GTEQ { Some (Token ">=") }
+    | TOK_GT { Some (Token ">") }
+    | TOK_EQEQ { Some (Token "==") }
+    | TOK_BANGEQ { Some (Token "!=") }
+    | TOK_LOR { Some (Token "||") }
+    | TOK_LAND { Some (Token "&&") }
+    | TOK_LXOR { Some (Token "^^") }
+    | TOK_BOR { Some (Token "|") }
+    | TOK_BAND { Some (Token "&") }
+    | TOK_BXOR { Some (Token "^") }
+    | TOK_LSHIFT { Some (Token "<<") }
+    | TOK_RSHIFT { Some (Token ">>") }
+    | TOK_ADD { Some (Token "+") }
+    | TOK_MUL { Some (Token "*") }
+    | TOK_DIV { Some (Token "/") }
+    | TOK_MOD { Some (Token "%") }
+    | TOK_BOREQ { Some (Token "!=") }
+;
+
+asgn_token :
+    | TOK_BANDEQ { Some (Token "&=") }
+    | TOK_BXOREQ { Some (Token "^=") }
+    | TOK_LSHIFTEQ { Some (Token "<<=") }
+    | TOK_RSHIFTEQ { Some (Token ">>=") }
+    | TOK_ADDEQ { Some (Token "+=") }
+    | TOK_MINUSEQ { Some (Token "-=") }
+    | TOK_MULEQ { Some (Token "*=") }
+    | TOK_DIVEQ { Some (Token "/=") }
+    | TOK_MODEQ { Some (Token "%=") }
+    | TOK_EQ { Some (Token "=") }
+;
+
+keyword_token :
+    | TOK_TYPE { Some (Token "type") }
+    | TOK_AS { Some (Token "as") }
+    | TOK_IF { Some (Token "if") }
+    | TOK_ELSE { Some (Token "else") }
+    | TOK_WHILE { Some (Token "while") }
+    | TOK_FOR { Some (Token "for") }
+    | TOK_BREAK { Some (Token "break") }
+    | TOK_CONTINUE { Some (Token "continue") }
+    | TOK_LET { Some (Token "let") }
+    | TOK_MUT { Some (Token "mut") }
+    | TOK_IN { Some (Token "in") }
+    | TOK_MATCH { Some (Token "match") }
+    | TOK_FUN { Some (Token "fun") }
+    | TOK_RETURN { Some (Token "return") }
+    | TOK_INTERFACE { Some (Token "interface") }
+    | TOK_IMPL { Some (Token "impl") }
+    | TOK_EXTENDS { Some (Token "extends") }
+;
+
+arrow_token :
+    | TOK_EQGT { Some (Token "=>") }
+    | TOK_MINUSGT { Some (Token "->") }
+;
+
+type_token :
+    | TOK_TyBool { Some (Token "Bool") }
+    | TOK_TyChar { Some (Token "Char") }
+    | TOK_TyInt { Some (Token (string_of_int_type (fst $1) (snd $1))) }
+    | TOK_TyFloat { Some (Token (match $1 with | FSize_32 -> "32" | FSize_64 -> "64")) }
+;
+
+other_token :
+    | TOK_TRUE { Some (Token "true") }
+    | TOK_FALSE { Some (Token "false") }
+    | TOK_THIS { Some (Token "this") }
+    | TOK_MINUS { Some (Token "-") }
+    | TOK_BANG { Some (Token "!") }
+    | TOK_LPAREN { Some (Token "(") }
+    | TOK_RPAREN { Some (Token ")") }
+    | TOK_LBRACK { Some (Token "[") }
+    | TOK_RBRACK { Some (Token "]") }
+    | TOK_COLON { Some (Token ":") }
+    | TOK_COMMA { Some (Token ",") }
+    | TOK_DOT { Some (Token ".") }
+    | TOK_UNDERSCORE { Some (Token "_") }
+    | TOK_SEMICOLON { Some (Token ";") }
+    | TOK_Integer { Some (Label "integer") }
+    | TOK_Double { Some (Label "float") }
+    | TOK_Char { Some (Token ("'" ^ String.make 1 (Char.chr $1) ^ "'")) }
+    | TOK_String { Some (Token ("\"" ^ $1 ^ "\"")) }
+
+non_ident_token :
+    | other_token { $1 }
+    | bi_op_token { $1 }
+    | asgn_token { $1 }
+    | keyword_token { $1 }
+    | brace_token { $1 }
+    | type_token { $1 }
+    | arrow_token { $1 }
+;
+
+any_token :
+    | non_ident_token { $1 }
+    | TOK_LowerIdent { Some (Token $1) }
+    | TOK_UpperIdent { Some (Token $1) }
+;
+
 program :
     | TOK_EOF            { [] }
     | top_clause program { $1 :: $2 }
-    | error              { error @@ Expecting "top level clause" }
 ;
 
 top_clause :
@@ -176,8 +285,14 @@ top_clause :
         { mk_top_clause @@ MethodsImpl (mk_impl (Some $4) $2 $6) }
     | function_impl
         { mk_top_clause @@ FunctionDef $1 }
-    | TOK_LET TOK_LowerIdent TOK_EQ expr TOK_SEMICOLON
-        { mk_top_clause @@ GlobalVarDef (mk_global_var $2 $4) }
+    | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
+        { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) ($2.vpat_typ) $4) }
+    // | any_token
+    //     { error @@ Basic { unexpected = $1
+    //                      ; expecting = [Label "top level clause"]
+    //                      ; message = None } }
+    // | error
+    //     { error @@ Expecting "top level clause" }
 ;
 
 
@@ -270,8 +385,8 @@ typ :
         { mk_typ @@ TyArray($2, $4) }
     | TOK_LPAREN typ_list_nonempty TOK_RPAREN
         { mk_typ @@ TyTuple $2 }
-    | error
-        { error @@ Expecting "type" }
+    // | error
+    //     { error @@ Expecting "type" }
 ;
 
 typ_list_nonempty :
@@ -309,8 +424,8 @@ stmt :
         { mk_stmt @@ StmtWhile($3, $5) }
     | TOK_MATCH TOK_LPAREN expr TOK_RPAREN TOK_LBRACE match_branches TOK_RBRACE
         { mk_stmt @@ StmtMatch($3, $6) }
-    | error
-        { error @@ Expecting "statement" }
+    // | error
+    //     { error @@ Expecting "statement" }
 ;
 
 lvalue :
@@ -339,7 +454,7 @@ match_branches :
 match_branch :
     | pattern TOK_EQGT stmt { ($1, $3) }
 ;
-    
+
 
 literal :
     | TOK_LPAREN TOK_RPAREN { LitUnit }
@@ -366,8 +481,8 @@ pattern :
         { mk_pat @@ PatStruct($1, $3) }
     | TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         { mk_pat @@ PatTuple $2 }
-    | error
-        { error @@ Expecting "pattern" }
+    // | error
+    //     { error @@ Expecting "pattern" }
 ;
 
 variable_pattern :
@@ -397,25 +512,43 @@ struct_pattern_field :
 
 expr :
     | small_expr           { $1 }
-    | expr TOK_LT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLt    , $1, $3) }
-    | expr TOK_LTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLeq   , $1, $3) }
-    | expr TOK_GT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGt    , $1, $3) }
-    | expr TOK_GTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGeq   , $1, $3) }
-    | expr TOK_EQEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpEq    , $1, $3) }
-    | expr TOK_BANGEQ expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpNeq   , $1, $3) }
-    | expr TOK_LOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLOr   , $1, $3) }
-    | expr TOK_LAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLAnd  , $1, $3) }
-    | expr TOK_LXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLXor  , $1, $3) }
-    | expr TOK_BOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBOr   , $1, $3) }
-    | expr TOK_BAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBAnd  , $1, $3) }
-    | expr TOK_BXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBXor  , $1, $3) }
-    | expr TOK_LSHIFT expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLShift, $1, $3) }
-    | expr TOK_RSHIFT expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpRShift, $1, $3) }
-    | expr TOK_ADD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpAdd   , $1, $3) }
-    | expr TOK_MINUS  expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpSub   , $1, $3) }
-    | expr TOK_MUL    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMul   , $1, $3) }
-    | expr TOK_DIV    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpDiv   , $1, $3) }
-    | expr TOK_MOD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMod   , $1, $3) }
+    | small_expr TOK_LT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLt    , $1, $3) }
+    | small_expr TOK_LTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLeq   , $1, $3) }
+    | small_expr TOK_GT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGt    , $1, $3) }
+    | small_expr TOK_GTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpGeq   , $1, $3) }
+    | small_expr TOK_EQEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpEq    , $1, $3) }
+    | small_expr TOK_BANGEQ expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpNeq   , $1, $3) }
+    | small_expr TOK_LOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLOr   , $1, $3) }
+    | small_expr TOK_LAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLAnd  , $1, $3) }
+    | small_expr TOK_LXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLXor  , $1, $3) }
+    | small_expr TOK_BOR    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBOr   , $1, $3) }
+    | small_expr TOK_BAND   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBAnd  , $1, $3) }
+    | small_expr TOK_BXOR   expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpBXor  , $1, $3) }
+    | small_expr TOK_LSHIFT expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpLShift, $1, $3) }
+    | small_expr TOK_RSHIFT expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpRShift, $1, $3) }
+    | small_expr TOK_ADD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpAdd   , $1, $3) }
+    | small_expr TOK_MINUS  expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpSub   , $1, $3) }
+    | small_expr TOK_MUL    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMul   , $1, $3) }
+    | small_expr TOK_DIV    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpDiv   , $1, $3) }
+    | small_expr TOK_MOD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMod   , $1, $3) }
+    | small_expr arrow_token { error @@ Basic { unexpected = $2
+                                  ; expecting = [Label "binary operator"]
+                                  ; message = None } }
+    | small_expr keyword_token { error @@ Basic { unexpected = $2
+                                    ; expecting = [Label "binary operator"]
+                                    ; message = None } }
+    | small_expr TOK_LowerIdent { error @@ Basic { unexpected = Some (Token $2)
+                                     ; expecting = [Label "binary operator"]
+                                     ; message = None } }
+    | small_expr TOK_UpperIdent { error @@ Basic { unexpected = Some (Token $2)
+                                 ; expecting = [Label "binary operator"]
+                                 ; message = None } }
+    | small_expr type_token { error @@ Basic { unexpected = $2
+                                 ; expecting = [Label "binary operator"]
+                                 ; message = None } }
+    | small_expr TOK_BANG { error @@ Basic { unexpected = Some (Token ":")
+                               ; expecting = [Label "binary operator"]
+                               ; message = None } }
     | error
         { error @@ Expecting "expression" }
 ;
@@ -424,6 +557,18 @@ small_expr :
     | atom_expr           { $1 }
     | TOK_MINUS atom_expr { mk_expr @@ ExpUnOp(UnOpNeg, $2) }
     | TOK_BANG  atom_expr { mk_expr @@ ExpUnOp(UnOpNot, $2) }
+    | bi_op_token { error @@ Basic { unexpected = $1
+                                   ; expecting = [Label "unary operator"]
+                                   ; message = None } }
+    | asgn_token { error @@ Basic { unexpected = $1
+                                  ; expecting = [Label "unary operator"]
+                                  ; message = None } }
+    | type_token { error @@ Basic { unexpected = $1
+                                  ; expecting = [Label "unary operator"]
+                                  ; message = None } }
+    | arrow_token { error @@ Basic { unexpected = $1
+                                   ; expecting = [Label "unary operator"]
+                                   ; message = None } }
     | TOK_UpperIdent TOK_LBRACE struct_expr_fields TOK_RBRACE
         { mk_expr @@ ExpStruct($1, $3) }
 ;
@@ -432,38 +577,59 @@ atom_expr :
     | literal        { mk_expr @@ ExpLit $1 }
     | TOK_LowerIdent { mk_expr @@ ExpVar $1 }
     | TOK_THIS       { mk_expr ExpThis }
-    | TOK_LPAREN expr_list_nonempty TOK_RPAREN
+    | TOK_LPAREN expr_list TOK_RPAREN
         { match $2 with [expr] -> expr
                       | exprs -> mk_expr @@ ExpTuple exprs }
     | TOK_UpperIdent
         { mk_expr @@ ExpADT($1, []) }
-    | TOK_UpperIdent TOK_LPAREN expr_list_nonempty TOK_RPAREN
-        { mk_expr @@ ExpADT($1, $3) }
+    | TOK_UpperIdent TOK_LPAREN expr_list TOK_RPAREN
+        { match $3 with [] ->
+            error @@ Basic { unexpected = None
+                           ; expecting = []
+                           ; message = Some "Constructor cannot take zero arguments." }
+                      | exprs -> mk_expr @@ ExpADT($1, exprs) }
     | TOK_LowerIdent TOK_LPAREN expr_list TOK_RPAREN
         { mk_expr @@ ExpApp($1, $3) }
     | atom_expr TOK_DOT TOK_LowerIdent
         { mk_expr @@ ExpField($1, $3) }
+    | atom_expr TOK_DOT TOK_UpperIdent
+        { error @@ Basic { unexpected = Some (Token $3)
+                         ; expecting = [Label "field name"; Label "method name"]
+                         ; message = None } }
+    | atom_expr TOK_DOT non_ident_token
+        { error @@ Basic { unexpected = $3
+                         ; expecting = [Label "field name"; Label "method name"]
+                         ; message = None } }
     | atom_expr TOK_DOT TOK_LowerIdent TOK_LPAREN expr_list TOK_RPAREN
         { mk_expr @@ ExpMethod($1, $3, $5) }
 ;
 
 struct_expr_fields :
-    | /* empty */                                    { [] }
-    | struct_expr_field                              { [$1] }
     | struct_expr_field TOK_COMMA struct_expr_fields { $1 :: $3 }
+    | struct_expr_field                              { [$1] }
+    | /* empty */                                    { [] }
 ;
 
 struct_expr_field :
-    | TOK_LowerIdent TOK_COLON expr { ($1, $3) }
+    | struct_expr_field_name any_token expr
+        { match $2 with (Some (Token ":")) -> ($1, $3)
+                      | _ -> error_ 2 2 @@ Basic { unexpected = $2
+                                                 ; expecting = [Token ":"]
+                                                 ; message = None } }
 ;
 
-
-expr_list_nonempty :
-    | expr                              { [$1] }
-    | expr TOK_COMMA expr_list_nonempty { $1 :: $3 }
+struct_expr_field_name :
+    | TOK_LowerIdent { $1 }
+    | TOK_UpperIdent { error @@ Basic { unexpected = Some (Token $1)
+                                      ; expecting = [Label "field name"]
+                                      ; message = None } }
+    | other_token { error @@ Basic { unexpected = $1
+                                   ; expecting = [Label "field name"]
+                                   ; message = None } }
 ;
 
 expr_list :
-    | /* empty */        { [] }
-    | expr_list_nonempty { $1 }
+    | /* empty */              { [] }
+    | expr                     { [$1] }
+    | expr TOK_COMMA expr_list { $1 :: $3 }
 ;

@@ -8,10 +8,39 @@ let parse_file file =
     let program = Parser.program Lexer.token lexbuf in
     program
 
+let test_valid path =
+    Format.printf "@[<v>";
+    try ignore (parse_file path);
+        true
+    with SyntaxError.Error(span, err) ->
+        Format.printf "syntax error: %a@ in %a\n"
+            SyntaxError.pp_error err SyntaxError.pp_span span;
+        false
+
+let test_invalid path =
+    Format.printf "@[<v>";
+    try ignore (parse_file path);
+        Format.printf "%s should have a syntax error!\n" path;
+        false
+    with SyntaxError.Error(span, err) ->
+        Format.printf "expected syntax error: %a@ in %a\n"
+            SyntaxError.pp_error err SyntaxError.pp_span span;
+        true
+
 let _ =
     Format.printf "@[<v>";
-    try ignore (parse_file "test/parser.dp")
-    with SyntaxError.Error(span, err) ->
-        Format.printf "syntax error: %a@ in %a"
-            SyntaxError.pp_error err SyntaxError.pp_span span;
-        exit 1
+    if List.for_all Fun.id (List.map test_valid ["test/parser.dp"; "test/types.dp"] 
+        @ List.map test_invalid [ "test/expressions/cons_no_args.dp"
+                                ; "test/expressions/bad_struct_field.dp"
+                                ; "test/expressions/bad_struct_field2.dp"
+                                ; "test/expressions/bad_unary_op.dp"
+                                ; "test/expressions/bad_unary_op2.dp"
+                                ; "test/expressions/bad_unary_op3.dp"
+                                ; "test/expressions/bad_field_access.dp"
+                                ; "test/expressions/bad_field_access2.dp"
+                                ; "test/expressions/bad_method_access.dp"
+                                ; "test/expressions/bad_method_access2.dp"
+                                ; "test/expressions/bad_binary_op.dp"
+                                ; "test/expressions/bad_binary_op2.dp" ])
+        then (Format.printf "OK!\n"; exit 0)
+        else (Format.printf "Not OK!\n"; exit 1)
