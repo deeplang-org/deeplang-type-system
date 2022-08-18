@@ -132,7 +132,6 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_IMPL TOK_EXTENDS
 %token TOK_TYPE
 
-
 %left     TOK_LOR
 %left     TOK_LXOR
 %left     TOK_LAND
@@ -287,7 +286,11 @@ top_clause :
         { mk_top_clause @@ FunctionDef $1 }
     | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
         { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) ($2.vpat_typ) $4) }
-    | TOK_LET variable_pattern TOK_EQ expr error 
+    | TOK_LET variable_pattern TOK_EQ expr error
+        { error_ 5 5 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }
+    | TOK_LET variable_pattern TOK_EQ error assignment_op expr error
         { error_ 5 5 @@ Basic { unexpected = None
         ; expecting = [Token ";"]
         ; message = None } }
@@ -550,6 +553,9 @@ expr :
     | small_expr type_token { error_ 2 2 @@ Basic { unexpected = $2
                                  ; expecting = [Label "binary operator"]
                                  ; message = None } }
+    // | small_expr asgn_token { error_ 2 2 @@ Basic { unexpected = $2
+    //                              ; expecting = [Label "binary operator"]
+    //                              ; message = None } }
     | small_expr TOK_BANG { error_ 2 2 @@ Basic { unexpected = Some (Token ":")
                                ; expecting = [Label "binary operator"]
                                ; message = None } }
