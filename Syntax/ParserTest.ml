@@ -41,6 +41,10 @@ let _ =
                                 ; "test/expressions/bad_method_access.dp"
                                 ; "test/expressions/bad_method_access2.dp"
                                 ; "test/expressions/bad_binary_op.dp"
-                                ; "test/expressions/bad_binary_op2.dp" ])
+                                ; "test/expressions/bad_binary_op2.dp"
+                                ; "test/expressions/mismatched_parens.dp"
+                                ; "test/expressions/mismatched_parens2.dp"
+                                ; "test/expressions/mismatched_parens3.dp"
+                                ; "test/expressions/mismatched_brack.dp" ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)
