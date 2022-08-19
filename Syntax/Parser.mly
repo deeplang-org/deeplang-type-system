@@ -490,6 +490,8 @@ variable_pattern :
     | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }
     | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }
     | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }
+    | error
+        { error @@ Expecting "variable pattern" }
 ;
 
 pattern_list_nonempty :
