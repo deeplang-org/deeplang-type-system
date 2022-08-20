@@ -468,8 +468,8 @@ literal :
 
 
 pattern :
-    | TOK_UNDERSCORE   { mk_pat PatWildcard }
-    | literal          { mk_pat @@ PatLit $1 }
+    | TOK_UNDERSCORE   { mk_pat PatWildcard }   // _ : match anything
+    | literal          { mk_pat @@ PatLit $1 }  // (), True, False, specific value
     | variable_pattern { mk_pat @@ PatVar $1 }
     | pattern TOK_AS variable_pattern
         { mk_pat @@ PatAs($1, $3) }
