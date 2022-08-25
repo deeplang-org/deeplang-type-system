@@ -1,21 +1,5 @@
 match (1) 
 {
-    _                     => return 0;
-    (                    => return 1;
-    true                  => return 2;
-    1                     => return 3;
-    1.0                   => return 4;
-    'a'                   => return 5;
-    "abc"                 => return 6;
-    x                     => return 7;
-    y : U8                => return 8;
-    mut x                 => return 9;
-    mut y : U8            => return 10;
-    _ as x                => return 11;
-    _ as mut y : [U8; 10] => return 12;
-    Label                 => return 13;
-    Label(arg)            => return 14;
-    Struct {}             => return 15;
-    Struct { field1: 1, field2: x1 }           => return 16;
-    (x, "abc", Struct { field: _Label(x, y) }) => return 17;
+    // Variable => { let x:I8 = y++x };
+    let x: = x + y;
 }
