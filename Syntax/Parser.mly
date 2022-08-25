@@ -448,11 +448,13 @@ assignment_op :
 
 match_branches :
     | /* empty */                 { [] }
-    | match_branch match_branches { $1 :: $2 }
+    | match_branch match_branches { $1 :: $2 }  // recursively defined
 ;
 
 match_branch :
     | pattern TOK_EQGT stmt { ($1, $3) }
+    | error
+        { error @@ Expecting "match branch" }
 ;
 
 
@@ -470,7 +472,7 @@ literal :
 pattern :
     | TOK_UNDERSCORE   { mk_pat PatWildcard }   // _ : match anything
     | literal          { mk_pat @@ PatLit $1 }  // (), True, False, specific value
-    | variable_pattern { mk_pat @@ PatVar $1 }
+    | variable_pattern { mk_pat @@ PatVar $1 }  // [mut] variable [: type]
     | pattern TOK_AS variable_pattern
         { mk_pat @@ PatAs($1, $3) }
     | TOK_UpperIdent
@@ -481,15 +483,15 @@ pattern :
         { mk_pat @@ PatStruct($1, $3) }
     | TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         { mk_pat @@ PatTuple $2 }
-    // | error
-    //     { error @@ Expecting "pattern" }
+    | error  // rule never used
+        { error @@ Expecting "pattern" }
 ;
 
 variable_pattern :
-    | TOK_LowerIdent                       { mk_var_pat Imm None $1 }
-    | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }
-    | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }
-    | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }
+    | TOK_LowerIdent                       { mk_var_pat Imm None $1 }       // x
+    | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }       // mut x
+    | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }  // x: I8
+    | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }  // mut x: I8
     | error
         { error @@ Expecting "variable pattern" }
 ;
