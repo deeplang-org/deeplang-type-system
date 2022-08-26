@@ -132,7 +132,6 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_IMPL TOK_EXTENDS
 %token TOK_TYPE
 
-
 %left     TOK_LOR
 %left     TOK_LXOR
 %left     TOK_LAND
@@ -287,12 +286,16 @@ top_clause :
         { mk_top_clause @@ FunctionDef $1 }
     | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
         { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) ($2.vpat_typ) $4) }
-    // | any_token
-    //     { error @@ Basic { unexpected = $1
-    //                      ; expecting = [Label "top level clause"]
-    //                      ; message = None } }
-    // | error
-    //     { error @@ Expecting "top level clause" }
+    | TOK_LET variable_pattern TOK_EQ expr error
+        { error_ 5 5 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }
+    | TOK_LET variable_pattern TOK_EQ error assignment_op expr error
+        { error_ 5 5 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }
+    | error
+        { error @@ Expecting "top level clause" }
 ;
 
 
@@ -535,26 +538,30 @@ expr :
     | small_expr TOK_MUL    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMul   , $1, $3) }
     | small_expr TOK_DIV    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpDiv   , $1, $3) }
     | small_expr TOK_MOD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMod   , $1, $3) }
-    | small_expr arrow_token { error @@ Basic { unexpected = $2
+    | small_expr arrow_token { error_ 2 2 @@ Basic { unexpected = $2
                                   ; expecting = [Label "binary operator"]
                                   ; message = None } }
-    | small_expr keyword_token { error @@ Basic { unexpected = $2
+    | small_expr keyword_token { error_ 2 2 @@ Basic { unexpected = $2
                                     ; expecting = [Label "binary operator"]
                                     ; message = None } }
-    | small_expr TOK_LowerIdent { error @@ Basic { unexpected = Some (Token $2)
+    | small_expr TOK_LowerIdent { error_ 2 2 @@ Basic { unexpected = Some (Token $2)
                                      ; expecting = [Label "binary operator"]
                                      ; message = None } }
-    | small_expr TOK_UpperIdent { error @@ Basic { unexpected = Some (Token $2)
+    | small_expr TOK_UpperIdent { error_ 2 2 @@ Basic { unexpected = Some (Token $2)
                                  ; expecting = [Label "binary operator"]
                                  ; message = None } }
-    | small_expr type_token { error @@ Basic { unexpected = $2
+    | small_expr type_token { error_ 2 2 @@ Basic { unexpected = $2
                                  ; expecting = [Label "binary operator"]
                                  ; message = None } }
-    | small_expr TOK_BANG { error @@ Basic { unexpected = Some (Token ":")
+    // | small_expr asgn_token { error_ 2 2 @@ Basic { unexpected = $2
+    //                              ; expecting = [Label "binary operator"]
+    //                              ; message = None } }
+    | small_expr TOK_BANG { error_ 2 2 @@ Basic { unexpected = Some (Token ":")
                                ; expecting = [Label "binary operator"]
                                ; message = None } }
-    | error
-        { error @@ Expecting "expression" }
+    | small_expr error { error_ 2 2 @@ Basic { unexpected = None
+                             ; expecting = [Label "expressions"]
+                             ; message = None } }
 ;
 
 small_expr :
@@ -575,15 +582,19 @@ small_expr :
                                    ; message = None } }
     | TOK_UpperIdent TOK_LBRACE struct_expr_fields TOK_RBRACE
         { mk_expr @@ ExpStruct($1, $3) }
+    | TOK_UpperIdent TOK_LBRACE error
+        { error_ 3 3 @@ Basic { unexpected = None
+                              ; expecting = [Token "}"]
+                              ; message = None } }
 ;
+
 
 atom_expr :
     | literal        { mk_expr @@ ExpLit $1 }
     | TOK_LowerIdent { mk_expr @@ ExpVar $1 }
     | TOK_THIS       { mk_expr ExpThis }
-    | TOK_LPAREN expr_list TOK_RPAREN
-        { match $2 with [expr] -> expr
-                      | exprs -> mk_expr @@ ExpTuple exprs }
+    | TOK_LPAREN expr_list TOK_RPAREN { match $2 with [expr] -> expr
+                                            | exprs -> mk_expr @@ ExpTuple exprs }
     | TOK_UpperIdent
         { mk_expr @@ ExpADT($1, []) }
     | TOK_UpperIdent TOK_LPAREN expr_list TOK_RPAREN
@@ -606,6 +617,20 @@ atom_expr :
                          ; message = None } }
     | atom_expr TOK_DOT TOK_LowerIdent TOK_LPAREN expr_list TOK_RPAREN
         { mk_expr @@ ExpMethod($1, $3, $5) }
+    | TOK_LPAREN error { error_ 2 2 @@ Basic { unexpected = None
+                                        ; expecting = [Token ")"]
+                                        ; message = None } }
+    | TOK_UpperIdent TOK_LPAREN error
+        { error_ 3 3 @@ Basic { unexpected = None
+                                        ; expecting = [Token ")"]
+                                        ; message = None } }
+    | TOK_LowerIdent TOK_LPAREN error { error_ 3 3 @@ Basic { unexpected = None
+                                      ; expecting = [Token ")"]
+                                      ; message = None } }
+    | atom_expr TOK_DOT TOK_LowerIdent TOK_LPAREN error 
+        { error_ 5 5 @@ Basic { unexpected = None
+        ; expecting = [Token ")"]
+        ; message = None } }
 ;
 
 struct_expr_fields :
