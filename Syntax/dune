@@ -25,5 +25,7 @@
        (file test/expressions/mismatched_parens.dp)
        (file test/expressions/mismatched_parens2.dp)
        (file test/expressions/mismatched_parens3.dp)
-       (file test/expressions/mismatched_brack.dp))
+       (file test/expressions/mismatched_brack.dp)
+       (file test/patterns/bad_match_branch1.dp)
+       (file test/patterns/bad_match_branch2.dp))
  (modules ParserTest))

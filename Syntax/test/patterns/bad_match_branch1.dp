@@ -1,0 +1,7 @@
+fun match_fun( var : I32 )
+{
+    match (1) 
+    {
+        let x: I8 = x + y;
+    }
+}
