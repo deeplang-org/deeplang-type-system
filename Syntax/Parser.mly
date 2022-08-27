@@ -457,7 +457,7 @@ match_branches :
 match_branch :
     | pattern TOK_EQGT stmt { ($1, $3) }
     | error
-        { error @@ Expecting "match branch" }
+        { error @@ Expecting "match branch with form : pattern => statement" }
 ;
 
 

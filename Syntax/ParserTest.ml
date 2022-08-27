@@ -46,6 +46,8 @@ let _ =
                                 ; "test/expressions/mismatched_parens2.dp"
                                 ; "test/expressions/mismatched_parens3.dp"
                                 ; "test/expressions/mismatched_brack.dp"
-                                ; "test/patterns/bad_match_pattern.dp" ])
+                                ; "test/patterns/bad_match_branch1.dp" 
+                                ; "test/patterns/bad_match_branch2.dp" 
+                                ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)
