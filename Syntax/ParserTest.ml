@@ -53,6 +53,7 @@ let _ =
                                 ; "test/patterns/bad_pattern_struct2.dp"
                                 ; "test/patterns/bad_variable_pattern1.dp"
                                 ; "test/patterns/bad_variable_pattern2.dp"
+                                ; "test/patterns/multiple_patterns.dp"
                                 ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)

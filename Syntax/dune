@@ -32,5 +32,6 @@
        (file test/patterns/bad_pattern_struct1.dp)
        (file test/patterns/bad_pattern_struct2.dp)
        (file test/patterns/bad_variable_pattern1.dp)
-       (file test/patterns/bad_variable_pattern2.dp))
+       (file test/patterns/bad_variable_pattern2.dp)
+       (file test/patterns/multiple_patterns.dp))
  (modules ParserTest))
