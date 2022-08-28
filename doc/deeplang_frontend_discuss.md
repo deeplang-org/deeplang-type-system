@@ -482,3 +482,22 @@ Deeplang语法复习：
 报错信息编写提示：
 
 ​	在Parser.mly文件的功能为构建起一棵抽象语法树，其中抽象语法树节点的定义信息可以参考Syntax/ParserTree.ml文件。在Parser匹配模式时，会优先匹配所定义的规则，最后均匹配不上时就会寻找error，并执行error中的命令实现错误信息提示。其中，外层的error为OCaml的token，而内层的error为Syntax/SyntaxError.ml文件中定义的error类型。在报错时从中选择合适的类型即可。
+
+
+
+### 2022.8.28例会纪要
+
+**lambda演算（练琪灏）：**
+
+无类型的λ演算
+
+​	图灵等价性（建模布尔值等）
+
+​	参考文献：《Practical Foundations for Programming Language》
+
+**borrow checker demo进展（刘请）：**
+
+​	不捕获变量的递归加入后就基本完成编译器中需要使用的borrow checker部分的内容。
+
+​	相关内容在GitHub deeplang/borrow-checker-demo的仓库链接中可以查看。
+
