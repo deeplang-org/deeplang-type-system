@@ -462,7 +462,7 @@ match_branch :
     //     ; expecting = [Token "=>"]
     //     ; message = None } }
     | error
-        { error @@ Expecting "match branch with form: pattern => statement" }
+        { error @@ Expecting "=>. match branch with form: pattern => statement" }
 ;
 
 
@@ -492,7 +492,7 @@ pattern :
     | TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         { mk_pat @@ PatTuple $2 }
     | TOK_UpperIdent TOK_LPAREN
-        { error @@ Unclosed "" }
+        { error @@ Expecting ")" }
     | TOK_LowerIdent TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         // { error_ 1 1 @@ Basic {
         //     unexpected = $1
@@ -502,8 +502,8 @@ pattern :
         { error_ 1 1 @@ Expecting "Abstract Data Type starting with a capital letter" }
     | TOK_LowerIdent TOK_LBRACE struct_pattern_fields TOK_RBRACE
         { error_ 1 1 @@ Expecting "struct pattern starting with a capital letter" }
-    // | error  // rule never used, otherwise '8 reduce/reduce conflicts' will happen
-    //     { error @@ Expecting "pattern" }
+    | error
+        { error @@ Expecting "pattern" }
 ;
 
 variable_pattern :
@@ -511,8 +511,8 @@ variable_pattern :
     | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }       // mut x
     | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }  // x: I8
     | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }  // mut x: I8
-    | error
-        { error @@ Expecting "variable pattern" }
+    // | error  // should not add error message here. otherwise pattern error will not work
+    //     { error @@ Expecting "variable pattern" }
 ;
 
 pattern_list_nonempty :

@@ -2,6 +2,6 @@ fun match_fun( var : I32 )
 {
     match (var) 
     {
-        _ x => return 1;
+        mypattern mut var : I32 => return 1;    // missing 'as'
     }
 }
