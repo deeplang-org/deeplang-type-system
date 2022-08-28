@@ -456,8 +456,13 @@ match_branches :
 
 match_branch :
     | pattern TOK_EQGT stmt { ($1, $3) }
+    // | pattern pattern TOK_EQGT stmt
+    //     { error_ 2 2 @@ 
+    //     Basic { unexpected = $2 
+    //     ; expecting = [Token "=>"]
+    //     ; message = None } }
     | error
-        { error @@ Expecting "match branch with form : pattern => statement" }
+        { error @@ Expecting "match branch with form: pattern => statement" }
 ;
 
 
@@ -478,7 +483,7 @@ pattern :
     | variable_pattern { mk_pat @@ PatVar $1 }  // [mut] variable [: type]
     | pattern TOK_AS variable_pattern
         { mk_pat @@ PatAs($1, $3) }
-    | TOK_UpperIdent
+    | TOK_UpperIdent                            // None, ...
         { mk_pat @@ PatADT($1, []) }
     | TOK_UpperIdent TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         { mk_pat @@ PatADT($1, $3) }
@@ -486,8 +491,19 @@ pattern :
         { mk_pat @@ PatStruct($1, $3) }
     | TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         { mk_pat @@ PatTuple $2 }
-    | error  // rule never used
-        { error @@ Expecting "pattern" }
+    | TOK_UpperIdent TOK_LPAREN
+        { error @@ Unclosed "" }
+    | TOK_LowerIdent TOK_LPAREN pattern_list_nonempty TOK_RPAREN
+        // { error_ 1 1 @@ Basic {
+        //     unexpected = $1
+        //     ; expecting = []
+        //     ; message = "Abstract Data Type starting with a capital letter"
+        // } }
+        { error_ 1 1 @@ Expecting "Abstract Data Type starting with a capital letter" }
+    | TOK_LowerIdent TOK_LBRACE struct_pattern_fields TOK_RBRACE
+        { error_ 1 1 @@ Expecting "struct pattern starting with a capital letter" }
+    // | error  // rule never used, otherwise '8 reduce/reduce conflicts' will happen
+    //     { error @@ Expecting "pattern" }
 ;
 
 variable_pattern :
@@ -502,6 +518,8 @@ variable_pattern :
 pattern_list_nonempty :
     | pattern                                 { [$1] }
     | pattern TOK_COMMA pattern_list_nonempty { $1 :: $3 }
+    // | error 
+    //     { error @@ Expecting "Nonempty pattern list" }
 ;
 
 
