@@ -1,0 +1,7 @@
+fun match_fun( var : I32 )
+{
+    match (var) 
+    {
+        Some(var => return 3;   // missing )
+    }
+}
