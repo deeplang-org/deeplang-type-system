@@ -1,0 +1,7 @@
+fun main( var : I32 )
+{
+    else if(1)
+    {
+        return 1;
+    }
+}
