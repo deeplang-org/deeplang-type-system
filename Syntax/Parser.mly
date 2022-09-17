@@ -427,8 +427,36 @@ stmt :
         { mk_stmt @@ StmtWhile($3, $5) }
     | TOK_MATCH TOK_LPAREN expr TOK_RPAREN TOK_LBRACE match_branches TOK_RBRACE
         { mk_stmt @@ StmtMatch($3, $6) }
-    // | error
-    //     { error @@ Expecting "statement" }
+
+    | TOK_RETURN expr error
+        { error_ 2 2 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }
+    | TOK_BREAK error     
+        { error_ 1 1 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }  
+    | TOK_CONTINUE error  
+        { error_ 1 1 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }  
+    | lvalue assignment_op expr error
+        { error_ 4 4 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }  
+    | TOK_LET pattern TOK_EQ expr error
+        { error_ 4 4 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }  
+    | TOK_ELSE error
+        { error_ 1 1 @@ Basic { unexpected = None
+        ; expecting = [Token "if"]
+        ; message = None } }
+
+    | expr assignment_op expr TOK_SEMICOLON             // 被赋值的表达式不是左值, 不能被赋值
+        { error_ 1 1 @@ BadToken "lvalue required as left operand of assignment." }  
+    | error
+        { error @@ Expecting "statement" }
 ;
 
 lvalue :

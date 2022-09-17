@@ -54,6 +54,14 @@ let _ =
                                 ; "test/patterns/bad_variable_pattern1.dp"
                                 ; "test/patterns/bad_variable_pattern2.dp"
                                 ; "test/patterns/multiple_patterns.dp"
+                                ; "test/statements/missing_if1.dp"
+                                ; "test/statements/missing_if2.dp"
+                                ; "test/statements/missing_semicolon1.dp"
+                                ; "test/statements/missing_semicolon2.dp"
+                                ; "test/statements/missing_semicolon3.dp"
+                                ; "test/statements/missing_semicolon4.dp"
+                                ; "test/statements/missing_semicolon5.dp"
+                                ; "test/statements/bad_assignment1.dp"
                                 ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)
