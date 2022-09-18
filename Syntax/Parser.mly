@@ -320,12 +320,16 @@ adt_branches :
 adt_branch :
     | TOK_UpperIdent                                         { ($1, []) }
     | TOK_UpperIdent TOK_LPAREN typ_list_nonempty TOK_RPAREN { ($1, $3) }
+    | error
+        { error @@ Expecting "interface name starting with a capital letter" }    
 ;
 
 
 interface_name_list_nonempty :
     | TOK_UpperIdent                                        { [$1] }
     | TOK_UpperIdent TOK_COMMA interface_name_list_nonempty { $1 :: $3 }
+    // | error
+    //     { error @@ Expecting "interface name starting with a capital letter" }
 ;
 
 function_decls :
@@ -355,6 +359,8 @@ function_decl_args_nonempty :
 
 function_decl_arg :
     | TOK_LowerIdent TOK_COLON typ { mk_func_arg $1 $3 }
+    | error
+        { error @@ Expecting "declaration specifiers" }
 ;
 
 function_decl_ret :
@@ -388,8 +394,9 @@ typ :
         { mk_typ @@ TyArray($2, $4) }
     | TOK_LPAREN typ_list_nonempty TOK_RPAREN
         { mk_typ @@ TyTuple $2 }
-    // | error
-    //     { error @@ Expecting "type" }
+    | error
+        { error @@ Expecting "type" }
+        
 ;
 
 typ_list_nonempty :
@@ -546,8 +553,6 @@ variable_pattern :
 pattern_list_nonempty :
     | pattern                                 { [$1] }
     | pattern TOK_COMMA pattern_list_nonempty { $1 :: $3 }
-    // | error 
-    //     { error @@ Expecting "Nonempty pattern list" }
 ;
 
 
@@ -559,6 +564,8 @@ struct_pattern_fields :
 
 struct_pattern_field :
     | TOK_LowerIdent TOK_COLON pattern { ($1, $3) }
+    | error
+            { error @@ Expecting "struct_pattern_field" }
 ;
 
 
