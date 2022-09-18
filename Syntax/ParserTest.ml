@@ -62,6 +62,14 @@ let _ =
                                 ; "test/statements/missing_semicolon4.dp"
                                 ; "test/statements/missing_semicolon5.dp"
                                 ; "test/statements/bad_assignment1.dp"
+                                ; "test/others/missing_type.dp"
+                                ; "test/others/missing_type2.dp"
+                                ; "test/others/missing_type3.dp"
+                                ; "test/others/missing_type4.dp"
+                                ; "test/others/missing_type5.dp"
+                                ; "test/others/missing_type6.dp"
+                                ; "test/others/missing_function_decl_arg.dp"
+                                ; "test/others/missing_ret.dp"
                                 ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)
