@@ -49,6 +49,6 @@
        (file test/others/missing_type5.dp)
        (file test/others/missing_type6.dp)
        (file test/others/missing_function_decl_arg.dp)
-       (file test/others/missing_ret.dp)
+       (file test/others/bad_adt_branch_name.dp)
        )
  (modules ParserTest))

@@ -69,7 +69,7 @@ let _ =
                                 ; "test/others/missing_type5.dp"
                                 ; "test/others/missing_type6.dp"
                                 ; "test/others/missing_function_decl_arg.dp"
-                                ; "test/others/missing_ret.dp"
+                                ; "test/others/bad_adt_branch_name.dp"
                                 ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)
