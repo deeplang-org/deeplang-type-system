@@ -132,7 +132,6 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_IMPL TOK_EXTENDS
 %token TOK_TYPE
 
-
 %left     TOK_LOR
 %left     TOK_LXOR
 %left     TOK_LAND
@@ -287,12 +286,16 @@ top_clause :
         { mk_top_clause @@ FunctionDef $1 }
     | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
         { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) ($2.vpat_typ) $4) }
-    // | any_token
-    //     { error @@ Basic { unexpected = $1
-    //                      ; expecting = [Label "top level clause"]
-    //                      ; message = None } }
-    // | error
-    //     { error @@ Expecting "top level clause" }
+    | TOK_LET variable_pattern TOK_EQ expr error
+        { error_ 5 5 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }
+    | TOK_LET variable_pattern TOK_EQ error assignment_op expr error
+        { error_ 5 5 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }
+    | error
+        { error @@ Expecting "top level clause" }
 ;
 
 
@@ -448,11 +451,13 @@ assignment_op :
 
 match_branches :
     | /* empty */                 { [] }
-    | match_branch match_branches { $1 :: $2 }
+    | match_branch match_branches { $1 :: $2 }  // recursively defined
 ;
 
 match_branch :
     | pattern TOK_EQGT stmt { ($1, $3) }
+    | error
+        { error @@ Expecting "=>. match branch with form: pattern => statement" }
 ;
 
 
@@ -468,12 +473,12 @@ literal :
 
 
 pattern :
-    | TOK_UNDERSCORE   { mk_pat PatWildcard }
-    | literal          { mk_pat @@ PatLit $1 }
-    | variable_pattern { mk_pat @@ PatVar $1 }
+    | TOK_UNDERSCORE   { mk_pat PatWildcard }   // _ : match anything
+    | literal          { mk_pat @@ PatLit $1 }  // (), true, false, specific value
+    | variable_pattern { mk_pat @@ PatVar $1 }  // [mut] variable [: type]
     | pattern TOK_AS variable_pattern
         { mk_pat @@ PatAs($1, $3) }
-    | TOK_UpperIdent
+    | TOK_UpperIdent                            // None, ...
         { mk_pat @@ PatADT($1, []) }
     | TOK_UpperIdent TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         { mk_pat @@ PatADT($1, $3) }
@@ -481,20 +486,51 @@ pattern :
         { mk_pat @@ PatStruct($1, $3) }
     | TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         { mk_pat @@ PatTuple $2 }
-    // | error
-    //     { error @@ Expecting "pattern" }
+        
+    | pattern TOK_AS error
+        { error_ 3 3 @@ Expecting "variable pattern" }
+    | TOK_UpperIdent TOK_LPAREN
+        { error_ 3 3 @@ Expecting "nonempty pattern list" }
+    // | TOK_UpperIdent TOK_LPAREN pattern_list_nonempty error  // shift/reduce conflicts
+    //     { error_ 3 3 @@ Basic { 
+    //         unexpected = None
+    //         ; expecting = [Token ")"]
+    //         ; message = None 
+    //     } }
+    | TOK_LowerIdent TOK_LPAREN pattern_list_nonempty TOK_RPAREN
+        { error_ 1 1 @@ Basic {
+            unexpected = Some (Label $1)
+            ; expecting = []
+            ; message = Some "Abstract Data Type should start with a capital letter"
+        } }
+    | TOK_UpperIdent TOK_LBRACE error
+        { error_ 3 3 @@ Basic { 
+            unexpected = None
+            ; expecting = [Token "}"]
+            ; message = None 
+        } }
+    | TOK_LowerIdent TOK_LBRACE struct_pattern_fields TOK_RBRACE
+        { error_ 1 1 @@ Basic {
+            unexpected = Some (Label $1)
+            ; expecting = []
+            ; message = Some "struct pattern should start with a capital letter"
+        } }
+    | error
+        { error @@ Expecting "pattern" }
 ;
 
 variable_pattern :
-    | TOK_LowerIdent                       { mk_var_pat Imm None $1 }
-    | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }
-    | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }
-    | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }
+    | TOK_LowerIdent                       { mk_var_pat Imm None $1 }       // x
+    | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }       // mut x
+    | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }  // x: I8
+    | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }  // mut x: I8
 ;
 
 pattern_list_nonempty :
     | pattern                                 { [$1] }
     | pattern TOK_COMMA pattern_list_nonempty { $1 :: $3 }
+    // | /* empty */
+    //     { error @@ Expecting "non empty pattern" }
 ;
 
 
@@ -531,26 +567,30 @@ expr :
     | small_expr TOK_MUL    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMul   , $1, $3) }
     | small_expr TOK_DIV    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpDiv   , $1, $3) }
     | small_expr TOK_MOD    expr { mk_expr @@ ExpBinOp(BinOpCalculate BinOpMod   , $1, $3) }
-    | small_expr arrow_token { error @@ Basic { unexpected = $2
+    | small_expr arrow_token { error_ 2 2 @@ Basic { unexpected = $2
                                   ; expecting = [Label "binary operator"]
                                   ; message = None } }
-    | small_expr keyword_token { error @@ Basic { unexpected = $2
+    | small_expr keyword_token { error_ 2 2 @@ Basic { unexpected = $2
                                     ; expecting = [Label "binary operator"]
                                     ; message = None } }
-    | small_expr TOK_LowerIdent { error @@ Basic { unexpected = Some (Token $2)
+    | small_expr TOK_LowerIdent { error_ 2 2 @@ Basic { unexpected = Some (Token $2)
                                      ; expecting = [Label "binary operator"]
                                      ; message = None } }
-    | small_expr TOK_UpperIdent { error @@ Basic { unexpected = Some (Token $2)
+    | small_expr TOK_UpperIdent { error_ 2 2 @@ Basic { unexpected = Some (Token $2)
                                  ; expecting = [Label "binary operator"]
                                  ; message = None } }
-    | small_expr type_token { error @@ Basic { unexpected = $2
+    | small_expr type_token { error_ 2 2 @@ Basic { unexpected = $2
                                  ; expecting = [Label "binary operator"]
                                  ; message = None } }
-    | small_expr TOK_BANG { error @@ Basic { unexpected = Some (Token ":")
+    // | small_expr asgn_token { error_ 2 2 @@ Basic { unexpected = $2
+    //                              ; expecting = [Label "binary operator"]
+    //                              ; message = None } }
+    | small_expr TOK_BANG { error_ 2 2 @@ Basic { unexpected = Some (Token ":")
                                ; expecting = [Label "binary operator"]
                                ; message = None } }
-    | error
-        { error @@ Expecting "expression" }
+    | small_expr error { error_ 2 2 @@ Basic { unexpected = None
+                             ; expecting = [Label "expressions"]
+                             ; message = None } }
 ;
 
 small_expr :
@@ -571,15 +611,19 @@ small_expr :
                                    ; message = None } }
     | TOK_UpperIdent TOK_LBRACE struct_expr_fields TOK_RBRACE
         { mk_expr @@ ExpStruct($1, $3) }
+    | TOK_UpperIdent TOK_LBRACE error
+        { error_ 3 3 @@ Basic { unexpected = None
+                              ; expecting = [Token "}"]
+                              ; message = None } }
 ;
+
 
 atom_expr :
     | literal        { mk_expr @@ ExpLit $1 }
     | TOK_LowerIdent { mk_expr @@ ExpVar $1 }
     | TOK_THIS       { mk_expr ExpThis }
-    | TOK_LPAREN expr_list TOK_RPAREN
-        { match $2 with [expr] -> expr
-                      | exprs -> mk_expr @@ ExpTuple exprs }
+    | TOK_LPAREN expr_list TOK_RPAREN { match $2 with [expr] -> expr
+                                            | exprs -> mk_expr @@ ExpTuple exprs }
     | TOK_UpperIdent
         { mk_expr @@ ExpADT($1, []) }
     | TOK_UpperIdent TOK_LPAREN expr_list TOK_RPAREN
@@ -602,6 +646,20 @@ atom_expr :
                          ; message = None } }
     | atom_expr TOK_DOT TOK_LowerIdent TOK_LPAREN expr_list TOK_RPAREN
         { mk_expr @@ ExpMethod($1, $3, $5) }
+    | TOK_LPAREN error { error_ 2 2 @@ Basic { unexpected = None
+                                        ; expecting = [Token ")"]
+                                        ; message = None } }
+    | TOK_UpperIdent TOK_LPAREN error
+        { error_ 3 3 @@ Basic { unexpected = None
+                                        ; expecting = [Token ")"]
+                                        ; message = None } }
+    | TOK_LowerIdent TOK_LPAREN error { error_ 3 3 @@ Basic { unexpected = None
+                                      ; expecting = [Token ")"]
+                                      ; message = None } }
+    | atom_expr TOK_DOT TOK_LowerIdent TOK_LPAREN error 
+        { error_ 5 5 @@ Basic { unexpected = None
+        ; expecting = [Token ")"]
+        ; message = None } }
 ;
 
 struct_expr_fields :

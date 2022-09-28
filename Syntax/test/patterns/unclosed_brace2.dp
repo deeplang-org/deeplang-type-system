@@ -1,0 +1,7 @@
+fun match_fun( var : I32 )
+{
+    match (var) 
+    {
+        MyStruct { field : 6    => x = y + 1; // missing }
+    }
+}
