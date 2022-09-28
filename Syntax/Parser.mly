@@ -529,8 +529,6 @@ variable_pattern :
 pattern_list_nonempty :
     | pattern                                 { [$1] }
     | pattern TOK_COMMA pattern_list_nonempty { $1 :: $3 }
-    // | /* empty */
-    //     { error @@ Expecting "non empty pattern" }
 ;
 
 
