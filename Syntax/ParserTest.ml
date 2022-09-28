@@ -58,6 +58,22 @@ let _ =
                                 ; "test/patterns/unclosed_brace2.dp"
                                 ; "test/patterns/unclosed_paren1.dp"
                                 ; "test/patterns/unclosed_paren2.dp"
+                                ; "test/statements/missing_if1.dp"
+                                ; "test/statements/missing_if2.dp"
+                                ; "test/statements/missing_semicolon1.dp"
+                                ; "test/statements/missing_semicolon2.dp"
+                                ; "test/statements/missing_semicolon3.dp"
+                                ; "test/statements/missing_semicolon4.dp"
+                                ; "test/statements/missing_semicolon5.dp"
+                                ; "test/statements/bad_assignment1.dp"
+                                ; "test/others/missing_type.dp"
+                                ; "test/others/missing_type2.dp"
+                                ; "test/others/missing_type3.dp"
+                                ; "test/others/missing_type4.dp"
+                                ; "test/others/missing_type5.dp"
+                                ; "test/others/missing_type6.dp"
+                                ; "test/others/missing_function_decl_arg.dp"
+                                ; "test/others/bad_adt_branch_name.dp"
                                 ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)

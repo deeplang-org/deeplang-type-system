@@ -320,12 +320,16 @@ adt_branches :
 adt_branch :
     | TOK_UpperIdent                                         { ($1, []) }
     | TOK_UpperIdent TOK_LPAREN typ_list_nonempty TOK_RPAREN { ($1, $3) }
+    | error
+        { error @@ Expecting "interface name starting with a capital letter" }    
 ;
 
 
 interface_name_list_nonempty :
     | TOK_UpperIdent                                        { [$1] }
     | TOK_UpperIdent TOK_COMMA interface_name_list_nonempty { $1 :: $3 }
+    // | error
+    //     { error @@ Expecting "interface name starting with a capital letter" }
 ;
 
 function_decls :
@@ -355,6 +359,8 @@ function_decl_args_nonempty :
 
 function_decl_arg :
     | TOK_LowerIdent TOK_COLON typ { mk_func_arg $1 $3 }
+    | error
+        { error @@ Expecting "declaration specifiers" }
 ;
 
 function_decl_ret :
@@ -388,8 +394,9 @@ typ :
         { mk_typ @@ TyArray($2, $4) }
     | TOK_LPAREN typ_list_nonempty TOK_RPAREN
         { mk_typ @@ TyTuple $2 }
-    // | error
-    //     { error @@ Expecting "type" }
+    | error
+        { error @@ Expecting "type" }
+        
 ;
 
 typ_list_nonempty :
@@ -427,8 +434,36 @@ stmt :
         { mk_stmt @@ StmtWhile($3, $5) }
     | TOK_MATCH TOK_LPAREN expr TOK_RPAREN TOK_LBRACE match_branches TOK_RBRACE
         { mk_stmt @@ StmtMatch($3, $6) }
-    // | error
-    //     { error @@ Expecting "statement" }
+
+    | TOK_RETURN expr error
+        { error_ 2 2 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }
+    | TOK_BREAK error     
+        { error_ 1 1 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }  
+    | TOK_CONTINUE error  
+        { error_ 1 1 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }  
+    | lvalue assignment_op expr error
+        { error_ 4 4 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }  
+    | TOK_LET pattern TOK_EQ expr error
+        { error_ 4 4 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }  
+    | TOK_ELSE error
+        { error_ 1 1 @@ Basic { unexpected = None
+        ; expecting = [Token "if"]
+        ; message = None } }
+
+    | expr assignment_op expr TOK_SEMICOLON             // 被赋值的表达式不是左值, 不能被赋值
+        { error_ 1 1 @@ BadToken "lvalue required as left operand of assignment." }  
+    | error
+        { error @@ Expecting "statement" }
 ;
 
 lvalue :
@@ -537,8 +572,6 @@ variable_pattern :
 pattern_list_nonempty :
     | pattern                                 { [$1] }
     | pattern TOK_COMMA pattern_list_nonempty { $1 :: $3 }
-    // | error 
-    //     { error @@ Expecting "Nonempty pattern list" }
 ;
 
 
@@ -550,6 +583,8 @@ struct_pattern_fields :
 
 struct_pattern_field :
     | TOK_LowerIdent TOK_COLON pattern { ($1, $3) }
+    | error
+            { error @@ Expecting "struct_pattern_field" }
 ;
 
 

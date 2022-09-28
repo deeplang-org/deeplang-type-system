@@ -1,0 +1,5 @@
+type Shape [
+    Rectangle(U32, U32),
+    circle(U32),
+    Nothing
+]
