@@ -491,14 +491,6 @@ match_branches :
 
 match_branch :
     | pattern TOK_EQGT stmt { ($1, $3) }
-<<<<<<< HEAD
-=======
-    // | pattern pattern TOK_EQGT stmt
-    //     { error_ 2 2 @@ 
-    //     Basic { unexpected = $2 
-    //     ; expecting = [Token "=>"]
-    //     ; message = None } }
->>>>>>> b56b201d82dac165160100656d77fc9cb85eefd0
     | error
         { error @@ Expecting "=>. match branch with form: pattern => statement" }
 ;
