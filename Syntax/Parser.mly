@@ -491,11 +491,6 @@ match_branches :
 
 match_branch :
     | pattern TOK_EQGT stmt { ($1, $3) }
-    // | pattern pattern TOK_EQGT stmt
-    //     { error_ 2 2 @@ 
-    //     Basic { unexpected = $2 
-    //     ; expecting = [Token "=>"]
-    //     ; message = None } }
     | error
         { error @@ Expecting "=>. match branch with form: pattern => statement" }
 ;
@@ -514,7 +509,7 @@ literal :
 
 pattern :
     | TOK_UNDERSCORE   { mk_pat PatWildcard }   // _ : match anything
-    | literal          { mk_pat @@ PatLit $1 }  // (), True, False, specific value
+    | literal          { mk_pat @@ PatLit $1 }  // (), true, false, specific value
     | variable_pattern { mk_pat @@ PatVar $1 }  // [mut] variable [: type]
     | pattern TOK_AS variable_pattern
         { mk_pat @@ PatAs($1, $3) }
@@ -526,17 +521,35 @@ pattern :
         { mk_pat @@ PatStruct($1, $3) }
     | TOK_LPAREN pattern_list_nonempty TOK_RPAREN
         { mk_pat @@ PatTuple $2 }
+        
+    | pattern TOK_AS error
+        { error_ 3 3 @@ Expecting "variable pattern" }
     | TOK_UpperIdent TOK_LPAREN
-        { error @@ Expecting ")" }
+        { error_ 3 3 @@ Expecting "nonempty pattern list" }
+    // | TOK_UpperIdent TOK_LPAREN pattern_list_nonempty error  // shift/reduce conflicts
+    //     { error_ 3 3 @@ Basic { 
+    //         unexpected = None
+    //         ; expecting = [Token ")"]
+    //         ; message = None 
+    //     } }
     | TOK_LowerIdent TOK_LPAREN pattern_list_nonempty TOK_RPAREN
-        // { error_ 1 1 @@ Basic {
-        //     unexpected = $1
-        //     ; expecting = []
-        //     ; message = "Abstract Data Type starting with a capital letter"
-        // } }
-        { error_ 1 1 @@ Expecting "Abstract Data Type starting with a capital letter" }
+        { error_ 1 1 @@ Basic {
+            unexpected = Some (Label $1)
+            ; expecting = []
+            ; message = Some "Abstract Data Type should start with a capital letter"
+        } }
+    | TOK_UpperIdent TOK_LBRACE error
+        { error_ 3 3 @@ Basic { 
+            unexpected = None
+            ; expecting = [Token "}"]
+            ; message = None 
+        } }
     | TOK_LowerIdent TOK_LBRACE struct_pattern_fields TOK_RBRACE
-        { error_ 1 1 @@ Expecting "struct pattern starting with a capital letter" }
+        { error_ 1 1 @@ Basic {
+            unexpected = Some (Label $1)
+            ; expecting = []
+            ; message = Some "struct pattern should start with a capital letter"
+        } }
     | error
         { error @@ Expecting "pattern" }
 ;
@@ -546,8 +559,6 @@ variable_pattern :
     | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }       // mut x
     | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }  // x: I8
     | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }  // mut x: I8
-    // | error  // should not add error message here. otherwise pattern error will not work
-    //     { error @@ Expecting "variable pattern" }
 ;
 
 pattern_list_nonempty :

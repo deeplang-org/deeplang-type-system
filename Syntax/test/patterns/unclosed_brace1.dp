@@ -2,6 +2,6 @@ fun match_fun( var : I32 )
 {
     match (var) 
     {
-        pattern as true => return 3;
+        MyStruct {    => x = y + 1; // missing }
     }
 }
