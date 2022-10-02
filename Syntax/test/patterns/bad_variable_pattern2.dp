@@ -2,6 +2,7 @@ fun match_fun( var : I32 )
 {
     match (var) 
     {
-        mypattern mut var : I32 => return 1;    // missing 'as'
+        mypattern mut var : I32 => return 4;    
+        // missing 'as', considered as multiple patterns
     }
 }
