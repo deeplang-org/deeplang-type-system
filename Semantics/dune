@@ -1,7 +1,7 @@
 (library
     (name Semantics)
     (libraries Syntax)
-    (modules Table Helper Walker)
+    (modules Context Helper Walker PatExhChecker StrDelResolver TypExistChecker)
     )
 
 (test

@@ -1,3 +1,6 @@
+(** Helper *)
+
+
 open Syntax.ParseTree;;
 let rec ty_eq (t1:typ) (t2:typ) : bool = 
     match (t1.shape, t2.shape) with
@@ -84,7 +87,7 @@ pp_tys fmt (tys:typ list) =
 
 let print_ty = pp_ty Format.std_formatter;;
 
-open Table;;
+open Context;;
 
 let pp_var_entry fmt (Symbol(symbol)) (data:var_data) = 
     let mut =

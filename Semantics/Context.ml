@@ -1,4 +1,7 @@
+(** Symbol Table and Semantics Context *)
+
 open Syntax.ParseTree;;
+(** {1 Table} *)
 type var_data = 
     { mut  : mutability
     ; typ  : typ
@@ -21,15 +24,27 @@ type adty_data =
     ; mutable meth : fun_table      (* impl for T *)
     ;         core : (adt_label * typ list) list
     };;
+
+(** for the following example :
+    ```
+    type A = { x : int }
+    type B = { delegate a : A , y : int }
+    ```
+    B has fields: `a` `x` `y`
+    where the attr of `a` and `y` is JustField, while `x` is a delegation from `a`
+ *)
+type field_attr =
+    | JustField 
+    | Delegation of struct_field
 type field_data = 
     { typ : typ
-    ; attr : struct_def_field_attr
+    ; attr : field_attr
     };;
 type struct_data = 
     { mutable intf : intf_name list
     ; mutable meth : fun_table
     ;         core : (struct_field, field_data) Hashtbl.t 
-    ;       fields : struct_def_field list
+    ;       fields : struct_def_field list (** original from AST *)
     };;
 type intf_data = 
     {         meth : fun_table
@@ -59,4 +74,15 @@ type table =
     ; typ : typ_table (** the info of adt, struct and interface *)
     ; adt : adt_table (** the signature/type of adt_labels/constructor  *)
     ; ref : ref_table (** the use of variable *)
+    };;
+
+(** {1 Context} *)
+type nametbl = (variable, symbol) Hashtbl.t ;;
+type scope = nametbl list ;;
+type context = 
+    {         table   : table
+    ; mutable nametbl : nametbl 
+    ; mutable scope   : scope    (** nametbl::scope *)
+    ; mutable this    : typ      (** type This of one struct or ADT *)
+    ; mutable rety    : typ      (** return type of function *)
     };;

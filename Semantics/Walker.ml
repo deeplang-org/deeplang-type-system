@@ -1,26 +1,15 @@
-open Syntax.ParseTree;;
-open Table;;
-
 (** This module walks AST from {! Syntax.ParseTree},
     to do {b name resolution} and {b type checking} in one pass.
   *)
 
-(** {1 Context} *)
 
-type nametbl = (variable, symbol) Hashtbl.t ;;
-type scope = nametbl list ;;
-type context = 
-    {         table   : table
-    ; mutable nametbl : nametbl 
-    ; mutable scope   : scope    (** nametbl::scope *)
-    ; mutable this    : typ      (** type This of one struct or ADT *)
-    ; mutable rety    : typ      (** return type of function *)
-    };;
+open Syntax.ParseTree;;
+open Context;;
+(* open PatExhChecker;; *)
 
 
-(** {1 Helper} *)
-
-(** Those used in {! Walker}, which is not yet defined in {! Syntax.ParseTree} *)
+let walk_type = TypExistChecker.check;;
+let unsupport_generics = TypExistChecker.unsupport_generics;;
 
 (** {1 Implementation} *)
 
@@ -82,28 +71,9 @@ let find_var_opt (context:context) (name:variable) : symbol option =
     In [ let (x, _) = (3, 1.1) ], [pattern] is [(x, _)], and [typ] is [(i64, f64)].
 *)
 
-let unsupport_generics (tys:typ list) = 
-    ( match tys with 
-    | [] -> () 
-    | _::_ -> failwith("Unsupport for Generics Programming")
-    )
-    ;;
 
-(** check TyNamed whether in context.typ *)
-let rec walk_type (context:context) (typ:typ) : bool =
-    let table = context.table.typ in
-    match typ.shape with 
-    | TyNamed(name, tys) -> 
-        unsupport_generics tys;
-        ( match Hashtbl.find_opt table name with
-        | None -> failwith("Type Named "^name^" Not Found")
-        | Some(_) -> true
-        )
-    | TyVar(_) -> failwith("Unsupport for Generics Programming")
-    | TyArray(typ, _) -> walk_type context typ
-    | TyTuple(tys) -> List.for_all (walk_type context) tys
-    | _ -> true
-    ;;
+
+
 
 let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit = 
     let table = context.table in 
@@ -644,29 +614,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
             ; typ  = typ
             ; name = name
             }
-    
-    | StructDef(def) ->
-        let name = def.struct_name in 
-        ( match Hashtbl.find_opt table.typ name with
-        | Some(_) -> failwith("The same Struct Name")
-        | None -> ()
-        );
-        let core = Hashtbl.create 10 in
-        let fields = def.struct_fields in
-        let insert (key, typ, attr) = 
-            (* check TyNamed existence *)
-            let _ = walk_type context typ in
-            Hashtbl.add core key {typ=typ; attr=attr}
-        in
-        List.iter insert fields;
-        Hashtbl.add table.typ name 
-            ( Struct_data(
-            { intf = []
-            ; meth = Hashtbl.create 10
-            ; core = core
-            ; fields = fields
-            }))
-
+    | StructDef(def) -> StrDelResolver.def_check context def
     | ADTDef(def) ->
         let name = def.adt_name in 
         ( match Hashtbl.find_opt table.typ name with

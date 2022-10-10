@@ -8,7 +8,7 @@ let parse_file file : Syntax.ParseTree.top_clause list =
     ;;
 
 open Semantics.Walker
-open Semantics.Table
+open Semantics.Context
 
 let table : table = 
     { var=Hashtbl.create 10

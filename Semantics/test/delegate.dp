@@ -1,0 +1,10 @@
+type A { b : Bool }
+type T { as a : A }
+
+fun f(t:T)
+{
+    match (t)
+    {
+        T{ a:A{b:true}, b:false } => { return 0; }
+    }
+}
