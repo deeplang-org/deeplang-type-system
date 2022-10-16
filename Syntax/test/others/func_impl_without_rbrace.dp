@@ -1,0 +1,4 @@
+fun main( var : I32 )
+{
+    return 0;
+    

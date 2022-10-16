@@ -1,0 +1,3 @@
+interface ordered extends Eq {
+    fun equals(this, other : This) : Bool; //this 是上下文有关的
+}
