@@ -40,4 +40,6 @@ let iterator clause = walk clause;;
 let _ = List.iter iterator clauses;;
 
 open Semantics.Helper;;
-pp_var_table Format.std_formatter table.var;;
+(* pp_var_table Format.std_formatter table.var;; *)
+let iter clause = pp_top Format.std_formatter clause in
+List.iter iter clauses;;

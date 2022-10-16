@@ -163,3 +163,237 @@ let pp_ref_table fmt (table:ref_table) =
     Format.fprintf fmt "@[<4>{\n%a}@]"
     (fun fmt -> Hashtbl.iter (pp_ref_entry fmt)) table
     ;;
+
+let pp_literal fmt = function
+    | LitUnit -> Format.fprintf fmt "()"
+    | LitBool(b) -> Format.fprintf fmt "%b" b
+    | LitInt(i) -> Format.fprintf fmt "%d" i
+    | LitFloat(f) -> Format.fprintf fmt "%f" f
+    | LitChar(c) -> Format.fprintf fmt "%c" (Char.chr c)
+    | LitString(s) -> Format.fprintf fmt "%s" s
+    ;;
+
+let pp_var_pattern fmt (vpat:var_pattern) =
+    let mutability = (
+        match vpat.vpat_mut with
+        | Imm -> ""
+        | Mut -> "mut "
+    ) in
+    Format.fprintf fmt "%s%s" mutability vpat.vpat_name;
+    match vpat.vpat_typ with
+    | None -> ()
+    | Some(ty) -> Format.fprintf fmt " : %a" pp_ty ty
+    ;;
+let rec pp_pattern fmt (pattern:pattern) : unit = 
+    match pattern.shape with
+    | PatWildcard -> Format.fprintf fmt "_"
+    | PatLit(literal) -> pp_literal fmt literal
+    | PatVar(vpat) -> pp_var_pattern fmt vpat
+    | PatAs(_) -> Format.fprintf fmt "TODO"
+    (* | PatADT(adt_label, patterns) ->  *)
+    | _ -> ()
+and pp_patterns fmt (patterns : pattern list) : unit = 
+    let final = (List.length patterns) - 1 in
+    let iteri idx pattern = 
+        pp_pattern fmt pattern ;
+        Format.fprintf fmt (if idx = final then "" else ",@ ")
+    in List.iteri iteri patterns
+    ;;
+
+let pp_ty fmt (typ:typ) : unit = 
+    match typ.shape with
+    | TyVar(name) -> Format.fprintf fmt "%s" name
+    | TyUnit -> Format.fprintf fmt "unit"
+    | TyBool -> Format.fprintf fmt "bool"
+    | TyInt(sign, size) -> 
+        let sign = 
+        ( match sign with
+        | Signed -> "i"
+        | Unsigned -> "u"
+        ) in
+        let size = 
+        ( match size with
+        | ISize_8 -> "8"
+        | ISize_16 -> "16"
+        | ISize_32 -> "32"
+        | ISize_64 -> "64"
+        ) in
+        Format.fprintf fmt "%s%s" sign size
+    | TyFloat(size) -> 
+        let size = 
+        ( match size with
+        | FSize_32 -> "32"
+        | FSize_64 -> "64"
+        ) in
+        Format.fprintf fmt "f%s" size
+    | TyChar -> Format.fprintf fmt "char"
+    | TyThis -> Format.fprintf fmt "this"
+    | TyArray(ty, size) -> Format.fprintf fmt "[%a ; %d]" pp_ty ty size
+    | TyTuple(tys) -> pp_tys fmt tys
+    | TyNamed(name, tys) -> Format.fprintf fmt "%s{%a}" name pp_tys tys
+
+and pp_tys fmt (tys:typ list) =
+    Format.fprintf fmt "@[<4>(";
+    let final = (List.length tys) - 1 in
+    let iteri idx ty = 
+        pp_ty fmt ty ;
+        Format.fprintf fmt (if idx = final then ")@]" else ",@,@ ")
+    in 
+    List.iteri iteri tys
+    ;;
+let rec pp_expr fmt (expr:expr) : unit = 
+    let unop_to_string = function
+    | UnOpNot -> "!"
+    | UnOpNeg -> "-"
+    in
+    let binop_to_string = function
+    | BinOpCompare(cmp) -> 
+        ( match cmp with
+        | BinOpLt -> "<"
+        | BinOpLeq -> "<="
+        | BinOpGt -> ">"
+        | BinOpGeq -> ">="
+        | BinOpEq -> "=="
+        | BinOpNeq -> "!="
+        )
+    | BinOpCalculate(calc) -> 
+        ( match calc with
+        | BinOpLOr -> "||"
+        | BinOpLAnd -> "&&"
+        | BinOpLXor -> "^^"
+        | BinOpBOr -> "|"
+        | BinOpBAnd -> "&"
+        | BinOpBXor -> "^"
+        | BinOpLShift -> "<<"
+        | BinOpRShift -> ">>"
+        | BinOpAdd -> "+"
+        | BinOpSub -> "-"
+        | BinOpMul -> "*"
+        | BinOpDiv -> "/"
+        | BinOpMod -> "%"
+        )
+    in 
+    match expr.shape with
+    | ExpLit(lit) -> pp_literal fmt lit
+    | ExpVar(name) -> Format.fprintf fmt "%s" name
+    | ExpUnOp(op, expr) -> Format.fprintf fmt "%s %a" (unop_to_string op) pp_expr expr
+    | ExpBinOp(op, expr1, expr2) -> Format.fprintf fmt "%a %s %a" pp_expr expr1 (binop_to_string op) pp_expr expr2
+    | ExpTuple(exprs) -> pp_exprs fmt exprs
+    | ExpADT(label, exprs) -> Format.fprintf fmt "%s %a" label pp_exprs exprs
+    | ExpStruct(name, fields) -> (
+        Format.fprintf fmt "%s {" name;
+        let final = (List.length fields) - 1 in
+        let iteri idx (name, expr) = 
+            Format.fprintf fmt "%s = %a" name pp_expr expr;
+            Format.fprintf fmt (if idx = final then "}" else ",@,@ ")
+        in 
+        List.iteri iteri fields
+    )
+    | ExpField(expr, name) -> Format.fprintf fmt "%a.%s" pp_expr expr name
+    | ExpThis -> Format.fprintf fmt "this"
+    | ExpApp(func, exprs) -> Format.fprintf fmt "%s(%a)" func pp_exprs exprs
+    | ExpMethod(expr, name, exprs) -> Format.fprintf fmt "%a.%s(%a)" pp_expr expr name pp_exprs exprs
+    | ExpIf(cond, expr1, expr2) -> Format.fprintf fmt "if %a then %a else %a" pp_expr cond pp_expr expr1 pp_expr expr2
+    | _ -> ()
+    
+and pp_exprs fmt (exprs:expr list) =
+    Format.fprintf fmt "@[<4>(";
+    let final = (List.length exprs) - 1 in
+    let iteri idx expr = 
+        pp_expr fmt expr ;
+        Format.fprintf fmt (if idx = final then ")@]" else ",@,@ ")
+    in
+    List.iteri iteri exprs
+    ;;
+
+let rec pp_stmt fmt (stmt:stmt) : unit =
+    match stmt.shape with
+    | StmtSeq(stmts) ->
+        let final = (List.length stmts) - 1 in
+        let iteri idx stmt = 
+            pp_stmt fmt stmt ;
+            Format.fprintf fmt (if idx = final then "" else "@,@ ")
+        in 
+        List.iteri iteri stmts
+    | StmtExpr(expr) -> pp_expr fmt expr
+    | StmtAssign(calc_op, expr1, expr2) -> (
+        let calc_op = 
+        ( match calc_op with
+        | None -> "="
+        | Some(op) -> 
+            ( match op with
+                | BinOpAdd -> "+="
+                | BinOpSub -> "-="
+                | BinOpMul -> "*="
+                | BinOpDiv -> "/="
+                | BinOpMod -> "%="
+                | _ -> "="
+            )
+        ) in
+        Format.fprintf fmt "%a %s %a;\n" pp_expr expr1 calc_op pp_expr expr2
+    )
+    | StmtDecl(pattern, expr) -> Format.fprintf fmt "let %a = %a;\n" pp_pattern pattern pp_expr expr
+    | _ -> ()
+    ;;
+let pp_args fmt (args:func_arg list) : unit = 
+    Format.fprintf fmt "@[<4>(";
+    let final = (List.length args) - 1 in
+    let iteri idx arg = 
+        Format.fprintf fmt "%s: %a" arg.farg_name pp_ty arg.farg_typ;
+        Format.fprintf fmt (if idx = final then ")@]" else ",@,@ ")
+    in 
+    List.iteri iteri args
+    ;;
+let pp_fun fmt ((func_decl, stmt): func_impl) : unit = 
+    Format.fprintf fmt "fun %s%a : %a {\n" func_decl.func_decl_name pp_args func_decl.func_decl_args pp_ty func_decl.func_decl_rety;
+    pp_stmt fmt stmt;
+    Format.fprintf fmt "}\n"
+
+let pp_top fmt (clause:top_clause) : unit = 
+    match clause.shape with 
+    | GlobalVarDef(gvar) -> (
+        match (gvar.gvar_typ) with 
+        | Some(typ) -> 
+            Format.fprintf fmt "let %s : %a = %a\n" gvar.gvar_name pp_ty typ pp_expr gvar.gvar_value
+        | None -> 
+            Format.fprintf fmt "let %s = %a\n" gvar.gvar_name pp_expr gvar.gvar_value
+    )
+
+    | StructDef(def) -> 
+        Format.fprintf fmt "struct %s {\n" def.struct_name;
+        let iter (key, typ, attr) =
+            let att = 
+            ( match attr with 
+            | Struct_Field -> "field"
+            | Struct_Delegate -> "delegate"
+            ) in
+            Format.fprintf fmt ".%s : %a (%s)\n" key pp_ty typ att
+        in 
+        List.iter iter def.struct_fields;
+        Format.fprintf fmt "}\n"
+
+    | ADTDef(def) -> 
+        Format.fprintf fmt "adt %s {\n" def.adt_name;
+        let iter (key, typs) = 
+            Format.fprintf fmt ".%s %a\n" key pp_tys typs
+        in
+        List.iter iter def.adt_branches;
+        Format.fprintf fmt "}\n"
+    | InterfaceDecl(decl) -> 
+       Format.fprintf fmt "interface %s {\n" decl.intf_decl_name;
+
+    | FunctionDef(impl) -> 
+        pp_fun fmt impl
+
+    | MethodsImpl(impl) -> 
+        match (impl.impl_intf) with
+        | Some(intf) -> 
+            Format.fprintf fmt "impl %s for %s {\n" intf impl.impl_typ;
+        | None -> 
+            Format.fprintf fmt "impl %s {\n" impl.impl_typ;
+        let iter func_impl = 
+            pp_fun fmt func_impl
+        in 
+        List.iter iter impl.impl_methods;
+        Format.fprintf fmt "}\n"
+    ;;

@@ -33,3 +33,4 @@ fun g(
     let (_, _, _, some_type) = x15;
     let mut field = some_type.x;
 }
+let x = 1;
