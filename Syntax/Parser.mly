@@ -434,7 +434,7 @@ stmt :
         { mk_stmt @@ StmtWhile($3, $5) }
     | TOK_MATCH TOK_LPAREN expr TOK_RPAREN TOK_LBRACE match_branches TOK_RBRACE
         { mk_stmt @@ StmtMatch($3, $6) }
-
+    // 缺少分号  
     | TOK_RETURN expr error
         { error_ 2 2 @@ Basic { unexpected = None
         ; expecting = [Token ";"]
@@ -454,14 +454,87 @@ stmt :
     | TOK_LET pattern TOK_EQ expr error
         { error_ 4 4 @@ Basic { unexpected = None
         ; expecting = [Token ";"]
-        ; message = None } }  
+        ; message = None } }
+    | expr error
+        { error_ 1 1 @@ Basic { unexpected = None
+        ; expecting = [Token ";"]
+        ; message = None } }
+
+    /* else 前缺少匹配的 if  */
     | TOK_ELSE error
         { error_ 1 1 @@ Basic { unexpected = None
         ; expecting = [Token "if"]
         ; message = None } }
 
+    /* if while match 的 () 中间没有表达式 */
+    | TOK_IF TOK_LPAREN TOK_RPAREN stmt
+        { error_ 3 3 @@ Expecting "expression before ')' token." }  
+    | TOK_ELSE TOK_LPAREN TOK_RPAREN stmt
+        { error_ 3 3 @@ Expecting "expression before ')' token." }    
+    | TOK_WHILE TOK_LPAREN TOK_RPAREN stmt
+        { error_ 3 3 @@ Expecting "expression before ')' token." }     
+    | TOK_MATCH TOK_LPAREN TOK_RPAREN stmt
+        { error_ 3 3 @@ Expecting "expression before ')' token." }      
+
+    /* 错误的赋值操作 */
+    | assignment_op expr TOK_SEMICOLON                  // 没有东西被赋值
+        { error_ 1 1 @@ Expecting "expression before '=' token." }  
     | expr assignment_op expr TOK_SEMICOLON             // 被赋值的表达式不是左值, 不能被赋值
         { error_ 1 1 @@ BadToken "lvalue required as left operand of assignment." }  
+
+    /* 缺少匹配的左括号 */
+    | TOK_IF expr TOK_RPAREN
+        { error_ 2 2 @@ Basic { unexpected = None
+        ; expecting = [Token "("]
+        ; message = None} }  
+    | TOK_WHILE expr TOK_RPAREN
+        { error_ 2 2 @@ Basic { unexpected = None
+        ; expecting = [Token "("]
+        ; message = None } }  
+    | TOK_MATCH expr TOK_RPAREN
+        { error_ 2 2 @@ Basic { unexpected = None
+        ; expecting = [Token "("]
+        ; message = None } }  
+    
+    /* 缺少匹配的右括号 */
+    | TOK_IF TOK_LPAREN error
+        { error_ 3 3 @@ Basic { unexpected = None
+        ; expecting = [Token ")"]
+        ; message = None} }  
+    | TOK_WHILE TOK_LPAREN error
+        { error_ 3 3 @@ Basic { unexpected = None
+        ; expecting = [Token ")"]
+        ; message = None} }  
+    | TOK_MATCH TOK_LPAREN error
+        { error_ 3 3 @@ Basic { unexpected = None
+        ; expecting = [Token ")"]
+        ; message = None} }  
+    
+    /* 缺少匹配的右大括号 */
+    | TOK_LBRACE stmt error
+        { error_ 3 3 @@ Basic { unexpected = None
+        ; expecting = [Token "}"]
+        ; message = None} }  
+    
+    /* 关于 for */
+    | TOK_FOR       
+        TOK_LPAREN pattern expr TOK_RPAREN          // pattern 和 exp 之间缺少 in
+        stmt
+        { error_ 3 3 @@ Expecting "'in' between pattern and expression" }  
+    | TOK_FOR
+        TOK_LPAREN pattern TOK_IN TOK_RPAREN        // in 后未接 expression
+        stmt
+        { error_ 5 5 @@ Basic { unexpected = None
+        ; expecting = [Label "expression"]
+        ; message = None} }  
+
+    /* 关于 let */
+    | TOK_LET pattern expr TOK_SEMICOLON            // pattern 和 exp 之间缺少 in
+        { error_ 3 3 @@ Expecting "'=' between pattern and expression" }  
+    | TOK_LET pattern TOK_EQ TOK_SEMICOLON          // in 后未接 expression
+        { error_ 4 4 @@ Basic { unexpected = None
+        ; expecting = [Label "expression"]
+        ; message = None} }   
     | error
         { error @@ Expecting "statement" }
 ;
