@@ -16,6 +16,7 @@ let rec ty_eq (t1:typ) (t2:typ) : bool =
         else false
     | _ -> t1.shape=t2.shape (* leaf nodes *)
     ;;
+
 let span_dummy : Syntax.SyntaxError.src_span = 
     { span_start= Lexing.dummy_pos
     ; span_end  = Lexing.dummy_pos
@@ -43,7 +44,7 @@ let tuple (typs:typ list) = mk_typ (TyTuple(typs)) ;;
 let named (name:typ_name) (tys:typ list) = mk_typ (TyNamed(name, tys)) ;;
 let var (name:typ_name) = mk_typ (TyVar(name)) ;;
 let this = mk_typ TyThis ;;
-
+(* 
 let rec pp_ty fmt (ty:typ) =
     let open Format in 
     ( match ty.shape with
@@ -68,7 +69,7 @@ let rec pp_ty fmt (ty:typ) =
         | [] -> fprintf fmt "%s" name
         | _::_ -> fprintf fmt "%s%a" name pp_tys tys
         ) 
-    | TyVar(name) -> fprintf fmt "%s@," name
+    | TyVar(name) -> fprintf fmt "%s," name
     )
 and 
 pp_tys fmt (tys:typ list) = 
@@ -162,8 +163,52 @@ let pp_ref_entry fmt (NodeId.ExprId(id)) (data:ref_data) =
 let pp_ref_table fmt (table:ref_table) =
     Format.fprintf fmt "@[<4>{\n%a}@]"
     (fun fmt -> Hashtbl.iter (pp_ref_entry fmt)) table
-    ;;
+    ;; *)
+let rec pp_ty fmt (typ:typ) : unit = 
+    match typ.shape with
+    | TyVar(name) -> Format.fprintf fmt "%s" name
+    | TyUnit -> Format.fprintf fmt "unit"
+    | TyBool -> Format.fprintf fmt "bool"
+    | TyInt(sign, size) -> 
+        let sign = 
+        ( match sign with
+        | Signed -> "i"
+        | Unsigned -> "u"
+        ) in
+        let size = 
+        ( match size with
+        | ISize_8 -> "8"
+        | ISize_16 -> "16"
+        | ISize_32 -> "32"
+        | ISize_64 -> "64"
+        ) in
+        Format.fprintf fmt "%s%s" sign size
+    | TyFloat(size) -> 
+        let size = 
+        ( match size with
+        | FSize_32 -> "32"
+        | FSize_64 -> "64"
+        ) in
+        Format.fprintf fmt "f%s" size
+    | TyChar -> Format.fprintf fmt "char"
+    | TyThis -> Format.fprintf fmt "this"
+    | TyArray(ty, size) -> Format.fprintf fmt "[%a ; %d]" pp_ty ty size
+    | TyTuple(tys) -> pp_tys fmt tys
+    | TyNamed(name, tys) ->
+         ( match tys with 
+        | [] -> Format.fprintf fmt "%s" name
+        | _::_ -> Format.fprintf fmt "%s%a" name pp_tys tys
+        ) 
 
+and pp_tys fmt (tys:typ list) =
+    Format.fprintf fmt "(";
+    let final = (List.length tys) - 1 in
+    let iteri idx ty = 
+        pp_ty fmt ty ;
+        Format.fprintf fmt (if idx = final then ")" else ", ")
+    in 
+    List.iteri iteri tys
+    ;;
 let pp_literal fmt = function
     | LitUnit -> Format.fprintf fmt "()"
     | LitBool(b) -> Format.fprintf fmt "%b" b
@@ -196,51 +241,11 @@ and pp_patterns fmt (patterns : pattern list) : unit =
     let final = (List.length patterns) - 1 in
     let iteri idx pattern = 
         pp_pattern fmt pattern ;
-        Format.fprintf fmt (if idx = final then "" else ",@ ")
+        Format.fprintf fmt (if idx = final then "" else ", ")
     in List.iteri iteri patterns
     ;;
 
-let pp_ty fmt (typ:typ) : unit = 
-    match typ.shape with
-    | TyVar(name) -> Format.fprintf fmt "%s" name
-    | TyUnit -> Format.fprintf fmt "unit"
-    | TyBool -> Format.fprintf fmt "bool"
-    | TyInt(sign, size) -> 
-        let sign = 
-        ( match sign with
-        | Signed -> "i"
-        | Unsigned -> "u"
-        ) in
-        let size = 
-        ( match size with
-        | ISize_8 -> "8"
-        | ISize_16 -> "16"
-        | ISize_32 -> "32"
-        | ISize_64 -> "64"
-        ) in
-        Format.fprintf fmt "%s%s" sign size
-    | TyFloat(size) -> 
-        let size = 
-        ( match size with
-        | FSize_32 -> "32"
-        | FSize_64 -> "64"
-        ) in
-        Format.fprintf fmt "f%s" size
-    | TyChar -> Format.fprintf fmt "char"
-    | TyThis -> Format.fprintf fmt "this"
-    | TyArray(ty, size) -> Format.fprintf fmt "[%a ; %d]" pp_ty ty size
-    | TyTuple(tys) -> pp_tys fmt tys
-    | TyNamed(name, tys) -> Format.fprintf fmt "%s{%a}" name pp_tys tys
 
-and pp_tys fmt (tys:typ list) =
-    Format.fprintf fmt "@[<4>(";
-    let final = (List.length tys) - 1 in
-    let iteri idx ty = 
-        pp_ty fmt ty ;
-        Format.fprintf fmt (if idx = final then ")@]" else ",@,@ ")
-    in 
-    List.iteri iteri tys
-    ;;
 let rec pp_expr fmt (expr:expr) : unit = 
     let unop_to_string = function
     | UnOpNot -> "!"
@@ -285,7 +290,7 @@ let rec pp_expr fmt (expr:expr) : unit =
         let final = (List.length fields) - 1 in
         let iteri idx (name, expr) = 
             Format.fprintf fmt "%s = %a" name pp_expr expr;
-            Format.fprintf fmt (if idx = final then "}" else ",@,@ ")
+            Format.fprintf fmt (if idx = final then "}" else ", ")
         in 
         List.iteri iteri fields
     )
@@ -293,15 +298,16 @@ let rec pp_expr fmt (expr:expr) : unit =
     | ExpThis -> Format.fprintf fmt "this"
     | ExpApp(func, exprs) -> Format.fprintf fmt "%s(%a)" func pp_exprs exprs
     | ExpMethod(expr, name, exprs) -> Format.fprintf fmt "%a.%s(%a)" pp_expr expr name pp_exprs exprs
-    | ExpIf(cond, expr1, expr2) -> Format.fprintf fmt "if %a then %a else %a" pp_expr cond pp_expr expr1 pp_expr expr2
+    | ExpIf(cond, expr1, expr2) -> 
+        Format.fprintf fmt "if %a then %a else %a" pp_expr cond pp_expr expr1 pp_expr expr2
     | _ -> ()
     
 and pp_exprs fmt (exprs:expr list) =
-    Format.fprintf fmt "@[<4>(";
+    Format.fprintf fmt "(";
     let final = (List.length exprs) - 1 in
     let iteri idx expr = 
         pp_expr fmt expr ;
-        Format.fprintf fmt (if idx = final then ")@]" else ",@,@ ")
+        Format.fprintf fmt (if idx = final then ")" else " ")
     in
     List.iteri iteri exprs
     ;;
@@ -309,10 +315,11 @@ and pp_exprs fmt (exprs:expr list) =
 let rec pp_stmt fmt (stmt:stmt) : unit =
     match stmt.shape with
     | StmtSeq(stmts) ->
+        Format.fprintf fmt "";
         let final = (List.length stmts) - 1 in
         let iteri idx stmt = 
             pp_stmt fmt stmt ;
-            Format.fprintf fmt (if idx = final then "" else "@,@ ")
+            Format.fprintf fmt (if idx = final then "" else "@\n")
         in 
         List.iteri iteri stmts
     | StmtExpr(expr) -> pp_expr fmt expr
@@ -330,47 +337,50 @@ let rec pp_stmt fmt (stmt:stmt) : unit =
                 | _ -> "="
             )
         ) in
-        Format.fprintf fmt "%a %s %a;\n" pp_expr expr1 calc_op pp_expr expr2
+        Format.fprintf fmt "%a %s %a;" pp_expr expr1 calc_op pp_expr expr2
     )
-    | StmtDecl(pattern, expr) -> Format.fprintf fmt "let %a = %a;\n" pp_pattern pattern pp_expr expr
+    | StmtDecl(pattern, expr) -> Format.fprintf fmt "let %a = %a;" pp_pattern pattern pp_expr expr
     | _ -> ()
     ;;
 let pp_args fmt (args:func_arg list) : unit = 
-    Format.fprintf fmt "@[<4>(";
+    Format.fprintf fmt "(";
     let final = (List.length args) - 1 in
-    let iteri idx arg = 
-        Format.fprintf fmt "%s: %a" arg.farg_name pp_ty arg.farg_typ;
-        Format.fprintf fmt (if idx = final then ")@]" else ",@,@ ")
-    in 
-    List.iteri iteri args
+    if final >= 0 then 
+        let iteri idx arg = 
+            Format.fprintf fmt "%s: %a" arg.farg_name pp_ty arg.farg_typ;
+            Format.fprintf fmt (if idx = final then ")" else ",@ ")
+        in 
+        List.iteri iteri args
+    else Format.fprintf fmt ")"
     ;;
 let pp_fun fmt ((func_decl, stmt): func_impl) : unit = 
-    Format.fprintf fmt "fun %s%a : %a {\n" func_decl.func_decl_name pp_args func_decl.func_decl_args pp_ty func_decl.func_decl_rety;
+    Format.fprintf fmt "@[<4>fun %s%a : %a {@\n" 
+        func_decl.func_decl_name pp_args func_decl.func_decl_args pp_ty func_decl.func_decl_rety;
     pp_stmt fmt stmt;
-    Format.fprintf fmt "}\n"
+    Format.fprintf fmt "@]@.}\n"
 
 let pp_top fmt (clause:top_clause) : unit = 
     match clause.shape with 
     | GlobalVarDef(gvar) -> (
         match (gvar.gvar_typ) with 
         | Some(typ) -> 
-            Format.fprintf fmt "let %s : %a = %a\n" gvar.gvar_name pp_ty typ pp_expr gvar.gvar_value
+            Format.fprintf fmt "let %s : %a = %a;\n" gvar.gvar_name pp_ty typ pp_expr gvar.gvar_value
         | None -> 
-            Format.fprintf fmt "let %s = %a\n" gvar.gvar_name pp_expr gvar.gvar_value
+            Format.fprintf fmt "let %s = %a;\n" gvar.gvar_name pp_expr gvar.gvar_value
     )
 
     | StructDef(def) -> 
-        Format.fprintf fmt "struct %s {\n" def.struct_name;
+        Format.fprintf fmt "@[<4>struct %s {@\n" def.struct_name;
         let iter (key, typ, attr) =
             let att = 
             ( match attr with 
             | Struct_Field -> "field"
             | Struct_Delegate -> "delegate"
             ) in
-            Format.fprintf fmt ".%s : %a (%s)\n" key pp_ty typ att
+            Format.fprintf fmt ".%s : %a (%s)@ " key pp_ty typ att
         in 
         List.iter iter def.struct_fields;
-        Format.fprintf fmt "}\n"
+        Format.fprintf fmt "@.}\n"
 
     | ADTDef(def) -> 
         Format.fprintf fmt "adt %s {\n" def.adt_name;
@@ -386,14 +396,14 @@ let pp_top fmt (clause:top_clause) : unit =
         pp_fun fmt impl
 
     | MethodsImpl(impl) -> 
-        match (impl.impl_intf) with
+        (match (impl.impl_intf) with
         | Some(intf) -> 
             Format.fprintf fmt "impl %s for %s {\n" intf impl.impl_typ;
         | None -> 
-            Format.fprintf fmt "impl %s {\n" impl.impl_typ;
+            Format.fprintf fmt "impl %s {\n" impl.impl_typ);
         let iter func_impl = 
             pp_fun fmt func_impl
         in 
         List.iter iter impl.impl_methods;
-        Format.fprintf fmt "}\n"
+        Format.fprintf fmt "}\n";
     ;;
