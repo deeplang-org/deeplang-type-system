@@ -1,0 +1,7 @@
+fun main( var : I32 )
+{
+    while(1)
+    {
+        break
+    }
+}
