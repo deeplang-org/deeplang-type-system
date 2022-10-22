@@ -1,1 +1,1 @@
-let x: cha = 1;
+let x: cha = 1; // bug : Any type with the first letter uppercase will be thought as correct
