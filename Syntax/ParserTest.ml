@@ -91,6 +91,14 @@ let _ =
                                 ; "test/others/missing_type6.dp"
                                 ; "test/others/missing_function_decl_arg.dp"
                                 ; "test/others/bad_adt_branch_name.dp"
+                                ; "test/others/missing_function_decl_arg.dp"
+                                ; "test/others/bad_adt_branch_name.dp"
+                                ; "test/others/function_decl_args_without_comma.dp"
+                                ; "test/others/mutiple_type.dp"
+                                ; "test/others/mutiple_type_mut.dp"
+                                ; "test/others/unknown_type.dp"
+                                ; "test/others/func_impl_without_rbrace.dp"
+                                ; "test/others/bad_interface_name.dp"
                                 ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)

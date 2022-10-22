@@ -333,7 +333,7 @@ adt_branch :
     | TOK_UpperIdent                                         { ($1, []) }
     | TOK_UpperIdent TOK_LPAREN typ_list_nonempty TOK_RPAREN { ($1, $3) }
     | error
-        { error @@ Expecting "interface name starting with a capital letter" }    
+        { error @@ Expecting "ADT branch name starting with a capital letter" }    
 ;
 
 
