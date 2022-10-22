@@ -77,5 +77,7 @@
        (file test/others/func_impl_without_rbrace.dp)
        (file test/others/bad_adt_branch_name.dp)
        (file test/others/bad_interface_name.dp)
+       (file test/others/bad_impl_name.dp)
+       (file test/others/bad_impl_name2.dp)
        )
  (modules ParserTest))

@@ -1,0 +1,5 @@
+impl lowercaseADT {
+    fun <foo>(< arg : String >) -> <I32> {
+        return 0; 
+    }
+}

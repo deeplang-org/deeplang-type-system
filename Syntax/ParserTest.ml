@@ -99,6 +99,8 @@ let _ =
                                 ; "test/others/unknown_type.dp"
                                 ; "test/others/func_impl_without_rbrace.dp"
                                 ; "test/others/bad_interface_name.dp"
+                                ; "test/others/bad_impl_name.dp"
+                                ; "test/others/bad_impl_name2.dp"
                                 ])
         then (Format.printf "OK!\n"; exit 0)
         else (Format.printf "Not OK!\n"; exit 1)

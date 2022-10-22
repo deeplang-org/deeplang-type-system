@@ -276,16 +276,17 @@ top_clause :
         TOK_EXTENDS interface_name_list_nonempty
         TOK_LBRACE function_decls TOK_RBRACE
         { failwith "unimplemented" }       
-    | TOK_IMPL TOK_UpperIdent TOK_LBRACE function_impls TOK_RBRACE
+    | TOK_IMPL ADT_name TOK_LBRACE function_impls TOK_RBRACE
         { mk_top_clause @@ MethodsImpl (mk_impl None $2 $4) }
-    // | TOK_IMPL TOK_UpperIdent TOK_LBRACE function_impls error
-    //     { error_ 4 4 @@ Basic { unexpected = None
-    //     ; expecting = [Token "}"]
-    //     ; message = None } }         
-    | TOK_IMPL TOK_UpperIdent
+      
+    | TOK_IMPL interface_name
         TOK_FOR TOK_UpperIdent
         TOK_LBRACE function_impls TOK_RBRACE
         { mk_top_clause @@ MethodsImpl (mk_impl (Some $4) $2 $6) }
+    // | TOK_IMPL error TOK_LBRACE function_impls error
+    //     { error_ 4 4 @@ Basic { unexpected = None
+    //     ; expecting = [Token "}"]
+    //     ; message = None } }   
     | function_impl
         { mk_top_clause @@ FunctionDef $1 }
     | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
@@ -305,10 +306,19 @@ top_clause :
 interface_name :
     | TOK_UpperIdent { $1 }
     | TOK_LowerIdent { error @@ Basic { unexpected = Some (Token $1)
-                                      ; expecting = [Label "an interface name starting with a capital letter"]
+                                      ; expecting = [Label "a interface name starting with a capital letter"]
                                       ; message = None } }
     | other_token { error @@ Basic { unexpected = $1
                                    ; expecting = [Label "legal interface name"]
+                                   ; message = None } }
+
+ADT_name:
+    | TOK_UpperIdent { $1 }
+    | TOK_LowerIdent { error @@ Basic { unexpected = Some (Token $1)
+                                      ; expecting = [Label "an ADT name starting with a capital letter"]
+                                      ; message = None } }
+    | other_token { error @@ Basic { unexpected = $1
+                                   ; expecting = [Label "legal ADT name"]
                                    ; message = None } }
 
 struct_fields :
