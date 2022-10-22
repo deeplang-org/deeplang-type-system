@@ -1,0 +1,5 @@
+fun main( var : I32 )
+{
+    let a : Int = 1;
+    let a  1;
+}

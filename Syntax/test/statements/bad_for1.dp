@@ -1,0 +1,6 @@
+fun main( var : I32 )
+{
+    for (df: I32  someThing) {
+    return (0, (1.2, 'c'), "Abc");
+  }
+}
