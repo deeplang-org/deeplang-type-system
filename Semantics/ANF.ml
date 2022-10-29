@@ -5,6 +5,7 @@ type block_label = int
 type func_name = Syntax.ParseTree.func_name
 type adt_label = Syntax.ParseTree.adt_label
 type typ_name  = Syntax.ParseTree.typ_name
+type intf_name = Syntax.ParseTree.intf_name
 
 type unary_op  = Syntax.ParseTree.unary_op
 type binary_op = Syntax.ParseTree.binary_op
@@ -31,6 +32,7 @@ type data_kind =
     | Tuple  of int
     | Struct of typ_name
     | ADT    of typ_name * adt_label
+    | Impl   of intf_name
 
 type value =
     | Int   of int
