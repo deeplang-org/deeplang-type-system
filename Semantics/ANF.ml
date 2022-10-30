@@ -35,17 +35,21 @@ type data_kind =
     | Impl   of intf_name
 
 type value =
+    | Var   of variable
     | Int   of int
     | Float of float
-    | Loc   of permission * loc_expr
     | Fun   of func_name
 
 type expr =
     | Val    of value
+    | Move   of loc_expr
+    | Copy   of loc_expr
+    | Borrow of mutability * loc_expr
     | App    of value * value list
     | UnOp   of unary_op  * value
     | BinOp  of binary_op * value * value
     | MkData of data_kind * value list
+    | TagOf  of value
 
 type statement =
     | Decl     of variable * expr
