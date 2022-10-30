@@ -272,16 +272,21 @@ top_clause :
     | TOK_INTERFACE TOK_UpperIdent TOK_LBRACE function_decls TOK_RBRACE
         { mk_top_clause @@ InterfaceDecl
             { intf_decl_name = $2; intf_decl_methods = $4 } }
-    | TOK_INTERFACE TOK_UpperIdent
+    | TOK_INTERFACE interface_name
         TOK_EXTENDS interface_name_list_nonempty
         TOK_LBRACE function_decls TOK_RBRACE
-        { failwith "unimplemented" }
-    | TOK_IMPL TOK_UpperIdent TOK_LBRACE function_impls TOK_RBRACE
+        { failwith "unimplemented" }       
+    | TOK_IMPL ADT_name TOK_LBRACE function_impls TOK_RBRACE
         { mk_top_clause @@ MethodsImpl (mk_impl None $2 $4) }
-    | TOK_IMPL TOK_UpperIdent
+      
+    | TOK_IMPL interface_name
         TOK_FOR TOK_UpperIdent
         TOK_LBRACE function_impls TOK_RBRACE
         { mk_top_clause @@ MethodsImpl (mk_impl (Some $4) $2 $6) }
+    // | TOK_IMPL error TOK_LBRACE function_impls error
+    //     { error_ 4 4 @@ Basic { unexpected = None
+    //     ; expecting = [Token "}"]
+    //     ; message = None } }   
     | function_impl
         { mk_top_clause @@ FunctionDef $1 }
     | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
@@ -298,6 +303,23 @@ top_clause :
         { error @@ Expecting "top level clause" }
 ;
 
+interface_name :
+    | TOK_UpperIdent { $1 }
+    | TOK_LowerIdent { error @@ Basic { unexpected = Some (Token $1)
+                                      ; expecting = [Label "a interface name starting with a capital letter"]
+                                      ; message = None } }
+    | other_token { error @@ Basic { unexpected = $1
+                                   ; expecting = [Label "legal interface name"]
+                                   ; message = None } }
+
+ADT_name:
+    | TOK_UpperIdent { $1 }
+    | TOK_LowerIdent { error @@ Basic { unexpected = Some (Token $1)
+                                      ; expecting = [Label "an ADT name starting with a capital letter"]
+                                      ; message = None } }
+    | other_token { error @@ Basic { unexpected = $1
+                                   ; expecting = [Label "legal ADT name"]
+                                   ; message = None } }
 
 struct_fields :
     | /* empty */                          { [] }
@@ -321,15 +343,15 @@ adt_branch :
     | TOK_UpperIdent                                         { ($1, []) }
     | TOK_UpperIdent TOK_LPAREN typ_list_nonempty TOK_RPAREN { ($1, $3) }
     | error
-        { error @@ Expecting "interface name starting with a capital letter" }    
+        { error @@ Expecting "ADT branch name starting with a capital letter" }    
 ;
 
 
 interface_name_list_nonempty :
     | TOK_UpperIdent                                        { [$1] }
-    | TOK_UpperIdent TOK_COMMA interface_name_list_nonempty { $1 :: $3 }
-    // | error
-    //     { error @@ Expecting "interface name starting with a capital letter" }
+    | TOK_UpperIdent TOK_COMMA interface_name_list_nonempty { $1 :: $3 }    
+    | error
+        { error @@ Expecting "interface name starting with a capital letter" }
 ;
 
 function_decls :
@@ -355,6 +377,12 @@ function_decl_args :
 function_decl_args_nonempty :
     | function_decl_arg                                       { [$1] }
     | function_decl_arg TOK_COMMA function_decl_args_nonempty { $1 :: $3 }
+    | function_decl_arg  function_decl_args_nonempty
+    { error_ 2 2 @@ Basic {
+        unexpected = None
+        ; expecting = [Token ","]
+        ; message = None
+    } }
 ;
 
 function_decl_arg :
@@ -378,6 +406,10 @@ function_impls :
 function_impl :
     | function_decl TOK_LBRACE stmt_list TOK_RBRACE
         { ( $1, mk_stmt @@ StmtSeq $3 ) }
+    // | function_decl TOK_LBRACE stmt_list error
+    //     { error_ 4 4 @@ Basic { unexpected = None
+    //       ; expecting = [Token "}"]
+    //       ; message = None } }
 ;
 
 
@@ -422,6 +454,12 @@ stmt :
     | TOK_LET pattern TOK_EQ expr TOK_SEMICOLON
         { mk_stmt @@ StmtDecl($2, $4) }
     | TOK_LBRACE stmt_list TOK_RBRACE { mk_stmt @@ StmtSeq $2 }
+
+    // | TOK_LBRACE stmt_list error
+    //     { error_ 3 3 @@ Basic { unexpected = None
+    //     ; expecting = [Token "}"]
+    //     ; message = None } }
+
     | TOK_IF TOK_LPAREN expr TOK_RPAREN stmt
         { mk_stmt @@ StmtIf($3, $5, None) }
     | TOK_IF TOK_LPAREN expr TOK_RPAREN stmt TOK_ELSE stmt
@@ -631,7 +669,19 @@ variable_pattern :
     | TOK_LowerIdent                       { mk_var_pat Imm None $1 }       // x
     | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }       // mut x
     | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }  // x: I8
+    | TOK_LowerIdent TOK_COLON typ typ        
+     { error_ 4 4 @@ Basic { 
+            unexpected = None
+            ; expecting = []
+            ; message = Some "two or more data types" 
+        } }
     | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }  // mut x: I8
+    | TOK_MUT TOK_LowerIdent TOK_COLON typ typ        
+     { error_ 5 5 @@ Basic { 
+            unexpected = None
+            ; expecting = []
+            ; message = Some "two or more data types" 
+        } }    
 ;
 
 pattern_list_nonempty :

@@ -573,3 +573,39 @@ ANF的再讨论：
 陈楷骐：pretty printer快写完了，预计下周可以完成
 
 练琪灏：在处理语言中的delegate的特性
+
+
+
+
+### 2022.10.16例会纪要
+
+**Deeplang的codege设计**
+
+Deeplang Source Code -> walker -> ast&tabs -> codege -> DeepVM -> libc
+
+其中，codege设计中，考虑先将ast转为S表达式，接着自己实现wat做一个中间的文本形式。但可能会遇见维护成本的问题。
+
+如果使用S表达式，S expression和ast更接近一些，文本形式的wasm文件和字节码之间使用官方库相互转换。
+
+如果不生成S expression的话就要整体使用OCaml调用C语言的wasm库的接口来实现生成字节码bit stream。
+
+参考：OCaml与C的互操作
+
+优势：调用OCaml官方的库，如果官方库修改后我们无需有大的改动。OCaml和C的相互调用较为简单。
+
+
+
+对齐各人的进展
+
+陈楷骐：交了一个branch
+
+秦嘉俊：今天下午已经将之前的工作合入了dev分支
+
+刘得志：
+
+​	两个问题：
+
+​		只要是大写字母开头都会认为是类型，无法定义“未定义类型”
+
+​		函数没有右括号的语句无法检查
+
