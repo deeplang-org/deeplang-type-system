@@ -82,13 +82,17 @@ type statement =
             [span] is the source location of [stmt]}
         {li [Branch br] is a unified construction for all control flow branching structures,
             e.g. if/else and pattern matching}
-        {li [DefBlock(def, body)] defines a new block with [def], and executes [body]} *)
+        {li [DefBlock(def, body)] defines a new block with [def], and executes [body]}
+        {li [Loop def] defines a {e recursive} block with [def],
+        and immediately enter the block}
+    } *)
 type program =
     | Return   of span * expr
     | Jump     of span * block_label * value list
     | Stmt     of span * statement * program
     | Branch   of branching
     | DefBlock of block_definition * program
+    | Loop     of block_definition
 
 
 (** [branching] is a simple switch on ADT label (integer tag).
