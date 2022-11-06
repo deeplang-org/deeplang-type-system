@@ -673,3 +673,23 @@ ANF变换
 确定了ANF IR需要完成的事情
 
 形成了IR的初稿，梳理了一下代码内容
+
+
+
+### 2022.11.6例会纪要
+
+基于DeepVM的load和store的tuple实现：
+
+​	对于tuple数据除了字符串之外可以直接采用I32或I64直接存储，而字符串由于可能较长，可以存在VM中的.data字段中（只能是read-only），或者是存在tuple之中（可修改）。
+
+
+
+IR的修改
+
+* 没有goto，简化IR
+* Deeplang有类似指针的读写借用，但WSM不太支持
+* local局部变量等的存储
+
+
+
+讨论了Deeplang后端的设计演变，以及WASM的相关内容
