@@ -117,3 +117,7 @@ extern "C" {
 但如果有了wasm之后，我们就可以将`deeplang`译成 `wasm`，然后直接分发到各个平台上。
 
 *Any application that can be compiled to WebAssembly, will be compiled to WebAssembly eventually.*
+
+
+
+在WebAssembly中，其规定的是一套机器码实现的标准，但并没有强制规定一套具体的实现。而在Deeplang中的DeepVM则是WebAssembly的一种简化版的具体实现形式。
