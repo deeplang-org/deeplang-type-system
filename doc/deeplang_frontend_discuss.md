@@ -709,3 +709,27 @@ IR的修改
 
 
 每个人汇报各自的进度
+
+
+
+### 2022.11.27 例会纪要
+
+在上周中，我们找出了DeepVM大约有100调指定没有实现。
+
+未实现的指令可分类为：比较指令、浮点运算、间接访问与调用
+
+
+
+经过上周的讨论，第一阶段：采用llvm的路线，利用llvm的优秀的优化来实现codegen的工作。
+
+
+
+deeplang source code  -> walker  ->  lowering  ->  llc  ->  DeepVM  ->  libc
+
+codegen的实现路径：
+
+​	Ocaml llvm IR的binding
+
+
+
+关于walker部分，主要做的内容为类型检查，实现静态语义检查相关的内容。而求值等部分不在此处完成。
