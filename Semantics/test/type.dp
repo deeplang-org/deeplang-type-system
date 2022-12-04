@@ -33,3 +33,16 @@ fun g(
     let (_, _, _, some_type) = x15;
     let mut field = some_type.x;
 }
+
+fun k(
+    x1  : Bool,
+    x2  : I8,
+    x3  : I8
+)
+{
+    // let y1 = x1 + x2;
+    let y2 = x2 + x3;
+    // let z1 : I32 = 1;
+    // let z2 : I32 = 2;
+    // let z3 = z1 + z2;
+}

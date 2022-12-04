@@ -205,9 +205,9 @@ let rec walk_expr (context:context) (expr:expr) : typ =
             | TyBool -> typ
             | _      -> failwith(" apply - to Not a Boolean ")
         ))
-    | ExpBinOp(op, left_e, right) ->
+    | ExpBinOp(op, left_e, right_e) ->
         let left  = walk_expr context left_e in
-        let right = walk_expr context right  in
+        let right = walk_expr context right_e  in
         ( match op with
         | BinOpCompare(op) -> ( match op with
             | BinOpLt | BinOpLeq | BinOpGt | BinOpGeq -> 
@@ -243,7 +243,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                 | _           -> failwith(" shifting a NaN bits ")
                 )
             | BinOpAdd | BinOpSub | BinOpMul | BinOpDiv ->
-                if left=right then ( match right.shape with 
+                if (Helper.ty_eq left right) then ( match right.shape with 
                     | TyInt(_, _) | TyFloat(_)  
                         -> right
                     | _ -> failwith(" arithmetic on neither Int nor Float ")
