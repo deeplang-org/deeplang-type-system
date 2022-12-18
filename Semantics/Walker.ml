@@ -211,26 +211,26 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         ( match op with
         | BinOpCompare(op) -> ( match op with
             | BinOpLt | BinOpLeq | BinOpGt | BinOpGeq -> 
-                if left=right then ( match right.shape with
+                if (Helper.ty_eq left right) then ( match right.shape with
                     | TyInt(_, _) | TyFloat(_) | TyChar      
                         -> Helper.bool
                     | _ -> failwith(" ordering values from none of Int, Float, Char ")
                 )
                 else failwith(" ordering values from different types")
             | BinOpEq | BinOpNeq -> 
-                if left=right then 
+                if (Helper.ty_eq left right) then 
                     Helper.bool
                 else failwith(" equaling values from different types")
             )
         | BinOpCalculate(op) -> ( match op with
             | BinOpLOr | BinOpLAnd | BinOpLXor -> 
-                if left=right then ( match right.shape with
+                if (Helper.ty_eq left right) then ( match right.shape with
                     | TyBool      -> Helper.bool
                     | _           -> failwith(" logical operate non Bool ")
                 )
                 else failwith(" logical operate non Bool ")
             | BinOpBOr | BinOpBAnd | BinOpBXor ->
-                if left=right then ( match right.shape with 
+                if (Helper.ty_eq left right) then ( match right.shape with 
                     | TyInt(_, _) -> right (* Discuss *)
                     | _           -> failwith(" bits operate non Int ")
                 )
@@ -250,7 +250,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                 )
                 else failwith(" arithmetic on different types")
             | BinOpMod -> 
-                if left=right then ( match right.shape with 
+                if (Helper.ty_eq left right) then ( match right.shape with 
                     | TyInt(_, _) -> right
                     | _           -> failwith(" mod on non Int ")
                 )

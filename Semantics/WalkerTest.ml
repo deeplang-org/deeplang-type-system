@@ -29,6 +29,18 @@ let context : context =
     ;;
 let walk = walk_top context;;
 
+let rec test_walk_valid pathes = 
+    match pathes with
+    | path :: rest_path -> (
+        try parse_file "test/type.dp" with
+        Syntax.SyntaxError.Error(span, err) ->
+            Format.printf "syntax error: %a@ in %a"
+                Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
+            exit 1
+        test_walk_valid rest_path
+    )
+    | [] -> true;;
+
 let clauses = try parse_file "test/type.dp" with
     Syntax.SyntaxError.Error(span, err) ->
         Format.printf "syntax error: %a@ in %a"
@@ -36,7 +48,8 @@ let clauses = try parse_file "test/type.dp" with
         exit 1
     ;;
 
-let iterator clause = walk clause;;
+let iterator clause = walk clause
+
 let _ = List.iter iterator clauses;;
 
 open Semantics.Helper;;
