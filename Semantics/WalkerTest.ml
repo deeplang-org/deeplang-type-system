@@ -29,7 +29,7 @@ let context : context =
     ;;
 let walk = walk_top context;;
 
-let rec test_walk_valid pathes = 
+(* let rec test_walk_valid pathes = 
     match pathes with
     | path :: rest_path -> (
         try parse_file "test/type.dp" with
@@ -39,9 +39,10 @@ let rec test_walk_valid pathes =
             exit 1
         test_walk_valid rest_path
     )
-    | [] -> true;;
+    | [] -> true;; *)
 
-let clauses = try parse_file "test/type.dp" with
+(* open SemanticsError;; *)
+let clauses = try parse_file "test/expression.dp" with
     Syntax.SyntaxError.Error(span, err) ->
         Format.printf "syntax error: %a@ in %a"
             Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;

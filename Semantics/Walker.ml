@@ -1,5 +1,6 @@
 open Syntax.ParseTree;;
 open Table;;
+(* open SemanticsError;; *)
 
 (** This module walks AST from {! Syntax.ParseTree},
     to do {b name resolution} and {b type checking} in one pass.
@@ -17,6 +18,12 @@ type context =
     ; mutable rety    : typ      (** return type of function *)
     };;
 
+
+let cur_span () =
+    { Syntax.SyntaxError.span_start = Parsing.symbol_start_pos ()
+    ; Syntax.SyntaxError.span_end   = Parsing.symbol_end_pos () }
+
+let current_error err = raise(Syntax.SyntaxError.Error(cur_span (), err))
 
 (** {1 Helper} *)
 
@@ -248,7 +255,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                         -> right
                     | _ -> failwith(" arithmetic on neither Int nor Float ")
                 )
-                else failwith(" arithmetic on different types")
+                else (current_error @@ Syntax.SyntaxError.Expecting(" arithmetic on different types")) (*ErrorType(expr, " arithmetic on different types")*)
             | BinOpMod -> 
                 if (Helper.ty_eq left right) then ( match right.shape with 
                     | TyInt(_, _) -> right
