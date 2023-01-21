@@ -42,12 +42,29 @@ let walk = walk_top context;;
     | [] -> true;; *)
 
 (* open SemanticsError;; *)
-let clauses = try parse_file "test/expression.dp" with
+let rec clauses_file file_list = 
+    match file_list with
+    | []    -> exit 1
+    | file::tails   -> (
+        try parse_file file with
+            Semantics.SemanticsError.ErrorType(_, msg) ->
+                Format.printf "semantics error: %a"
+                Semantics.SemanticsError.print_error msg;
+                (* @todo 未来加入定位报错时这里也需要修改 *)
+                (* Format.printf "semantics error: %a@ in %a"
+                Semantics.SemanticsError.pretty_print_error err 
+                    Syntax.SyntaxError.pp_span span; *)
+        clauses_file tails
+    )
+    
+let clauses = clauses_file ["test/expression.dp"]
+
+(* let clauses = try parse_file "test/expression.dp" with
     Syntax.SyntaxError.Error(span, err) ->
         Format.printf "syntax error: %a@ in %a"
             Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
         exit 1
-    ;;
+    ;; *)
 
 let iterator clause = walk clause
 
