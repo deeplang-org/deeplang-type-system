@@ -29,46 +29,39 @@ let context : context =
     ;;
 let walk = walk_top context;;
 
-(* let rec test_walk_valid pathes = 
-    match pathes with
-    | path :: rest_path -> (
-        try parse_file "test/type.dp" with
-        Syntax.SyntaxError.Error(span, err) ->
-            Format.printf "syntax error: %a@ in %a"
-                Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
-            exit 1
-        test_walk_valid rest_path
-    )
-    | [] -> true;; *)
+(* open Semantics.SemanticsError;; *)
 
-(* open SemanticsError;; *)
-let rec clauses_file file_list = 
-    match file_list with
-    | []    -> exit 1
-    | file::tails   -> (
-        try parse_file file with
-            Semantics.SemanticsError.ErrorType(_, msg) ->
-                Format.printf "semantics error: %a"
-                Semantics.SemanticsError.print_error msg;
-                (* @todo 未来加入定位报错时这里也需要修改 *)
-                (* Format.printf "semantics error: %a@ in %a"
-                Semantics.SemanticsError.pretty_print_error err 
-                    Syntax.SyntaxError.pp_span span; *)
-        clauses_file tails
-    )
-    
-let clauses = clauses_file ["test/expression.dp"]
-
-(* let clauses = try parse_file "test/expression.dp" with
+let clauses file = try parse_file file with
     Syntax.SyntaxError.Error(span, err) ->
         Format.printf "syntax error: %a@ in %a"
             Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
         exit 1
-    ;; *)
+    ;;
 
-let iterator clause = walk clause
+let iterator clause = 
+    try walk clause with
+        Semantics.SemanticsError.ErrorType(_, msg) ->
+            Format.printf "semantics error: %a"
+            Semantics.SemanticsError.print_error msg;;
+    (* @todo 未来加入定位报错时这里也需要修改 *)
+        (* Format.printf "semantics error: %a@ in %a"
+        Semantics.SemanticsError.pretty_print_error err 
+            Syntax.SyntaxError.pp_span span; *)
 
-let _ = List.iter iterator clauses;;
+let file_list = ["test/type.dp"
+                ;"test/expression.dp"
+                ];;
+
+let rec iterator_files fileList = 
+    match fileList with
+    | []            -> []
+    | file::tails   -> (
+        List.iter iterator (clauses file);
+        iterator_files tails
+    )
+
+(* let _ = List.iter iterator clauses;; *)
+let _ = iterator_files file_list;;
 
 open Semantics.Helper;;
 pp_var_table Format.std_formatter table.var;;
