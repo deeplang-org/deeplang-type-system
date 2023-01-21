@@ -40,16 +40,17 @@ let clauses file = try parse_file file with
 
 let iterator clause = 
     try walk clause with
-        Semantics.SemanticsError.ErrorType(_, msg) ->
+        Semantics.SemanticsError.ErrorType(err) ->
             Format.printf "semantics error: %a"
-            Semantics.SemanticsError.print_error msg;;
+            Semantics.SemanticsError.print_error err;;
     (* @todo 未来加入定位报错时这里也需要修改 *)
         (* Format.printf "semantics error: %a@ in %a"
-        Semantics.SemanticsError.pretty_print_error err 
+        Semantics.SemanticsError.print_error err 
             Syntax.SyntaxError.pp_span span; *)
 
 let file_list = ["test/type.dp"
-                ;"test/expression.dp"
+                ;"test/expression1.dp"
+                ;"test/expression2.dp"
                 ];;
 
 let rec iterator_files fileList = 

@@ -1,0 +1,6 @@
+fun expr2()
+{
+    let z1 : I32 = 1;
+    let z2 : I64 = 2;
+    let z3 = z1 - z2;
+}

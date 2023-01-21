@@ -123,7 +123,7 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
             if Helper.ty_eq ty typ then 
                 add_variable context vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ
             else
-                failwith("declared type doesn't match with the given expr")
+                error_type UnsuitablePattern(pattern, " declared type doesn't match with the given expr")
         )
     (* TODO Discuss PatAs *)
     | PatAs(pattern, vpat) -> 
@@ -135,7 +135,7 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
             if ty = typ then 
                 add_variable context vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ
             else
-                failwith("declared type doesn't match with the given expr")
+                error_type MismatchParameter(expr, " declared type doesn't match with the given expr")
         )
     | PatADT(adt_label, patterns) -> ( match Hashtbl.find_opt table.adt adt_label with
         | None -> failwith("adt_lable" ^adt_label ^ "not found")
@@ -255,8 +255,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                         -> right
                     | _ -> failwith(" arithmetic on neither Int nor Float ")
                 )
-                else error_type expr  (MismatchParameter " arithmetic on different types")
-                    (* (current_error @@ Syntax.SyntaxError.Expecting(" arithmetic on different types"))  *)
+                else error_type MismatchParameter(expr, " arithmetic on different types")
             | BinOpMod -> 
                 if (Helper.ty_eq left right) then ( match right.shape with 
                     | TyInt(_, _) -> right

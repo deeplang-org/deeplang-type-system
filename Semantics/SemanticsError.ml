@@ -7,15 +7,16 @@ type src_span =
 
 (* walker中的错误类型，目前抛出的错误为以下类型中的一种 *)
 type error_walker = 
+    | TypeError         of string 
     | UndefinedOperator of string
-    | MismatchParameter of string
-    | UnsuitablePattern of string
+    | MismatchParameter of expr * string
+    | UnsuitablePattern of pattern * string
 
-exception ErrorType of expr * error_walker
+exception ErrorType of error_walker
 
 (* 实际调用抛出错误的函数，在使用时可以直接调用 *)
-let error_type (expr:expr) (error_message:error_walker) = 
-    raise (ErrorType(expr, error_message))
+let error_type (error_message:error_walker) = 
+    raise (ErrorType(error_message))
 
 (* @todo 这部分是将来期望能够加入位置信息的报错代码，暂时还没有用到 *)
 (* exception ErrorWalker of src_span * error_walker *)
@@ -30,9 +31,10 @@ let error_type (expr:expr) (error_message:error_walker) =
 let print_error fmt (err:error_walker) =
     let open Format in
     match err with
-    | UndefinedOperator msg -> fprintf fmt "UndefinedOperator %s\n"   msg
-    | MismatchParameter msg -> fprintf fmt "MismatchParameter %s\n"  msg
-    | UnsuitablePattern msg -> fprintf fmt "UnsuitablePattern %s\n" msg
+    | TypeError msg         -> fprintf fmt "Type Error %s\n"   msg
+    | UndefinedOperator msg -> fprintf fmt "Undefined Operator %s\n"   msg
+    | MismatchParameter (expression, msg) -> fprintf fmt "Mismatched Parameter %s\n"  msg
+    | UnsuitablePattern (pattern, msg) -> fprintf fmt "Unsuitable Pattern %s\n" msg
 
 (* expression 的 pretty printer，暂时还没有写出来，ww *)
 (* let print_expr expr =
