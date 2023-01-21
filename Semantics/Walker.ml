@@ -42,7 +42,7 @@ let scope_end (context:context) : unit =
     | nametbl::scope -> 
         context.nametbl <- nametbl ;
         context.scope <- scope 
-    | [] -> failwith("Impossible scope empty")
+    | [] -> error_type (TypeError "Impossible scope empty")
     ;;
 
 
@@ -52,11 +52,11 @@ let add_variable (context:context) (symbol:symbol) (mut:mutability) (name:variab
     let table = context.table in 
     let nametbl = context.nametbl in
     let typ = match typo with
-        | None -> failwith(" Type Annotation Needed Currently ")
+        | None -> error_type (TypeError " Type Annotation Needed Currently ")
         | Some(typ) -> typ
         in
     match Hashtbl.find_opt nametbl name with
-        | Some(_) -> failwith("varaible "^ name ^ " has been declared")
+        | Some(_) -> error_type (TypeError ("varaible "^ name ^ " has been declared"))
         | None -> Hashtbl.add table.var symbol
             { mut  = mut
             ; typ  = typ
@@ -92,7 +92,7 @@ let find_var_opt (context:context) (name:variable) : symbol option =
 let unsupport_generics (tys:typ list) = 
     ( match tys with 
     | [] -> () 
-    | _::_ -> failwith("Unsupport for Generics Programming")
+    | _::_ -> error_type (TypeError "Unsupport for Generics Programming")
     )
     ;;
 
@@ -103,10 +103,10 @@ let rec walk_type (context:context) (typ:typ) : bool =
     | TyNamed(name, tys) -> 
         unsupport_generics tys;
         ( match Hashtbl.find_opt table name with
-        | None -> failwith("Type Named "^name^" Not Found")
+        | None -> error_type (TypeError ("Type Named "^name^" Not Found"))
         | Some(_) -> true
         )
-    | TyVar(_) -> failwith("Unsupport for Generics Programming")
+    | TyVar(_) -> error_type (TypeError "Unsupport for Generics Programming")
     | TyArray(typ, _) -> walk_type context typ
     | TyTuple(tys) -> List.for_all (walk_type context) tys
     | _ -> true
@@ -123,7 +123,7 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
             if Helper.ty_eq ty typ then 
                 add_variable context vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ
             else
-                error_type UnsuitablePattern(pattern, " declared type doesn't match with the given expr")
+                error_type (UnsuitablePattern(pattern, " declared type doesn't match with the given expr"))
         )
     (* TODO Discuss PatAs *)
     | PatAs(pattern, vpat) -> 
@@ -135,10 +135,10 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
             if ty = typ then 
                 add_variable context vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ
             else
-                error_type MismatchParameter(expr, " declared type doesn't match with the given expr")
+                error_type (UnsuitablePattern(pattern, " declared type doesn't match with the given expr"))
         )
     | PatADT(adt_label, patterns) -> ( match Hashtbl.find_opt table.adt adt_label with
-        | None -> failwith("adt_lable" ^adt_label ^ "not found")
+        | None -> error_type (TypeError ("adt_lable" ^adt_label ^ "not found"))
         | Some(data) ->  
             (* WARNING : raise error if length of patterns and that of adt children differ *)
             let walk_iter2 pattern typ = walk_pattern context pattern typ in
@@ -149,11 +149,11 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
         (* walk_iter (struct_field, pattern) *)
         let core = ( match Hashtbl.find_opt table.typ type_name with
         | Some(Struct_data(data)) -> data.core
-        | _ -> failwith("name "^type_name^" is not a struct")
+        | _ -> error_type (TypeError ("name "^type_name^" is not a struct"))
         ) in
         let walk_iter (struct_field , pattern) = ( 
             match Hashtbl.find_opt core struct_field with
-            | None -> failwith("struct "^type_name^" has no field named "^struct_field)
+            | None -> error_type (TypeError ("struct "^type_name^" has no field named "^struct_field))
             | Some(data) -> walk_pattern context pattern data.typ
         ) in
         List.iter walk_iter field_patterns
@@ -161,7 +161,7 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
         (* Typing rules here *)
         let typs = ( match typ.shape with
         | TyTuple(typs) -> typs
-        | _ -> failwith("expr is NOT a Tuple")
+        | _ -> error_type (TypeError "expr is NOT a Tuple")
         ) in
         (* WARNING : raise error if length of patterns and that of adt children differ *)
         let walk_iter2 pattern typ = walk_pattern context pattern typ in
@@ -195,10 +195,10 @@ let rec walk_expr (context:context) (expr:expr) : typ =
             { sym = symbol 
             };
             ( match Hashtbl.find_opt table.var symbol with
-            | None -> failwith("Impossible, symbol not found, DEBUG needed")
+            | None -> error_type (TypeError "Impossible, symbol not found, DEBUG needed")
             | Some(data) -> data.typ
             )
-        | None -> failwith("varaible " ^ name ^ " Not Found")
+        | None -> error_type (TypeError ("varaible " ^ name ^ " Not Found"))
         )
     | ExpUnOp(op, expr) -> let typ = walk_expr context expr in 
         ( match op with 
@@ -206,11 +206,11 @@ let rec walk_expr (context:context) (expr:expr) : typ =
             | TyInt(_, _) -> typ
             | TyFloat(_)  -> typ
             | TyChar      -> typ
-            | _           -> failwith(" apply - to Not a Number ")
+            | _           -> error_type (TypeError " apply - to Not a Number ")
         )
         | UnOpNot -> ( match typ.shape with
             | TyBool -> typ
-            | _      -> failwith(" apply - to Not a Boolean ")
+            | _      -> error_type (TypeError " apply - to Not a Boolean ")
         ))
     | ExpBinOp(op, left_e, right_e) ->
         let left  = walk_expr context left_e in
@@ -221,62 +221,62 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                 if (Helper.ty_eq left right) then ( match right.shape with
                     | TyInt(_, _) | TyFloat(_) | TyChar      
                         -> Helper.bool
-                    | _ -> failwith(" ordering values from none of Int, Float, Char ")
+                    | _ -> error_type (MismatchParameter(expr, " ordering values from none of Int, Float, Char "))
                 )
-                else failwith(" ordering values from different types")
+                else error_type (MismatchParameter(expr, " ordering values from different types"))
             | BinOpEq | BinOpNeq -> 
                 if (Helper.ty_eq left right) then 
                     Helper.bool
-                else failwith(" equaling values from different types")
+                else error_type (MismatchParameter(expr, " equaling values from different types"))
             )
         | BinOpCalculate(op) -> ( match op with
             | BinOpLOr | BinOpLAnd | BinOpLXor -> 
                 if (Helper.ty_eq left right) then ( match right.shape with
                     | TyBool      -> Helper.bool
-                    | _           -> failwith(" logical operate non Bool ")
+                    | _           -> error_type (MismatchParameter(expr, " logical operate non Bool "))
                 )
-                else failwith(" logical operate non Bool ")
+                else error_type (MismatchParameter(expr, " logical operate non Bool "))
             | BinOpBOr | BinOpBAnd | BinOpBXor ->
                 if (Helper.ty_eq left right) then ( match right.shape with 
                     | TyInt(_, _) -> right (* Discuss *)
-                    | _           -> failwith(" bits operate non Int ")
+                    | _           -> error_type (MismatchParameter(expr, " bits operate non Int "))
                 )
-                else failwith(" bits operate non Int ")
+                else error_type (MismatchParameter(expr, " bits operate non Int "))
             | BinOpLShift | BinOpRShift -> ( match right.shape with 
                 | TyInt(_, _) -> ( match left.shape with  (* Discuss *)
                     | TyInt(_, _) -> right (* Discuss *)
-                    | _           -> failwith(" shifting non Int ")
+                    | _           -> error_type (MismatchParameter(expr, " shifting non Int "))
                 )
-                | _           -> failwith(" shifting a NaN bits ")
+                | _           -> error_type (MismatchParameter(expr, " shifting a NaN bits "))
                 )
             | BinOpAdd | BinOpSub | BinOpMul | BinOpDiv ->
                 if (Helper.ty_eq left right) then ( match right.shape with 
                     | TyInt(_, _) | TyFloat(_)  
                         -> right
-                    | _ -> failwith(" arithmetic on neither Int nor Float ")
+                    | _ -> error_type (MismatchParameter(expr, " arithmetic on neither Int nor Float "))
                 )
-                else error_type MismatchParameter(expr, " arithmetic on different types")
+                else error_type (MismatchParameter(expr, " arithmetic on different types"))
             | BinOpMod -> 
                 if (Helper.ty_eq left right) then ( match right.shape with 
                     | TyInt(_, _) -> right
-                    | _           -> failwith(" mod on non Int ")
+                    | _           -> error_type (MismatchParameter(expr, " mod on non Int "))
                 )
-                else failwith(" mod on different types")
+                else error_type (MismatchParameter(expr, " mod on different types"))
             )
         )
     | ExpTuple(exprs) -> Helper.tuple ( List.map (fun expr -> walk_expr context expr ) exprs )
     | ExpADT(label, exprs) -> ( match Hashtbl.find_opt table.adt label with
-        | None       -> failwith(" ADT label " ^ label ^ " Not Found ")
+        | None       -> error_type (TypeError (" ADT label " ^ label ^ " Not Found "))
         | Some(data) -> (
             if data.typ = List.map (fun expr -> walk_expr context expr) exprs then
                 Helper.named data.sum []
             else
-                failwith(" types doesn't match with ADT label "^ label)
+                error_type (TypeError (" types doesn't match with ADT label "^ label))
         ))
     | ExpStruct(name, field_exprs) -> ( match Hashtbl.find_opt table.typ name with
-        | None -> failwith(" type " ^ name ^ " Not Found ")
-        | Some(ADT_data(_)) -> failwith(" type " ^ name ^ " is not a Struct but an ADT ")
-        | Some(Intf_data(_)) -> failwith(""^name ^ " is not a Struct but an Interface ")
+        | None -> error_type (TypeError (" type " ^ name ^ " Not Found "))
+        | Some(ADT_data(_)) -> error_type (TypeError (" type " ^ name ^ " is not a Struct but an ADT "))
+        | Some(Intf_data(_)) -> error_type (TypeError (""^name ^ " is not a Struct but an Interface "))
         | Some(Struct_data(data)) -> ( let def_fields = data.fields in
                 let map_def_field (def_field:struct_def_field) = match def_field with
                     | (field, typ, _) -> (field, typ)
@@ -287,7 +287,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                 if List.map map_def_field def_fields = List.map map_field_expr field_exprs then
                     Helper.named name []
                 else
-                    failwith(" types doesn't match with fields of Struct " ^ name)
+                    error_type (TypeError (" types doesn't match with fields of Struct " ^ name))
         ))
     | ExpField(expr, field) -> let rec find_field (typ:typ) (field:struct_field) : typ option =
         ( match typ.shape with 
@@ -314,27 +314,27 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                 )
             | _ -> None
             )
-        | _           -> None (* failwith(" expr is not a term of struct type") *)
+        | _           -> None (* error_type (TypeError " expr is not a term of struct type") *)
         ) in 
         let typ = walk_expr context expr in
         ( match typ.shape with 
         | TyNamed(name, tys) -> 
             unsupport_generics tys;
             ( match Hashtbl.find_opt table.typ name with
-            | None       -> failwith("It's impossible. DEBUG why struct name not found")
-            | Some(ADT_data(_)) -> failwith(" ADT has no fields! ")
-            | Some(Intf_data(_)) -> failwith(" Interface has no fields! ")
+            | None       -> error_type (TypeError "It's impossible. DEBUG why struct name not found")
+            | Some(ADT_data(_)) -> error_type (TypeError " ADT has no fields! ")
+            | Some(Intf_data(_)) -> error_type (TypeError " Interface has no fields! ")
             | Some(Struct_data(_)) -> ( match find_field typ field with
-                | None -> failwith(" field " ^ field ^ " not found ")
+                | None -> error_type (TypeError (" field " ^ field ^ " not found "))
                 | Some(typ) -> typ
                 )
             )
-        | _        -> failwith(" expr is not a term of struct type")
+        | _        -> error_type (TypeError " expr is not a term of struct type")
         )
     | ExpThis -> context.this;
     | ExpApp(func, args) -> (* interface check included *)
         ( match Hashtbl.find_opt table.fnc func with
-        | None -> failwith(" function " ^ func ^ " not found ")
+        | None -> error_type (TypeError (" function " ^ func ^ " not found "))
         | Some(data) -> 
             (* arg : formal, i.e. declared in function , para : actual *)
             let ty_eq_with_intf (para_t:typ) (arg_t:typ) = 
@@ -343,13 +343,13 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                 | TyNamed(intf_name, tys) -> 
                     unsupport_generics tys;
                     ( match Hashtbl.find_opt table.typ intf_name with
-                    | None -> failwith("Impossible, DEBUG please")
+                    | None -> error_type (TypeError "Impossible, DEBUG please")
                     (* arg_t is a interface *)
                     | Some(Intf_data(_)) -> ( match para_t.shape with
                         | TyNamed(type_name, tys) -> 
                             unsupport_generics tys;
                             ( match Hashtbl.find_opt table.typ type_name with
-                            | None -> failwith("Impossible, DEBUG please")
+                            | None -> error_type (TypeError "Impossible, DEBUG please")
                             | Some(Intf_data(_)) -> false (* REMAIN : interface subtyping here, currently reject *)
                             | Some(Struct_data(data)) -> List.exists (fun name->name=intf_name) data.intf;
                             | Some(ADT_data(data)) -> List.exists (fun name->name=intf_name) data.intf;
@@ -363,7 +363,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
             let para_types = List.map (fun expr->walk_expr context expr) args in
             let result = List.for_all2 ty_eq_with_intf para_types data.args in
             if result then data.rety
-            else failwith(" function args' types doesn't match ")
+            else error_type (TypeError " function args' types doesn't match ")
         )
     
     | ExpMethod(obj, meth, args) -> (* TODO Helper.ty_eq with type This *)
@@ -373,34 +373,34 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         | TyNamed(name, tys) -> 
             unsupport_generics tys;
             name
-        | _ -> failwith(" Unsupported ") (* Discuss : Support impl for just TyNamed(name, []) currently *)
+        | _ -> error_type (TypeError " Unsupported ") (* Discuss : Support impl for just TyNamed(name, []) currently *)
         ) in
         let methtbl = 
         ( match Hashtbl.find_opt table.typ name with
         | Some(ADT_data(data)) -> data.meth
         | Some(Struct_data(data)) -> data.meth
         | Some(Intf_data(data)) -> data.meth
-        | None -> failwith(" method not found for type " ^ name)
+        | None -> error_type (TypeError (" method not found for type " ^ name))
         ) in
         let data = ( match Hashtbl.find_opt methtbl meth with
         | Some(data) -> data
-        | None -> failwith(" method " ^ meth ^ " not found in type " ^ name)
+        | None -> error_type (TypeError (" method " ^ meth ^ " not found in type " ^ name))
         ) in
         let para_types = List.map (fun expr->walk_expr context expr) args in 
         let result = List.for_all2 Helper.ty_eq data.args para_types in
         if result then data.rety
-        else failwith(" method args' types doesn't match ")
+        else error_type (TypeError " method args' types doesn't match ")
 
     | ExpIf(cond, fst, snd) -> 
         let cond = walk_expr context cond in
         ( match cond.shape with
         | TyBool -> ()
-        | _      -> failwith(" condition of if is not a bool ")
+        | _      -> error_type (TypeError " condition of if is not a bool ")
         );
         let fst = walk_expr context fst in
         let snd = walk_expr context snd in
         if Helper.ty_eq fst snd then snd 
-        else failwith(" types of fst and snd of if don't equal ")
+        else error_type (TypeError " types of fst and snd of if don't equal ")
     | ExpMatch(expr, pattern_exprs) -> 
         (* Discuss : Only support match term:ADT with ...
          * as for other pattern matches, use let pattern = term:Type
@@ -410,9 +410,9 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         | TyNamed(name, tys) -> 
             unsupport_generics tys;
             ( match Hashtbl.find_opt table.typ name with
-            | None       -> failwith("It's impossible. DEBUG why ADT name not found")
-            | Some(Intf_data(_)) -> failwith("cannot match with Interface")
-            | Some(Struct_data(_)) -> failwith(" cannot match with Struct")
+            | None       -> error_type (TypeError "It's impossible. DEBUG why ADT name not found")
+            | Some(Intf_data(_)) -> error_type (TypeError "cannot match with Interface")
+            | Some(Struct_data(_)) -> error_type (TypeError " cannot match with Struct")
             (* | Some(ADT_data(data)) -> let branches = data.core in *)
             | Some(ADT_data(_)) ->
                 (* TODO Discuss : how to solve pattern exhaustive not only here but also StmtMatch *)
@@ -430,15 +430,15 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                 ) in
                 let types = List.map mapper pattern_exprs in
                 let ty1 = match types with
-                    | [] -> failwith(" match no branches ")
+                    | [] -> error_type (TypeError " match no branches ")
                     | t::_ -> t 
                 in 
                 if List.for_all (fun ty'->Helper.ty_eq ty' ty1) types then
                     ty1
                 else
-                    failwith(" match branches return different types");
+                    error_type (TypeError " match branches return different types");
             ) 
-        | _           -> failwith(" expr is not a term of ADT")
+        | _           -> error_type (TypeError " expr is not a term of ADT")
         (* As for tuple, use let assignment to fetch its sub-fields *)
         )
     ;;
@@ -464,29 +464,29 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
     | StmtAssign(_, left, right) -> let name = 
         (   match left.shape with 
         |   ExpVar(name) -> name
-        |   _ -> failwith(" assign to not a variable")
+        |   _ -> error_type (TypeError " assign to not a variable")
         ) in
         let symbol = 
         (   match find_var_opt context name with 
         |   Some(symbol) -> symbol
-        |   None -> failwith("varaible " ^ name ^ " Not Found")
+        |   None -> error_type (TypeError ("varaible " ^ name ^ " Not Found"))
         )   in
         Hashtbl.add table.ref left.expr_id { sym = symbol };
         let data = 
         (   match Hashtbl.find_opt table.var symbol with
-            | None -> failwith("Impossible, symbol not found, DEBUG needed")
+            | None -> error_type (TypeError "Impossible, symbol not found, DEBUG needed")
             | Some(data) -> data
         ) in
         let _ = (* mutability check *)
         (   match data.mut with
-        |   Imm -> failwith(" assign to a immutable variable " ^ name)
+        |   Imm -> error_type (TypeError (" assign to a immutable variable " ^ name))
         |   Mut -> ()
         ) in
         let var_ty = data.typ in
         (* TODO : check for (left op right) *)
         let res_ty = walk_expr context right in
         if Helper.ty_eq var_ty res_ty then ()
-        else failwith(" assign a value:T1 to a variable:T2, while T1!=T2")
+        else error_type (TypeError " assign a value:T1 to a variable:T2, while T1!=T2")
     | StmtDecl(pattern, expr) -> 
         let typ = walk_expr context expr in
         walk_pattern context pattern typ
@@ -494,7 +494,7 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
         let ty = walk_expr context cond in
         ( match ty.shape with
         | TyBool -> ()
-        | _ -> failwith(" cond of if-statement is not a boolean")
+        | _ -> error_type (TypeError " cond of if-statement is not a boolean")
         );
         walk_stmt context t_stmt;
         ( match f_stmto with 
@@ -511,7 +511,7 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
         let ty = walk_expr context cond in
         ( match ty.shape with
         | TyBool -> ()
-        | _ -> failwith(" cond of while-statement is not a boolean")
+        | _ -> error_type (TypeError " cond of while-statement is not a boolean")
         );
         walk_stmt context body
     | StmtMatch(expr, branches) ->
@@ -524,7 +524,7 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
         (* process control here *)
         let typ = walk_expr context expr in
         if Helper.ty_eq typ context.rety then ()
-        else failwith(" return different types ")
+        else error_type (TypeError " return different types ")
     | StmtBreak ->
         (* process control here *)
         ()
@@ -541,7 +541,7 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
 let walk_func_decl (context:context) (name:func_name) (args:func_arg list) (rety:typ) : unit =
     let table = context.table in 
     match Hashtbl.find_opt table.fnc name with
-    | Some(_) -> failwith("function name " ^ name ^ " has been used")
+    | Some(_) -> error_type (TypeError ("function name " ^ name ^ " has been used"))
     | None -> 
         (* check TyNamed existence *)
         let _ = walk_type context rety in
@@ -593,14 +593,14 @@ let walk_method_intf (context:context) (intf:intf_name option) (typ:typ_name) : 
                             List.for_all2 Helper.ty_eq fun_data.args fun_data'.args 
                          && Helper.ty_eq fun_data.rety fun_data'.rety
                         )
-                    | _ -> failwith(" impl type NOT FOUND ")
+                    | _ -> error_type (TypeError " impl type NOT FOUND ")
                 else false in
             let result = Hashtbl.fold folder data.meth true in 
             if result then ()
-            else failwith(" not match with interface's methods ")
-        | Some(ADT_data(_)) -> failwith(name ^ " is not an interface but an ADT")
-        | Some(Struct_data(_)) -> failwith(name ^ " is not an interface but a Struct")
-        | None -> failwith("no interface name as " ^ name)
+            else error_type (TypeError " not match with interface's methods ")
+        | Some(ADT_data(_)) -> error_type (TypeError (name ^ " is not an interface but an ADT"))
+        | Some(Struct_data(_)) -> error_type (TypeError (name ^ " is not an interface but a Struct"))
+        | None -> error_type (TypeError ("no interface name as " ^ name))
     )
     ;;
 
@@ -608,13 +608,13 @@ let walk_method_intf (context:context) (intf:intf_name option) (typ:typ_name) : 
 let walk_method_decl (context:context) (typ:typ_name) (name:func_name) (args:func_arg list) (rety:typ) : unit =
     let table = context.table in
     let fun_table = match Hashtbl.find_opt table.typ typ with
-        | None -> failwith("no type named" ^ typ)
-        | Some(Intf_data(_)) -> failwith(typ^" is not a type but an interface") 
+        | None -> error_type (TypeError ("no type named" ^ typ))
+        | Some(Intf_data(_)) -> error_type (TypeError (typ^" is not a type but an interface") )
         | Some(Struct_data(table)) -> table.meth
         | Some(ADT_data(table)) -> table.meth
     in
     match Hashtbl.find_opt fun_table name with
-    | Some(_) -> failwith("member function name " ^ name ^ " has been used")
+    | Some(_) -> error_type (TypeError ("member function name " ^ name ^ " has been used"))
     | None -> 
         (* check TyNamed existence *)
         let _ = walk_type context rety in
@@ -642,7 +642,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
         let typ = walk_expr context gvar.gvar_value in
         (* Global -> context.scope = [] *)
         ( match Hashtbl.find_opt nametbl name with
-        | Some(_) -> failwith("The same global variable name")
+        | Some(_) -> error_type (TypeError "The same global variable name")
         | None -> ()
         );
         Hashtbl.add nametbl name symbol;
@@ -655,7 +655,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
     | StructDef(def) ->
         let name = def.struct_name in 
         ( match Hashtbl.find_opt table.typ name with
-        | Some(_) -> failwith("The same Struct Name")
+        | Some(_) -> error_type (TypeError "The same Struct Name")
         | None -> ()
         );
         let core = Hashtbl.create 10 in
@@ -677,13 +677,13 @@ let walk_top (context:context) (clause:top_clause) : unit =
     | ADTDef(def) ->
         let name = def.adt_name in 
         ( match Hashtbl.find_opt table.typ name with
-        | Some(_) -> failwith("The same ADT Name")
+        | Some(_) -> error_type (TypeError "The same ADT Name")
         | None    -> ()
         );
         let branches = def.adt_branches in
         let walk_iter ((label, typs)) = 
         ( match Hashtbl.find_opt table.adt label with
-        | Some(_) -> failwith("The same ADT label")
+        | Some(_) -> error_type (TypeError "The same ADT label")
         | None    -> 
             (* check TyNamed existence *)
             let _ = walk_type context (Helper.tuple typs) in
@@ -702,7 +702,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
     | InterfaceDecl(decl) -> 
         let name = decl.intf_decl_name in
         ( match Hashtbl.find_opt table.typ name with
-        | Some(_) -> failwith("The same Interface Name")
+        | Some(_) -> error_type (TypeError "The same Interface Name")
         | None -> ()
         );
         let fun_table = Hashtbl.create 10 in

@@ -1,0 +1,15 @@
+fun used_func1(
+    x1  : I32,
+    x2  : I32
+)
+{
+    return x1 + x2;
+}
+
+fun used_func1(
+    x1  : I32,
+    x2  : I32
+)
+{
+    return x1 + x2;
+}

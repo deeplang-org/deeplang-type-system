@@ -28,13 +28,14 @@ let error_type (error_message:error_walker) =
     }, error_message)) *)
 
 (* 以下内容为打印调试信息的代码，可不看 *)
+[@@@warning "-27"]
 let print_error fmt (err:error_walker) =
     let open Format in
     match err with
-    | TypeError msg         -> fprintf fmt "Type Error %s\n"   msg
-    | UndefinedOperator msg -> fprintf fmt "Undefined Operator %s\n"   msg
-    | MismatchParameter (expression, msg) -> fprintf fmt "Mismatched Parameter %s\n"  msg
-    | UnsuitablePattern (pattern, msg) -> fprintf fmt "Unsuitable Pattern %s\n" msg
+    | TypeError msg         -> fprintf fmt "[Type Error] %s\n"   msg
+    | UndefinedOperator msg -> fprintf fmt "[Undefined Operator] %s\n"   msg
+    | MismatchParameter (expression, msg) -> fprintf fmt "[Mismatched Parameter] %s\n"  msg
+    | UnsuitablePattern (pattern, msg) -> fprintf fmt "[Unsuitable Pattern] %s\n" msg
 
 (* expression 的 pretty printer，暂时还没有写出来，ww *)
 (* let print_expr expr =

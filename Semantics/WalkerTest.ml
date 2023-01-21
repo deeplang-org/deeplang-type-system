@@ -41,7 +41,7 @@ let clauses file = try parse_file file with
 let iterator clause = 
     try walk clause with
         Semantics.SemanticsError.ErrorType(err) ->
-            Format.printf "semantics error: %a"
+            Format.printf "semantics error: %a\n"
             Semantics.SemanticsError.print_error err;;
     (* @todo 未来加入定位报错时这里也需要修改 *)
         (* Format.printf "semantics error: %a@ in %a"
@@ -51,13 +51,20 @@ let iterator clause =
 let file_list = ["test/type.dp"
                 ;"test/expression1.dp"
                 ;"test/expression2.dp"
+                ;"test/used_func1.dp"
+                ;"test/used_var1.dp"
+                ;"test/used_var2.dp"
+                ;"test/used_var3.dp"
+                ;"test/used_var4.dp"
                 ];;
 
 let rec iterator_files fileList = 
     match fileList with
     | []            -> []
     | file::tails   -> (
+        Format.printf "%s\n" file;
         List.iter iterator (clauses file);
+        Format.printf "\n";
         iterator_files tails
     )
 
