@@ -494,7 +494,7 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
         let ty = walk_expr context cond in
         ( match ty.shape with
         | TyBool -> ()
-        | _ -> error_type (TypeError " cond of if-statement is not a boolean")
+        | _ -> error_type (MismatchParameter (cond, " condition of if-statement is not a boolean"))
         );
         walk_stmt context t_stmt;
         ( match f_stmto with 
@@ -511,7 +511,7 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
         let ty = walk_expr context cond in
         ( match ty.shape with
         | TyBool -> ()
-        | _ -> error_type (TypeError " cond of while-statement is not a boolean")
+        | _ -> error_type (MismatchParameter (cond, " condition of while-statement is not a boolean"))
         );
         walk_stmt context body
     | StmtMatch(expr, branches) ->
@@ -524,7 +524,7 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
         (* process control here *)
         let typ = walk_expr context expr in
         if Helper.ty_eq typ context.rety then ()
-        else error_type (TypeError " return different types ")
+        else error_type (MismatchParameter (expr, " return different types "))
     | StmtBreak ->
         (* process control here *)
         ()
