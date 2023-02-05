@@ -1,10 +1,5 @@
 open Syntax.ParseTree;;
 
-(* @todo 未来期望能够在报错信息中加入位置信息，预留出的位置 *)
-type src_span =
-    { span_start : Lexing.position
-    ; span_end   : Lexing.position }
-
 (* walker中的错误类型，目前抛出的错误为以下类型中的一种 *)
 type error_walker = 
     | TypeError         of string 
@@ -12,20 +7,29 @@ type error_walker =
     | MismatchParameter of expr * string
     | UnsuitablePattern of pattern * string
 
-exception ErrorType of error_walker
+(* exception ErrorType of error_walker *)
+
+(* 实际调用抛出错误的函数，在使用时可以直接调用 *)
+(* let error_type (error_message:error_walker) = 
+    raise (ErrorType(error_message)) *)
+
+(* @todo 这部分是将来期望能够加入位置信息的报错代码，暂时还没有用到 *)
+(* @todo 未来期望能够在报错信息中加入位置信息，预留出的位置 *)
+open Syntax.SyntaxError;;
+(* type src_span =
+    { span_start : Lexing.position
+    ; span_end   : Lexing.position } *)
+
+let cur_span () =
+    { span_start = Parsing.symbol_start_pos ()
+    ; span_end   = Parsing.symbol_end_pos () }
+
+exception ErrorType of src_span * error_walker
 
 (* 实际调用抛出错误的函数，在使用时可以直接调用 *)
 let error_type (error_message:error_walker) = 
-    raise (ErrorType(error_message))
+    raise (ErrorType((cur_span ()), error_message))
 
-(* @todo 这部分是将来期望能够加入位置信息的报错代码，暂时还没有用到 *)
-(* exception ErrorWalker of src_span * error_walker *)
-
-(* let error_type_ left right error_message = 
-    raise(ErrorWalker({
-        span_start = Parsing.rhs_start_pos left;
-        span_end = Parsing.rhs_end_pos right
-    }, error_message)) *)
 
 (* 以下内容为打印调试信息的代码，可不看 *)
 [@@@warning "-27"]
