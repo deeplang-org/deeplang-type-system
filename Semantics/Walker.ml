@@ -19,12 +19,6 @@ type context =
     };;
 
 
-(* let cur_span () =
-    { Syntax.SyntaxError.span_start = Parsing.symbol_start_pos ()
-    ; Syntax.SyntaxError.span_end   = Parsing.symbol_end_pos () }
-
-let current_error err = raise(Syntax.SyntaxError.Error(cur_span (), err)) *)
-
 (** {1 Helper} *)
 
 (** Those used in {! Walker}, which is not yet defined in {! Syntax.ParseTree} *)
