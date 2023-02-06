@@ -18,7 +18,6 @@ type context =
     ; mutable rety    : typ      (** return type of function *)
     };;
 
-
 (* let cur_span () =
     { Syntax.SyntaxError.span_start = Parsing.symbol_start_pos ()
     ; Syntax.SyntaxError.span_end   = Parsing.symbol_end_pos () }
@@ -395,7 +394,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         let cond = walk_expr context cond in
         ( match cond.shape with
         | TyBool -> ()
-        | _      -> error_type (TypeError " condition of if is not a bool ")
+        | _      -> error_type (MismatchParameter(expr, " condition of if is not a bool ") )
         );
         let fst = walk_expr context fst in
         let snd = walk_expr context snd in

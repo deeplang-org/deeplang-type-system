@@ -53,6 +53,7 @@ let file_list = ["test/type.dp"
                 (* ;"test/type/unsupport_type2.dp" *)
                 ;"test/expression/expression1.dp"
                 ;"test/expression/expression2.dp"
+                ;"test/pattern/bad_pattern1.dp"
                 ;"test/used_func1.dp"
                 ;"test/used_var1.dp"
                 ;"test/used_var2.dp"

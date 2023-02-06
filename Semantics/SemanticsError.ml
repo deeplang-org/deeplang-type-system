@@ -1,9 +1,9 @@
 open Syntax.ParseTree;;
 
 (* @todo 未来期望能够在报错信息中加入位置信息，预留出的位置 *)
-type src_span =
+(* type src_span =
     { span_start : Lexing.position
-    ; span_end   : Lexing.position }
+    ; span_end   : Lexing.position } *)
 
 (* walker中的错误类型，目前抛出的错误为以下类型中的一种 *)
 type error_walker = 
