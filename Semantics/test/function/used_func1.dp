@@ -1,4 +1,4 @@
-fun used_func1 (
+fun used_func1 : I32 (
     x1  : I32,
     x2  : I32
 )

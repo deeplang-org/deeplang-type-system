@@ -29,18 +29,20 @@ let context : context =
     ;;
 let walk = walk_top context;;
 
-let clauses file = try parse_file file with
-    Syntax.SyntaxError.Error(span, err) ->
-        Format.printf "syntax error: %a@ in %a"
-            Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
-        exit 1
-    ;;
+let clauses file = 
+    try parse_file file with
+        Syntax.SyntaxError.Error(span, err) ->
+            Format.printf "syntax error: %a@ in %a\n"
+                Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
+            []
+        ;;
 
 let iterator clause = 
     try walk clause with
         Semantics.SemanticsError.ErrorType(err) ->
             Format.printf "semantics error: %a\n"
-            Semantics.SemanticsError.print_error err;;
+            Semantics.SemanticsError.print_error err
+        ;;
 
 let file_list = ["test/type.dp"
                 ;"test/type/unsupport_type1.dp"
