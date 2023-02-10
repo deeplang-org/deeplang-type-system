@@ -2,10 +2,12 @@ open Syntax.ParseTree;;
 
 (* walker中的错误类型，目前抛出的错误为以下类型中的一种 *)
 type error_walker = 
-    | TypeError         of string 
-    | UndefinedOperator of string
-    | MismatchParameter of expr * string
-    | UnsuitablePattern of pattern * string
+    | Error             of string 
+    | TypeError         of typ      * string
+    | PatternError      of pattern  * string
+    | ExprError         of expr     * string
+    | StmtError         of stmt     * string
+    | TopError          of top_clause * string
 
 exception ErrorType of error_walker
 
@@ -29,10 +31,18 @@ open Syntax.SyntaxError;;
 let print_error fmt (err:error_walker) =
     let open Format in
     match err with
-    | TypeError msg         -> fprintf fmt "[Type Error] %s\n"   msg
-    | UndefinedOperator msg -> fprintf fmt "[Undefined Operator] %s\n"   msg
-    | MismatchParameter (expr, msg) -> fprintf fmt "[Mismatched Parameter] %s@ in %a\n"  msg pp_span expr.span
-    | UnsuitablePattern (pattern, msg) -> fprintf fmt "[Unsuitable Pattern] %s@ in %a\n" msg pp_span pattern.span
+    | Error msg         
+        -> fprintf fmt "[Error] %s\n"   msg
+    | TypeError (typ, msg) 
+        -> fprintf fmt "[Type Error] %s@ in %a\n"   msg pp_span typ.span
+    | PatternError (pattern, msg) 
+        -> fprintf fmt "[Pattern Error] %s@ in %a\n" msg pp_span pattern.span
+    | ExprError (expr, msg) 
+        -> fprintf fmt "[Expression Error] %s@ in %a\n"  msg pp_span expr.span
+    | StmtError (stmt, msg) 
+        -> fprintf fmt "[Statement Error] %s@ in %a\n"  msg pp_span stmt.span
+    | TopError (top_clause, msg)
+        -> fprintf fmt "[Top Error] %s@ in %a\n"  msg pp_span top_clause.span
 
 (* expression 的 pretty printer，暂时还没有写出来，ww *)
 (* let print_expr expr =
