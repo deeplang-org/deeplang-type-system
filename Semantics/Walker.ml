@@ -97,10 +97,10 @@ let rec walk_type (context:context) (typ:typ) : bool =
     | TyNamed(name, tys) -> 
         unsupport_generics tys;
         ( match Hashtbl.find_opt table name with
-        | None -> error_type (Error ("Type Named "^name^" Not Found"))
+        | None -> error_type (TypeError (typ, "Type Named "^name^" Not Found"))
         | Some(_) -> true
         )
-    | TyVar(_) -> error_type (Error "Unsupport for Generics Programming")
+    | TyVar(_) -> error_type (TypeError (typ, "Unsupport for Generics Programming"))
     | TyArray(typ, _) -> walk_type context typ
     | TyTuple(tys) -> List.for_all (walk_type context) tys
     | _ -> true
