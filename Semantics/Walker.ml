@@ -46,7 +46,7 @@ let add_variable (context:context) (symbol:symbol) (mut:mutability) (name:variab
     let table = context.table in 
     let nametbl = context.nametbl in
     let typ = match typo with
-        | None -> error_type (Error " Type Annotation Needed Currently ")
+        | None -> error_type (Error (" Type Annotation Needed Currently "))
         | Some(typ) -> typ
         in
     match Hashtbl.find_opt nametbl name with
@@ -132,7 +132,7 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
                 error_type (PatternError(pattern, " declared type doesn't match with the given expr"))
         )
     | PatADT(adt_label, patterns) -> ( match Hashtbl.find_opt table.adt adt_label with
-        | None -> error_type (Error ("adt_lable" ^adt_label ^ "not found"))
+        | None -> error_type (PatternError (pattern, "adt_lable" ^adt_label ^ "not found"))
         | Some(data) ->  
             (* WARNING : raise error if length of patterns and that of adt children differ *)
             let walk_iter2 pattern typ = walk_pattern context pattern typ in
@@ -143,11 +143,11 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
         (* walk_iter (struct_field, pattern) *)
         let core = ( match Hashtbl.find_opt table.typ type_name with
         | Some(Struct_data(data)) -> data.core
-        | _ -> error_type (Error ("name "^type_name^" is not a struct"))
+        | _ -> error_type (PatternError (pattern, "name "^type_name^" is not a struct"))
         ) in
         let walk_iter (struct_field , pattern) = ( 
             match Hashtbl.find_opt core struct_field with
-            | None -> error_type (Error ("struct "^type_name^" has no field named "^struct_field))
+            | None -> error_type (PatternError (pattern, "struct "^type_name^" has no field named "^struct_field))
             | Some(data) -> walk_pattern context pattern data.typ
         ) in
         List.iter walk_iter field_patterns
@@ -155,7 +155,7 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
         (* Typing rules here *)
         let typs = ( match typ.shape with
         | TyTuple(typs) -> typs
-        | _ -> error_type (Error "expr is NOT a Tuple")
+        | _ -> error_type (PatternError (pattern, "expr is NOT a Tuple"))
         ) in
         (* WARNING : raise error if length of patterns and that of adt children differ *)
         let walk_iter2 pattern typ = walk_pattern context pattern typ in
