@@ -3,5 +3,5 @@ fun used_var4(
 )
 {
     let x4  : I32 = 1;
-    let x4  : I32 = 2;  // @BUG
+    let x4  : I32 = 2;  // @BUG, ANF
 }

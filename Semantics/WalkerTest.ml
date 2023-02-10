@@ -43,10 +43,6 @@ let iterator clause =
         Semantics.SemanticsError.ErrorType(err) ->
             Format.printf "semantics error: %a\n"
             Semantics.SemanticsError.print_error err;;
-    (* @todo 未来加入定位报错时这里也需要修改 *)
-        (* Format.printf "semantics error: %a@ in %a"
-        Semantics.SemanticsError.print_error err 
-            Syntax.SyntaxError.pp_span span; *)
 
 let file_list = ["test/type.dp"
                 ;"test/type/unsupport_type1.dp"
