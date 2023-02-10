@@ -29,8 +29,6 @@ let context : context =
     ;;
 let walk = walk_top context;;
 
-(* open Semantics.SemanticsError;; *)
-
 let clauses file = try parse_file file with
     Syntax.SyntaxError.Error(span, err) ->
         Format.printf "syntax error: %a@ in %a"
@@ -47,10 +45,10 @@ let iterator clause =
 let file_list = ["test/type.dp"
                 ;"test/type/unsupport_type1.dp"
                 (* ;"test/type/unsupport_type2.dp" *)
+                ;"test/pattern/bad_pattern1.dp"
                 ;"test/expression/expression1.dp"
                 ;"test/expression/expression2.dp"
-                ;"test/pattern/bad_pattern1.dp"
-                ;"test/used_func1.dp"
+                ;"test/function/used_func1.dp"
                 ;"test/used_var1.dp"
                 ;"test/used_var2.dp"
                 ;"test/used_var3.dp"
