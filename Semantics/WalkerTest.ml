@@ -45,8 +45,9 @@ let iterator clause =
         ;;
 
 let file_list = ["test/type.dp"
+                ;"test/test.dp"
                 ;"test/type/unsupport_type1.dp"
-                (* ;"test/type/unsupport_type2.dp" *)
+                ;"test/type/unsupport_type2.dp"
                 ;"test/pattern/bad_pattern1.dp"
                 ;"test/expression/expression1.dp"
                 ;"test/expression/expression2.dp"

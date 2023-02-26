@@ -262,7 +262,8 @@ let rec walk_expr (context:context) (expr:expr) : typ =
     | ExpADT(label, exprs) -> ( match Hashtbl.find_opt table.adt label with
         | None       -> error_type (Error (" ADT label " ^ label ^ " Not Found "))
         | Some(data) -> (
-            if data.typ = List.map (fun expr -> walk_expr context expr) exprs then
+            (* if data.typ = List.map (fun expr -> walk_expr context expr) exprs then *)
+            if (List.equal Helper.ty_eq data.typ (List.map (fun expr -> walk_expr context expr) exprs)) then
                 Helper.named data.sum []
             else
                 error_type (Error (" types doesn't match with ADT label "^ label))
@@ -669,12 +670,12 @@ let walk_top (context:context) (clause:top_clause) : unit =
             }))
 
     | ADTDef(def) ->
-        let name = def.adt_name in 
+        let name = def.adt_name in (* adt_name : typ_name *)
         ( match Hashtbl.find_opt table.typ name with
         | Some(_) -> error_type (Error "The same ADT Name")
         | None    -> ()
         );
-        let branches = def.adt_branches in
+        let branches = def.adt_branches in (* adt_branches : (adt_label * typ list) list *)
         let walk_iter ((label, typs)) = 
         ( match Hashtbl.find_opt table.adt label with
         | Some(_) -> error_type (Error "The same ADT label")
@@ -685,7 +686,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
             { sum = name
             ; typ = typs
             }
-        ) in
+        ) in    (* adt_label : string -> adt_data, see Tabel.ml *)
         List.iter walk_iter branches;
         Hashtbl.add table.typ name (ADT_data(
             { intf = []

@@ -9,6 +9,7 @@
     (libraries Syntax Semantics)
     (deps 
         (file test/type.dp)
+        (file test/test.dp)
         (file test/type/unsupport_type1.dp)
         (file test/type/unsupport_type2.dp)
         (file test/pattern/bad_pattern1.dp)
