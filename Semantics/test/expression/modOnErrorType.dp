@@ -1,0 +1,7 @@
+fun modOnErrorType (
+    x1 : Bool,
+    x2 : Bool
+)
+{
+    return  x1 % x2;
+}

@@ -1,0 +1,8 @@
+type Color {
+    r : U8,
+    g : U8,
+    b : U8
+}
+fun structTypeNotFound(x1 : Bird){
+  return x1;
+}

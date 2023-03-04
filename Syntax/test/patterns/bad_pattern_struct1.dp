@@ -1,0 +1,7 @@
+fun match_fun( var : I32 )
+{
+    match (var) 
+    {
+        myStruct {} => return 1;
+    }
+}

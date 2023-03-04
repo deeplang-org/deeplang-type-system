@@ -1,0 +1,6 @@
+_build
+.envrc
+.direnv
+.DS_Store
+*.bak
+*.o

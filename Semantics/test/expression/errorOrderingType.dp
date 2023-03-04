@@ -1,0 +1,7 @@
+fun errorOrderingType  (
+    x1 : [U8; 20],
+    x2 : [U8; 20]
+)
+{
+    return  x1 > x2;
+}

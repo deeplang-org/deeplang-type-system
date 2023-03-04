@@ -1,0 +1,5 @@
+type Point {
+    x : ,
+    y : F32,
+    z : F32
+}

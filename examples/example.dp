@@ -1,0 +1,89 @@
+/*   Comment   */
+// This is a single line comment
+/*
+    this is a block comment
+*/
+/*   Comment   */
+/* Declaration */
+let i1 : Int;
+let s1 : String;
+fun foo ( ){};
+fun bar (str : String)-> Int {};
+let mut flag : Bool;
+/* Declaration */
+/*  Statement  */
+if (flag)
+{
+    foo( );
+}
+else
+{
+    bar( );
+};
+for({let mut i : Int = 0};i<10;++i) // must mutable
+{
+    foo( );
+};
+/*  Statement  */
+/* Definition  */
+fun main( ) 
+{
+    let foo : Foo = new Foo ( );
+    foo.fib(10);
+};
+let mut b : I32;
+fun foo( a : U32 )->In{ };
+type Show {
+    show : This->String
+};
+
+fun bar( a: U32)->String{
+    let mut str : String;
+};
+
+type Shape [
+	Rectangle(width: I32, height: I32),
+	Circle(radius: I32)
+]{};
+type Shape [
+	Rectangle(width: I32, height: I32),
+	Circle(radius: I32)
+] {
+	fun area(this: This) -> I32 {
+		match(this) {
+			Rectangle(width, height) {
+				;
+			}
+			Circle(radius) {
+				;
+			}
+		};
+        return "daw";
+	}
+};
+// Interface
+type Show {
+    show: This -> String
+};
+
+// Implement
+type Sigma(string : String, as an :An) impl Show
+{
+    fun show(this:This) -> String
+    {
+        return string;
+    }
+};
+
+// Delegate
+type Animal (weight: I32) {};
+type Person (
+    age: I32, name: String,
+    as animal: Animal // delegate
+){};
+
+// expression
+let a : Int = times((--b<<2) +3*1, 6*7) == 3 && true;
+
+// operator. operator()
+main.test( ); // 需要额外地打空格，这里不是很能理解，可能是分开的lexer"(" ")"

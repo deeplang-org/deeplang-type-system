@@ -1,0 +1,8 @@
+fun main(x: Char) {
+  let a: I32;
+  let b: F32;
+  a = 3;
+  b = a % 2;
+
+  let arr: [FooType; 10] = [1, 2, [3, 4], Point()];
+}

@@ -1,0 +1,33 @@
+fun main(x : Char, y : Bool) {
+  let mut f : Bool;
+  let c : Char = 'c';
+  f = true;
+
+  // meaningless if structure
+  if (f) {
+    print(1);
+  } else if (true) {
+    print(f);
+    if (false) {
+      foo();
+    } else if (bar) {
+      baz();
+    }
+  } else {
+    fooBar();
+  }
+
+  // meaningless while structure
+  let mut (x, b): I32 = (0, 3);
+  while (1 + x == 3) {
+    return (0, (1.2, 'c'), "Abc");
+  }
+
+  // meaningless for structures
+  for (df: I32 in someThing) {
+    return (0, (1.2, 'c'), "Abc");
+  }
+  for ((key, value) in someThing) {
+    return (0, (1.2, 'c'), "Abc");
+  }
+}

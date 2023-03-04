@@ -1,0 +1,14 @@
+fun main() {
+  match(x) {
+    _ => { return 0; }
+    a : Bool => { return 1; }
+    Nothing() => { return 2; }
+    Some(Any(y)) => { return 3; }
+    () => { return 4; }
+    mut a => { return 5; }
+    (a, b: Bool, (c, d), e: Char): (F32, Bool, (I32, I32), Char) => { return 6; }
+    7 => { return 7; }
+    Point { x : (7: I32), y : Point { x : _ } } => { return 8; }
+    Point { x : 7, y : Point { x : _ } } : Point as p => { return 9; }
+  }
+}
