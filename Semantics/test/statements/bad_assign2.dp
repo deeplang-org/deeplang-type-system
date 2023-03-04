@@ -1,8 +1,8 @@
 fun stmt2(
-    x1  : Bool,
+    x1  : I8,
     x2  : I8,
     x3  : I8
 )
-{
-    w = x2 + x3;   // variable "name" Not Found
+{     
+    x1 = x2 + x3;        // assign to a immutable variable(x1)
 }

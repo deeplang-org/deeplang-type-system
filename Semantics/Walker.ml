@@ -17,7 +17,7 @@ type context =
     ; mutable scope   : scope    (** nametbl::scope *)
     ; mutable this    : typ      (** type This of one struct or ADT *)
     ; mutable rety    : typ      (** return type of function *)
-    ; mutable checkloop  : bool
+    ; mutable checkloop  : int
     };;
 
 
@@ -460,29 +460,29 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
     | StmtAssign(_, left, right) -> let name = 
         (   match left.shape with 
         |   ExpVar(name) -> name
-        |   _ -> error_type (Error " assign to not a variable")
+        |   _ -> error_type (StmtError (stmt, " assign to not a variable"))
         ) in
         let symbol = 
         (   match find_var_opt context name with 
         |   Some(symbol) -> symbol
-        |   None -> error_type (Error ("varaible " ^ name ^ " Not Found"))
+        |   None -> error_type (StmtError (stmt, "varaible " ^ name ^ " Not Found"))
         )   in
         Hashtbl.add table.ref left.expr_id { sym = symbol };
         let data = 
         (   match Hashtbl.find_opt table.var symbol with
-            | None -> error_type (Error "Impossible, symbol not found, DEBUG needed")
+            | None -> error_type (StmtError(stmt,  "Impossible, symbol not found, DEBUG needed"))
             | Some(data) -> data
         ) in
         let _ = (* mutability check *)
         (   match data.mut with
-        |   Imm -> error_type (Error (" assign to a immutable variable " ^ name))
+        |   Imm -> error_type (StmtError (stmt, " assign to a immutable variable " ^ name))
         |   Mut -> ()
         ) in
         let var_ty = data.typ in
         (* TODO : check for (left op right) *)
         let res_ty = walk_expr context right in
         if Helper.ty_eq var_ty res_ty then ()
-        else error_type (Error " assign a value:T1 to a variable:T2, while T1!=T2")
+        else error_type (StmtError (stmt, " assign a value:T1 to a variable:T2, while T1!=T2"))
     | StmtDecl(pattern, expr) -> 
         let typ = walk_expr context expr in
         walk_pattern context pattern typ
@@ -502,18 +502,19 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
     | StmtFor(pattern, expr, body)->
         let typ = walk_expr context expr in
         walk_pattern context pattern typ;
-        context.checkloop <- true;
+        
+        context.checkloop <- context.checkloop + 1;
         walk_stmt context body;
-        context.checkloop <- false;
+        context.checkloop <- context.checkloop - 1;
     | StmtWhile(cond, body) -> 
         let ty = walk_expr context cond in
         ( match ty.shape with
         | TyBool -> ()
         | _ -> error_type (ExprError (cond, " condition of while-statement is not a boolean"))
         );
-        context.checkloop <- true;
+        context.checkloop <- context.checkloop + 1;
         walk_stmt context body;
-        context.checkloop <- false;
+        context.checkloop <- context.checkloop - 1;
     | StmtMatch(expr, branches) ->
         let typ = walk_expr context expr in
         let walk_iter (pattern,body) = (
@@ -528,14 +529,14 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
     | StmtBreak ->
         (* process control here *)
         (match context.checkloop with
-        | true -> (context.checkloop <- false)
-        | false -> error_type (Error ("break statement not within loop or switch"))
+        | 0 -> error_type (StmtError (stmt, "break statement not within loop or switch"))
+        | _ -> ()
         )
     | StmtContinue -> 
         (* process control here *)
         (match context.checkloop with
-        | true -> ()
-        | false -> error_type (Error ("continue statement not within loop or switch"))
+        | 0 -> error_type (StmtError (stmt, "continue statement not within loop or switch"))
+        | _ -> ()
         )
     ;;
 
