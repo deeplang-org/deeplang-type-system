@@ -1,0 +1,6 @@
+fun bad_return2(
+    x : I32
+)-> Bool 
+{
+    return 1;
+}

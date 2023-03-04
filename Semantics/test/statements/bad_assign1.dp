@@ -1,0 +1,8 @@
+fun stmt1(
+    x1  : Bool,
+    x2  : I8,
+    x3  : I8
+)
+{
+    1 = x2 + x3;   // assign to not a variable
+}

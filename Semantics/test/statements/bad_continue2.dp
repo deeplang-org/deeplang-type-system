@@ -1,0 +1,8 @@
+fun bad_continue2(
+    x1 : Bool
+)
+{
+    while(x1) {
+    }
+    continue;
+}

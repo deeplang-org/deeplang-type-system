@@ -25,6 +25,7 @@ let context : context =
     ; scope   = []
     ; this    = Semantics.Helper.unit
     ; rety    = Semantics.Helper.unit
+    ; checkloop = false
     }
     ;;
 let walk = walk_top context;;
@@ -55,6 +56,18 @@ let file_list = ["test/type.dp"
                 ;"test/used_var2.dp"
                 ;"test/used_var3.dp"
                 ;"test/used_var4.dp"
+                (* ;"test/statements/bad_assign1.dp" *)
+                ;"test/statements/bad_assign2.dp"
+                ;"test/statements/bad_assign3.dp"
+                ;"test/statements/bad_assign4.dp"
+                ;"test/statements/bad_assign5.dp"
+                ;"test/statements/bad_break1.dp"
+                ;"test/statements/bad_break2.dp"
+                (* ;"test/statements/bad_break3.dp" *)
+                ;"test/statements/bad_continue1.dp"
+                ;"test/statements/bad_continue2.dp"
+                ;"test/statements/bad_return1.dp"
+                ;"test/statements/bad_return2.dp"
                 ];;
 
 let rec iterator_files fileList = 

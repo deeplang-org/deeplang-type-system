@@ -10,12 +10,14 @@ open SemanticsError;;
 
 type nametbl = (variable, symbol) Hashtbl.t ;;
 type scope = nametbl list ;;
+(* type loop = inloop | notinloop ;; *)
 type context = 
     {         table   : table
     ; mutable nametbl : nametbl 
     ; mutable scope   : scope    (** nametbl::scope *)
     ; mutable this    : typ      (** type This of one struct or ADT *)
     ; mutable rety    : typ      (** return type of function *)
+    ; mutable checkloop  : bool
     };;
 
 
@@ -500,14 +502,18 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
     | StmtFor(pattern, expr, body)->
         let typ = walk_expr context expr in
         walk_pattern context pattern typ;
-        walk_stmt context body
+        context.checkloop <- true;
+        walk_stmt context body;
+        context.checkloop <- false;
     | StmtWhile(cond, body) -> 
         let ty = walk_expr context cond in
         ( match ty.shape with
         | TyBool -> ()
         | _ -> error_type (ExprError (cond, " condition of while-statement is not a boolean"))
         );
-        walk_stmt context body
+        context.checkloop <- true;
+        walk_stmt context body;
+        context.checkloop <- false;
     | StmtMatch(expr, branches) ->
         let typ = walk_expr context expr in
         let walk_iter (pattern,body) = (
@@ -521,11 +527,18 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
         else error_type (ExprError (expr, " return different types "))
     | StmtBreak ->
         (* process control here *)
-        ()
+        (match context.checkloop with
+        | true -> (context.checkloop <- false)
+        | false -> error_type (Error ("break statement not within loop or switch"))
+        )
     | StmtContinue -> 
         (* process control here *)
-        ()
+        (match context.checkloop with
+        | true -> ()
+        | false -> error_type (Error ("continue statement not within loop or switch"))
+        )
     ;;
+
 
 (** check func name, and collect type info 
     {[
