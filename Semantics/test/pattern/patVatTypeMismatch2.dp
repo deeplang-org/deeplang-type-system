@@ -1,0 +1,5 @@
+fun patVatTypeMismatch2()
+{
+    let x1 : Bool = 2;
+    // declared type doesn't match with the given expr
+}
