@@ -1,0 +1,6 @@
+fun bad_break1(
+    x1  : Bool
+)
+{
+    break;
+}
