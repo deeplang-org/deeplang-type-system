@@ -262,7 +262,6 @@ let rec walk_expr (context:context) (expr:expr) : typ =
     | ExpADT(label, exprs) -> ( match Hashtbl.find_opt table.adt label with
         | None       -> error_type (Error (" ADT label " ^ label ^ " Not Found "))
         | Some(data) -> (
-            (* if data.typ = List.map (fun expr -> walk_expr context expr) exprs then *)
             if (List.equal Helper.ty_eq data.typ (List.map (fun expr -> walk_expr context expr) exprs)) then
                 Helper.named data.sum []
             else
