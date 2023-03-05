@@ -134,7 +134,7 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
                 error_type (PatternError(pattern, " declared type doesn't match with the given expr"))
         )
     | PatADT(adt_label, patterns) -> ( match Hashtbl.find_opt table.adt adt_label with
-        | None -> error_type (PatternError (pattern, "adt_lable" ^adt_label ^ "not found"))
+        | None -> error_type (PatternError (pattern, "adt_label " ^adt_label ^ " not found"))
         | Some(data) ->  
             (* WARNING : raise error if length of patterns and that of adt children differ *)
             let walk_iter2 pattern typ = walk_pattern context pattern typ in
@@ -206,7 +206,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         )
         | UnOpNot -> ( match typ.shape with
             | TyBool -> typ
-            | _      -> error_type (Error " apply - to Not a Boolean ")
+            | _      -> error_type (Error " apply ! to Not a Boolean ")
         ))
     | ExpBinOp(op, left_e, right_e) ->
         let left  = walk_expr context left_e in
@@ -683,12 +683,12 @@ let walk_top (context:context) (clause:top_clause) : unit =
             }))
 
     | ADTDef(def) ->
-        let name = def.adt_name in (* adt_name : typ_name *)
+        let name = def.adt_name in 
         ( match Hashtbl.find_opt table.typ name with
         | Some(_) -> error_type (Error "The same ADT Name")
         | None    -> ()
         );
-        let branches = def.adt_branches in (* adt_branches : (adt_label * typ list) list *)
+        let branches = def.adt_branches in
         let walk_iter ((label, typs)) = 
         ( match Hashtbl.find_opt table.adt label with
         | Some(_) -> error_type (Error "The same ADT label")
@@ -699,7 +699,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
             { sum = name
             ; typ = typs
             }
-        ) in    (* adt_label : string -> adt_data, see Tabel.ml *)
+        ) in
         List.iter walk_iter branches;
         Hashtbl.add table.typ name (ADT_data(
             { intf = []

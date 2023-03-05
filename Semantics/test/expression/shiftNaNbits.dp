@@ -1,0 +1,7 @@
+fun shiftNaNbits  (
+    x1 : I32,
+    x2 : Bool
+)
+{
+    return  x1 >> x2;
+}

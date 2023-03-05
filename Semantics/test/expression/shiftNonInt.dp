@@ -1,0 +1,6 @@
+fun shiftNonInt  (
+    x1 : Bool
+)
+{
+    return  x1 >> 2;
+}

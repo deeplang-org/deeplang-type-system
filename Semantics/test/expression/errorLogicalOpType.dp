@@ -1,0 +1,7 @@
+fun errorLogicalOpType  (
+    x1 : Bool,
+    x2 : Char
+)
+{
+    return  x1 || x2;
+}

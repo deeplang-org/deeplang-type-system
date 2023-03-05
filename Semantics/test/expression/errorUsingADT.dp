@@ -1,0 +1,15 @@
+type People [
+    Male(U64),
+    Female(U32)
+]
+fun errorUsingADT (
+    x1 : People
+)
+{
+    // match (x1) {
+    //   Male => { return 1; }
+    //   Female    => { return 0; }
+    // } 
+    //会FatalError
+    
+}

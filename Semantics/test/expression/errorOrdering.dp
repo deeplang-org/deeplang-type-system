@@ -1,0 +1,7 @@
+fun errorOrdering  (
+    x1 : I32,
+    x2 : I64
+)
+{
+    return  x1 > x2;
+}
