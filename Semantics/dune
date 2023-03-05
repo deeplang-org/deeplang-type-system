@@ -3,6 +3,11 @@
     (libraries Syntax)
     (modules Table Helper Walker SemanticsError)
     )
+(library
+    (name Semantics)
+    (libraries Syntax)
+    (modules Table Helper Walker SemanticsError)
+    )
 
 (test
     (name WalkerTest)

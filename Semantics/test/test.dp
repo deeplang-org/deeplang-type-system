@@ -1,0 +1,12 @@
+type Shape [
+    Rectangle(I32, I32),
+    Circle(U32)
+]
+fun errorADTLabelNotFound (
+    x1 : Shape
+)
+{
+    let y1 : I32 = 1;
+    let y2 : I32 = 2;
+    Rectangle(y1, y2);
+}
