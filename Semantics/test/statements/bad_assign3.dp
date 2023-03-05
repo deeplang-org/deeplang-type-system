@@ -1,0 +1,9 @@
+fun stmt3(
+    x1  : Bool,
+    x2  : I8,
+    x3  : I8
+)
+{
+    let mut x = x1;     // type(x) is Bool
+    x = x2 + x3;        // assign a value:T1 to a variable:T2, while T1!=T2
+}

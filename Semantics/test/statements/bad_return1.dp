@@ -1,0 +1,6 @@
+fun bad_return1(
+    x : I32
+)-> I32 
+{
+    return true;
+}
