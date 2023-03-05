@@ -1,0 +1,7 @@
+fun modOnDifferentTypes (
+    x1 : Bool,
+    x2 : I32
+)
+{
+    return  x1 % x2;
+}

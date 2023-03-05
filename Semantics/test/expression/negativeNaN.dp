@@ -1,0 +1,6 @@
+fun negativeNaN  (
+    x1  : Bool
+)
+{
+    return  -x1;
+}

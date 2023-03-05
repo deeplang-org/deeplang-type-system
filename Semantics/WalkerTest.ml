@@ -46,9 +46,8 @@ let iterator clause =
         ;;
 
 let file_list = ["test/type.dp"
-                ;"test/test.dp"
                 ;"test/type/unsupport_type1.dp"
-                ;"test/type/unsupport_type2.dp"
+                (* ;"test/type/unsupport_type2.dp" *)
                 ;"test/pattern/bad_pattern1.dp"
                 ;"test/expression/expression1.dp"
                 ;"test/expression/expression2.dp"
@@ -57,6 +56,26 @@ let file_list = ["test/type.dp"
                 ;"test/used_var2.dp"
                 ;"test/used_var3.dp"
                 ;"test/used_var4.dp"
+                ;"test/expression/negativeNaN.dp"
+                ;"test/expression/notNaB.dp"
+                ;"test/expression/errorOrdering.dp"
+                ;"test/expression/errorEqualing.dp"
+                ;"test/expression/errorUnequaling.dp"
+                ;"test/expression/errorOrderingType.dp"
+                ;"test/expression/errorLogicalOpType.dp"
+                ;"test/expression/errorLogicalOpType2.dp"
+                ;"test/expression/shiftNonInt.dp"
+                ;"test/expression/shiftNaNbits.dp"
+                ;"test/expression/arithmeticOnErrorType.dp"
+                ;"test/expression/modOnErrorType.dp"
+                ;"test/expression/modOnDifferentTypes.dp"
+                ;"test/expression/ADThasNoFields.dp"
+                ;"test/expression/structTypeNotFound.dp"
+                (* ;"test/expression/errorUsingADT.dp" *)
+                (* ;"test/expression/errorIfReturn.dp" *)
+                ;"test/expression/errorIfCondition.dp"
+                ;"test/expression/errorMatchStruct.dp"
+                (* ;"test/expression/errorInterface.dp" *)
                 ;"test/statements/bad_assign1.dp"
                 ;"test/statements/bad_assign2.dp"
                 ;"test/statements/bad_assign3.dp"

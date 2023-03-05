@@ -1,0 +1,11 @@
+fun errorMatchStruct (
+    x1 : Color
+) -> Bool
+{
+    match (x1) {
+      j    => { return true; }
+      k    => { return true; }
+      l    => { return false; }
+    }
+    
+}

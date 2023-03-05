@@ -1,0 +1,30 @@
+    interface Quack {
+      fun quack() -> ();
+    }
+    type Duck [ RubberDuck ]
+    impl Quack for Duck {
+        fun quack() -> () {
+            print("quaaaack");
+        }
+    }
+    
+    type Bird [ Snidget ]
+    impl Quack for Bird {
+        fun quack() -> () {
+            print("bird quaaaack");
+        }
+    }
+    
+    fun sound(animal: Quack) -> () {
+        animal.quack();
+    }
+    
+    fun errorInterface() -> () {
+        let duck: Duck = Duck();
+        let bird: Bird = Bird();
+    
+        // type checking pass
+        sound(duck); // quaaaak
+        sound(bird); // bird quaaaak
+    }
+    //syntax error: Constructor cannot take zero arguments.
