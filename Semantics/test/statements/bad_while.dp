@@ -1,0 +1,7 @@
+fun bad_while(
+    x1  : I32
+)
+{
+    while(x1) {
+    }
+}
