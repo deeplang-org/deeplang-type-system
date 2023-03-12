@@ -854,3 +854,20 @@ codegen的实现路径：
 
 邱日宏：在尝试运行deepVM
 
+
+
+### 2023.3.12 例会纪要
+
+练琪灏：展示exhaustivity check demo
+
+刘得志：正在看deep VM
+
+秦嘉俊：暂时没有什么特别的
+
+邱日宏：正在看deep VM
+
+陈亦棠：把栈宽改为1 byte，memory allocation还在调整
+
+​	可以参考Intel的runtime实现 
+
+刘请：正在改borrow checker demo
