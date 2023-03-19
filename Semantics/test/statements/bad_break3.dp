@@ -1,0 +1,11 @@
+fun bad_break3(
+    x1 : Bool
+)
+{
+    // Still Buggy
+    let sth = (1, 2);
+    for (df: I32 in sth) {
+        break;
+    }
+    break;
+}

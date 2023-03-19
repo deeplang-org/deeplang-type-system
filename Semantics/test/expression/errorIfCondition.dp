@@ -1,0 +1,5 @@
+fun errorIfCondition(x1 : U32){
+  
+  if(x1)  x1 = 1; 
+  else  x1 = 0;
+}

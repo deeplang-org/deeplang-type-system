@@ -1,0 +1,10 @@
+type Shape [
+    Rectangle(U32, U64),
+    Circle(U32)
+]
+fun adtHasNoFields (
+    x1 : Shape
+)
+{
+    return x1.triangle;
+}

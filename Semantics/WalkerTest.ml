@@ -25,19 +25,86 @@ let context : context =
     ; scope   = []
     ; this    = Semantics.Helper.unit
     ; rety    = Semantics.Helper.unit
+    ; checkloop = 0
     }
     ;;
 let walk = walk_top context;;
 
-let clauses = try parse_file "test/type.dp" with
-    Syntax.SyntaxError.Error(span, err) ->
-        Format.printf "syntax error: %a@ in %a"
-            Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
-        exit 1
-    ;;
+let clauses file = 
+    try parse_file file with
+        Syntax.SyntaxError.Error(span, err) ->
+            Format.printf "syntax error: %a@ in %a\n"
+                Syntax.SyntaxError.pp_error err Syntax.SyntaxError.pp_span span;
+            []
+        ;;
 
-let iterator clause = walk clause;;
-let _ = List.iter iterator clauses;;
+let iterator clause = 
+    try walk clause with
+        Semantics.SemanticsError.ErrorType(err) ->
+            Format.printf "semantics error: %a\n"
+            Semantics.SemanticsError.print_error err
+        ;;
+
+let file_list = ["test/type.dp"
+                ;"test/type/unsupport_type1.dp"
+                ;"test/type/unsupport_type2.dp"
+                ;"test/type/used_var1.dp"
+                ;"test/type/used_var2.dp"
+                ;"test/type/used_var3.dp"
+                ;"test/type/used_var4.dp"
+                (* ;"test/type/unsupport_type2.dp" *)
+                ;"test/pattern/bad_pattern1.dp"
+                ;"test/pattern/patVatTypeMismatch1.dp"
+                ;"test/pattern/patVatTypeMismatch2.dp"
+                ;"test/expression/expression1.dp"
+                ;"test/expression/expression2.dp"
+                ;"test/function/used_func1.dp"
+                ;"test/expression/negativeNaN.dp"
+                ;"test/expression/notNaB.dp"
+                ;"test/expression/errorOrdering.dp"
+                ;"test/expression/errorEqualing.dp"
+                ;"test/expression/errorUnequaling.dp"
+                ;"test/expression/errorOrderingType.dp"
+                ;"test/expression/errorLogicalOpType.dp"
+                ;"test/expression/errorLogicalOpType2.dp"
+                ;"test/expression/shiftNonInt.dp"
+                ;"test/expression/shiftNaNbits.dp"
+                ;"test/expression/arithmeticOnErrorType.dp"
+                ;"test/expression/modOnErrorType.dp"
+                ;"test/expression/modOnDifferentTypes.dp"
+                ;"test/expression/ADThasNoFields.dp"
+                ;"test/expression/structTypeNotFound.dp"
+                (* ;"test/expression/errorUsingADT.dp" *)
+                (* ;"test/expression/errorIfReturn.dp" *)
+                ;"test/expression/errorIfCondition.dp"
+                ;"test/expression/errorMatchStruct.dp"
+                (* ;"test/expression/errorInterface.dp" *)
+                ;"test/statements/bad_assign1.dp"
+                ;"test/statements/bad_assign2.dp"
+                ;"test/statements/bad_assign3.dp"
+                ;"test/statements/bad_assign4.dp"
+                ;"test/statements/bad_break1.dp"
+                ;"test/statements/bad_break2.dp"
+                ;"test/statements/bad_continue1.dp"
+                ;"test/statements/bad_continue2.dp"
+                ;"test/statements/bad_return1.dp"
+                ;"test/statements/bad_return2.dp"
+                ;"test/statements/bad_if.dp"
+                ;"test/statements/bad_while.dp"
+                ];;
+
+let rec iterator_files fileList = 
+    match fileList with
+    | []            -> []
+    | file::tails   -> (
+        Format.printf "%s\n" file;
+        List.iter iterator (clauses file);
+        Format.printf "\n";
+        iterator_files tails
+    )
+
+(* let _ = List.iter iterator clauses;; *)
+let _ = iterator_files file_list;;
 
 open Semantics.Helper;;
 pp_var_table Format.std_formatter table.var;;
