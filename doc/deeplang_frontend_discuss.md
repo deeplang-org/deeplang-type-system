@@ -871,3 +871,25 @@ codegen的实现路径：
 ​	可以参考Intel的runtime实现 
 
 刘请：正在改borrow checker demo
+
+
+
+### 2023.3.19 例会纪要
+
+刘请：demo
+
+邱日宏：可以手写S表达式或者用官方工具转成wasm文件
+
+秦嘉俊：在看deepvm，还没有看懂
+
+刘得志：正在看代码
+
+
+
+先搜搜WASM，根据问题来询问
+
+WASM：大概整体上是在执行runtime后端
+
+​	根据WASM 1.0版本中间格式做转译，生成可执行文件
+
+输入是字节码 byte code
