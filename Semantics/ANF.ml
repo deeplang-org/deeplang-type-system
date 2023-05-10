@@ -1,6 +1,6 @@
 
-type variable    = int
-type block_label = int
+type variable = int
+type label    = int
 
 type func_name = Syntax.ParseTree.func_name
 type adt_label = Syntax.ParseTree.adt_label
@@ -32,8 +32,9 @@ type data_kind =
     So every [lvalue] corresponds to a memory address.
     Some examples: [point.x], [*ptr] *)
 type lvalue =
-    { var  : variable
-    ; path : path }
+    { lv_var  : variable
+    ; lv_path : path
+    ; lv_src  : span }
 
 and path = path_node list
 
@@ -42,24 +43,26 @@ and path = path_node list
         {li [Field k] selects the [k]-th field from an aggregate,
         i.e. a tuple, a struct, an ADT or a method dictionary}
         {li [Deref] selects the address a pointer points to}
+        {li [AsTag l] selects the data associated with label [l] in an ADT}
+        {li [Method m] selects the implementation of method [m] from an interface implementation}
     } *)
 and path_node =
-    | Field of int
+    | Field  of int
     | Deref
+    | AsTag  of adt_label
+    | Method of string
 
 
 (** A [value] in the ANF IR is something immediately available without needing
     any computation. *)
 type value =
-    | Var   of variable
+    | LVal  of lvalue
     | Int   of int
     | Float of float
-    | Fun   of func_name
 
 
 type expr =
     | Val    of value
-    | Move   of lvalue
     | Copy   of lvalue
     | Borrow of mutability * lvalue
     | App    of value * value list
@@ -67,6 +70,7 @@ type expr =
     | BinOp  of binary_op * value * value
     | MkData of data_kind * value list
     | TagOf  of value
+    | Fun    of func_name
 
 type statement =
     | Decl     of variable * expr
@@ -82,17 +86,17 @@ type statement =
             [span] is the source location of [stmt]}
         {li [Branch br] is a unified construction for all control flow branching structures,
             e.g. if/else and pattern matching}
-        {li [DefBlock(def, body)] defines a new block with [def], and executes [body]}
+        {li [Block(def, body)] defines a new block with [def], and executes [body]}
         {li [Loop def] defines a {e recursive} block with [def],
         and immediately enter the block}
     } *)
 type program =
-    | Return   of span * expr
-    | Jump     of span * block_label * value list
-    | Stmt     of span * statement * program
-    | Branch   of branching
-    | DefBlock of block_definition * program
-    | Loop     of block_definition
+    | Return of span * expr
+    | Jump   of span * label * value list
+    | Stmt   of span * statement * program
+    | Branch of branching
+    | Block  of block_definition * program
+    | Loop   of block_definition
 
 
 (** [branching] is a simple switch on ADT label (integer tag).
@@ -112,15 +116,26 @@ and branching =
 
 
 and block_definition =
-    { blk_src   : span
-    ; blk_label : block_label
-    ; blk_args  : variable list
-    ; blk_body  : program }
+    { blk_label  : label
+    ; blk_params : variable list
+    ; blk_body   : program }
 
 
 
+(** [func_label] represents the point {e after} the function returns *)
 type function_definition =
-    { func_src  : span
-    ; func_name : string
-    ; func_args : variable list
-    ; func_body : program }
+    { func_src    : span
+    ; func_name   : string
+    ; func_params : variable list
+    ; func_label  : label
+    ; func_body   : program }
+
+
+
+
+let (gen_var, gen_label, reset_generator) =
+    let var_seed = ref 0 in
+    let label_seed = ref 0 in
+    ( (fun () -> incr var_seed; !var_seed)
+    , (fun () -> incr label_seed; !label_seed)
+    , (fun () -> var_seed := 0; label_seed := 0) )
