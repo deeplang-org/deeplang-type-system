@@ -1,0 +1,7 @@
+fun used_var1(
+    x1  : I32,
+    x1  : I64
+)
+{
+    // used parameter
+}

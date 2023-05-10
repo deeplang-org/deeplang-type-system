@@ -1,0 +1,4 @@
+fun unsupport_type1()
+{
+    let x1: StrangeType = 1;
+}

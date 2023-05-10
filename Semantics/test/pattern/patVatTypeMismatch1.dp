@@ -1,0 +1,7 @@
+fun patVatTypeMismatch1(x1)
+{
+    match(x1)
+    {
+        Some() => return;
+    }
+}

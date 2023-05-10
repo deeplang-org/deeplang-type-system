@@ -1,0 +1,9 @@
+fun expr1(
+    x1  : Bool,
+    x2  : I8,
+    x3  : I8
+)
+{
+    let y1 = x1 + x2;   // Bool + Int
+    let y2 = x2 + x3;
+}

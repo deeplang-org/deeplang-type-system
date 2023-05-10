@@ -1,0 +1,6 @@
+fun notNaB  (
+    x1  : I64
+)
+{
+    return  !x1;
+}

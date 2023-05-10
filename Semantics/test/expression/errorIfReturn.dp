@@ -1,0 +1,4 @@
+// fun errorIfReturn(x1 : Bool){
+//   if (x1) 0; else false;
+// }
+//未报错
