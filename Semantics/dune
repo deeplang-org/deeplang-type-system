@@ -1,13 +1,13 @@
 (library
     (name Semantics)
     (libraries Syntax)
-    （modules ANF Table Heper Walker SemanticsError)
+    (modules ANF Table Helper Walker SemanticsError)
     )
 
 (test
     (name WalkerTest)
     (libraries Syntax Semantics)
-    (deps 
+    (deps
         (file test/type.dp)
         (file test/type/unsupport_type1.dp)
         (file test/type/unsupport_type2.dp)

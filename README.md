@@ -13,6 +13,9 @@ We are learning TAPL and developing some interesting projects as follow:
 - Deeplang type checker and then type infer
 - Deeplang wasm codegen
 
+### Prepare
+- ocaml >= 4.12.0
+- dune >= 2.8
 
 ### Building
 Currently, only the AST definition is completed.
