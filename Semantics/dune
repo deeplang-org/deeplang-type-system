@@ -5,6 +5,11 @@
     )
 
 (test
+    (name Playground)
+    (libraries Syntax Semantics)
+    (modules Playground))
+
+(test
     (name WalkerTest)
     (libraries Syntax Semantics)
     (deps
