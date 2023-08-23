@@ -19,7 +19,7 @@ let trans_func_impl (func_impl:func_impl): Semantics.ANF.function_definition =
       func_src = stmt.span;
       func_name = func_decl.func_decl_name;
       func_params = List.map get_fresh_arg_name func_decl.func_decl_args;
-      func_label = 114514; (* 暂时不懂 *)
+      func_label = Semantics.ANF.gen_label();
       func_body = Return(stmt.span, Val(Int(2)));
     }
 
