@@ -4,6 +4,8 @@ type src_span =
     { span_start : Lexing.position
     ; span_end   : Lexing.position }
 
+let pp_src_span(_1:Format.formatter)(_2:src_span): unit = ()
+
 (* Tokens are string literals in the input, while labels are the name of a
    collection of tokens. For example, ";" is a token while type is a label that
    could represent any type *)
