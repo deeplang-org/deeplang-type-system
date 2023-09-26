@@ -1,5 +1,6 @@
 (library
  (name Syntax)
+ (preprocess(pps ppx_deriving.show))
  (modules ParseTree SyntaxError Parser Lexer))
 
 (ocamlyacc Parser)

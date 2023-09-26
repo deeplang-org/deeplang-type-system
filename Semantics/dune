@@ -1,12 +1,14 @@
 (library
     (name Semantics)
     (libraries Syntax)
+    (preprocess(pps ppx_deriving.show))
     (modules ANF Table Helper Walker SemanticsError)
     )
 
 (test
     (name Playground)
     (libraries Syntax Semantics)
+    (preprocess(pps ppx_deriving.show))
     (modules Playground))
 
 (test
