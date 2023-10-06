@@ -15,6 +15,7 @@
     (name WalkerTest)
     (libraries Syntax Semantics)
     (deps
+        (file ../examples/basicMain.dp)
         (file test/type.dp)
         (file test/type/unsupport_type1.dp)
         (file test/type/unsupport_type2.dp)

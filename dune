@@ -1,5 +1,3 @@
-(data_only_dirs doc examples)
-
 (library
  (name DeeplangType)
  (libraries Syntax Semantics)
