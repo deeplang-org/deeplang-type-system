@@ -5,6 +5,7 @@ end
 
 module StringMap = Map.Make(OrderedString)
 
+type top_clause = Syntax.ParseTree.top_clause
 type func_impl = Syntax.ParseTree.func_impl
 type func_arg = Syntax.ParseTree.func_arg
 type context = Semantics.Walker.context
@@ -21,6 +22,10 @@ let trans_func_impl (_context:context) (func_impl:func_impl): Semantics.ANF.func
       func_label = Semantics.ANF.gen_label();
       func_body = Return(stmt.span, Val(Int(114514)));
     };;
+
+let trans_top_clause (context:context) (top_clause:top_clause) : Semantics.ANF.function_definition = match top_clause.shape with
+  | FunctionDef(func_impl) -> trans_func_impl(context)(func_impl)
+  | _ -> failwith "TODO";;
 
 let parse_file file : Syntax.ParseTree.top_clause list = 
   let ch = open_in file in
@@ -79,4 +84,4 @@ let ast = clauses file;;
 
 let _ = List.iter iterator ast;;
 
-let _ = List.map (fun x -> print_endline (Syntax.ParseTree.show_top_clause x)) ast;;
+let _ = List.map (fun x -> print_endline (Semantics.ANF.show_function_definition(trans_top_clause(context)(x)))) ast;;
