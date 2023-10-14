@@ -1,25 +1,3 @@
-type top_clause = Syntax.ParseTree.top_clause
-type func_impl = Syntax.ParseTree.func_impl
-type func_arg = Syntax.ParseTree.func_arg
-type context = Semantics.Walker.context
-type int_typ_sign = Syntax.ParseTree.int_typ_sign
-
-let trans_func_impl (_context:context) (func_impl:func_impl): IR.ANF.function_definition =
-  let get_arg_symbol (func_arg:func_arg) = match func_arg.farg_symb with
-    Symbol(symbol) -> symbol in
-  let (func_decl, stmt) = func_impl in
-    {
-      func_src = stmt.span;
-      func_name = func_decl.func_decl_name;
-      func_params = List.map get_arg_symbol func_decl.func_decl_args;
-      func_label = IR.ANF.gen_label();
-      func_body = Return(stmt.span, Val(Int(114514)));
-    };;
-
-let trans_top_clause (context:context) (top_clause:top_clause) : IR.ANF.function_definition = match top_clause.shape with
-  | FunctionDef(func_impl) -> trans_func_impl(context)(func_impl)
-  | _ -> failwith "TODO";;
-
 let parse_file file : Syntax.ParseTree.top_clause list = 
   let ch = open_in file in
   let lexbuf = Lexing.from_channel ch in
@@ -69,12 +47,10 @@ let iterator clause =
 let _ = Format.printf "1919810\n";;
 
 
-
-
 let file = "../examples/basicMain.dp";;
 
 let ast = clauses file;;
 
 let _ = List.iter iterator ast;;
 
-let _ = List.map (fun x -> print_endline (IR.ANF.show_function_definition(trans_top_clause(context)(x)))) ast;;
+let _ = List.map (fun x -> print_endline (IR.ANF.show_function_definition(IR.Conversion.trans_top_clause(context)(x)))) ast;;
