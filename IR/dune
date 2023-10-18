@@ -1,0 +1,15 @@
+(library
+    (name IR)
+    (libraries Syntax Semantics)
+    (preprocess(pps ppx_deriving.show))
+    (modules ANF Conversion)
+    )
+
+(test
+    (name Playground)
+    (libraries Syntax Semantics IR)
+    (preprocess(pps ppx_deriving.show))
+    (deps
+        (file ../examples/basicMain.dp)
+    )
+    (modules Playground))

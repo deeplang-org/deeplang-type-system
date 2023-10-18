@@ -1,13 +1,15 @@
 (library
     (name Semantics)
     (libraries Syntax)
-    (modules ANF Table Helper Walker SemanticsError)
+    (preprocess(pps ppx_deriving.show))
+    (modules Table Helper Walker SemanticsError)
     )
 
 (test
     (name WalkerTest)
     (libraries Syntax Semantics)
     (deps
+        (file ../examples/basicMain.dp)
         (file test/type.dp)
         (file test/type/unsupport_type1.dp)
         (file test/type/unsupport_type2.dp)
