@@ -9,4 +9,7 @@
     (name Playground)
     (libraries Syntax Semantics IR)
     (preprocess(pps ppx_deriving.show))
+    (deps
+        (file ../examples/basicMain.dp)
+    )
     (modules Playground))
