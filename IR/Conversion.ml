@@ -15,7 +15,10 @@ let trans_expr (_context: context) (expr: Syntax.ParseTree.expr): ANF.expr = mat
     (** 16-bit *)
     | LitChar(int) -> Val(Int(int))
     | LitString(str) -> Val(String(str)))
-  (* | ExpVar(var) -> _context.nametbl *)
+  | ExpVar(var_name) -> (match Hashtbl.find_opt _context.nametbl var_name with
+    | Some(sym) ->  (match sym with
+      |Symbol(id) -> Val(Int(id)))
+    | None -> failwith "find no variable")
   | _ -> failwith "TODO1";;
 
 let rec trans_stmt (_context: context) (stmt: Syntax.ParseTree.stmt): ANF.program = match stmt.shape with
