@@ -62,6 +62,7 @@ type value =
     | LVal  of lvalue
     | Int   of int
     | Float of float
+    | String of string
     [@@deriving show]
 
 type expr =
