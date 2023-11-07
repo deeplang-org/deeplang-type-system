@@ -23,8 +23,8 @@ let trans_expr (_context: context) (expr: Syntax.ParseTree.expr): ANF.expr = mat
 
 let rec trans_stmt (_context: context) (stmt: Syntax.ParseTree.stmt): ANF.program = match stmt.shape with
   | StmtSeq(stmt_list) -> (match stmt_list with
-    | h::[] -> trans_stmt (_context) (h)
-    | _ -> failwith "TODO2")
+    | s::ss -> List.fold_left ANF.concat_program (trans_stmt(_context) s) (List.map (trans_stmt(_context)) ss)
+    | _ -> failwith "Empty stmt list")
   | StmtExpr(expr) -> Return(expr.span, trans_expr(_context) (expr))
   | _ -> failwith "TODO3";;
 

@@ -141,3 +141,10 @@ let (gen_var, gen_label, reset_generator) =
     ( (fun () -> incr var_seed; !var_seed)
     , (fun () -> incr label_seed; !label_seed)
     , (fun () -> var_seed := 0; label_seed := 0) )
+
+(* Concatenate two programs *)
+let rec concat_program(p1: program)(p2: program): program =
+    match p1 with
+    | Stmt(span, stmt, body) -> Stmt(span, stmt, concat_program body p2)
+    | Block(def, body) -> Block(def, concat_program body p2)
+    | _ -> p1 (* In the other cases, the second program is unreachable *)
