@@ -4,26 +4,35 @@ type func_arg = Syntax.ParseTree.func_arg
 type context = Semantics.Walker.context
 type int_typ_sign = Syntax.ParseTree.int_typ_sign
 
-let trans_expr (_context: context) (expr: Syntax.ParseTree.expr): ANF.expr = match expr.shape with
-  | ExpLit(lit) -> (match lit with
-    | LitUnit -> Val(Int(0))
-    | LitBool(bool) -> (match bool with
-      | true -> Val(Int(1))
-      | false -> Val(Int(0)))
-    | LitInt(int) -> Val(Int(int))
-    | LitFloat(float) -> Val(Float(float))
-    (** 16-bit *)
-    | LitChar(int) -> Val(Int(int))
-    | LitString(str) -> Val(String(str)))
-  | ExpVar(var_name) -> (match Hashtbl.find_opt _context.nametbl var_name with
-    | Some(sym) ->  (match sym with
-      | Symbol(id) -> Val(Int(id)))
-    | None -> failwith "find no variable")
-  | _ -> failwith "TODO1";;
+let rec trans_expr_assign
+  (_context: context)
+  (span: ANF.span)
+  (op: Syntax.ParseTree.calculate_op option)
+  (lvalue: Syntax.ParseTree.expr)
+  (rvalue: Syntax.ParseTree.expr)
+  (cont: Syntax.ParseTree.stmt list): ANF.program = match op with
+    | Some(op) -> trans_expr_assign (_context) span None lvalue {span = rvalue.span; expr_id = rvalue.expr_id; shape = ExpBinOp(BinOpCalculate(op), lvalue, rvalue)} (cont)
+    | None -> failwith "TODO2"
+      (* match rvalue.shape of *)
+    (* | ExpLit(lit) -> (match lit with
+      | LitUnit -> Val(Int(0))
+      | LitBool(bool) -> (match bool with
+        | true -> Val(Int(1))
+        | false -> Val(Int(0)))
+      | LitInt(int) -> Val(Int(int))
+      | LitFloat(float) -> Val(Float(float))
+      (** 16-bit *)
+      | LitChar(int) -> Val(Int(int))
+      | LitString(str) -> Val(String(str)))
+    | ExpVar(var_name) -> (match Hashtbl.find_opt _context.nametbl var_name with
+      | Some(sym) ->  (match sym with
+        | Symbol(id) -> Val(Int(id)))
+      | None -> failwith "find no variable")
+    | _ -> failwith "TODO1";; *)
 
 let rec trans_stmt (_context: context) (stmt: Syntax.ParseTree.stmt) (cont: Syntax.ParseTree.stmt list): ANF.program = match stmt.shape with
   | StmtSeq(stmt_list) -> trans_stmts (_context) (stmt_list) (cont)
-  | StmtReturn(expr) -> Return(expr.span, trans_expr(_context) (expr))
+  (* | StmtReturn(expr) -> Return(expr.span, trans_expr(_context) (expr)) *)
   (* | StmtExpr(expr) -> Return(expr.span, trans_expr(_context) (expr)) *)
   | _ -> failwith "TODO3"
 
