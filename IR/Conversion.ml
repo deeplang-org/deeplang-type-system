@@ -16,26 +16,28 @@ type var_data =
 
 type var_table = (Syntax.ParseTree.symbol * var_data) list;;
 
-(* let rec trans_expr
-  (var_table: var_table)
+let rec trans_expr
+  (_var_table: var_table)
   (assignee: variable)
   (expr: Syntax.ParseTree.expr)
   (cont: ANF.program -> ANF.program): ANF.program -> ANF.program = fun program -> match expr.shape with
-    | ExpLit(LitUnit) -> Stmt(expr.span, Decl(assignee, Val(Int(0))), trans_stmts(var_table)(cont))
-    | ExpLit(LitBool(true)) -> Stmt(expr.span, Decl(assignee, Val(Int(1))), trans_stmts(var_table)(cont))
-    | ExpLit(LitBool(false)) -> Stmt(expr.span, Decl(assignee, Val(Int(0))), trans_stmts(var_table)(cont))
-    | ExpLit(LitInt(i)) -> Stmt(expr.span, Decl(assignee, Val(Int(i))), trans_stmts(var_table)(cont))
-    | ExpLit(LitFloat(f)) -> Stmt(expr.span, Decl(assignee, Val(Float(f))), trans_stmts(var_table)(cont))
-    | ExpLit(LitChar(ch)) -> Stmt(expr.span, Decl(assignee, Val(Int(ch))), trans_stmts(var_table)(cont))
-    | ExpLit(LitString(str)) -> Stmt(expr.span, Decl(assignee, Val(String(str))), trans_stmts(var_table)(cont))
-    | _ -> failwith "TODO0" *)
+    | ExpLit(LitUnit) -> Stmt(expr.span, Decl(assignee, Val(Int(0))), cont program)
+    | ExpLit(LitBool(true)) -> Stmt(expr.span, Decl(assignee, Val(Int(1))), cont program)
+    | ExpLit(LitBool(false)) -> Stmt(expr.span, Decl(assignee, Val(Int(0))), cont program)
+    | ExpLit(LitInt(i)) -> Stmt(expr.span, Decl(assignee, Val(Int(i))), cont program)
+    | ExpLit(LitFloat(f)) -> Stmt(expr.span, Decl(assignee, Val(Float(f))), cont program)
+    | ExpLit(LitChar(ch)) -> Stmt(expr.span, Decl(assignee, Val(Int(ch))), cont program)
+    | ExpLit(LitString(str)) -> Stmt(expr.span, Decl(assignee, Val(String(str))), cont program)
+    | _ -> failwith "TODO0"
 
-let rec trans_stmt
+and trans_stmt
   (var_table: var_table)
   (stmt: Syntax.ParseTree.stmt)
   (cont: ANF.program -> ANF.program): ANF.program -> ANF.program = fun program -> match stmt.shape with
   | StmtSeq(stmt_list) -> trans_stmts var_table stmt_list cont program
-  (* | StmtReturn(expr) -> Stmt(expr.span, trans_expr (ANF.gen_var()) (expr)) Return(expr.span, trans_expr(_context) (expr)) *)
+  | StmtReturn(expr) ->
+    let fresh_var = ANF.gen_var() in
+      trans_expr var_table fresh_var expr (fun _program -> Return(expr.span, Val(LVal {lv_var = fresh_var; lv_path = []; lv_src = expr.span}))) program
   (* | StmtExpr(expr) -> Return(expr.span, trans_expr(_context) (expr)) *)
   | _ -> failwith "TODO3"
 
