@@ -102,6 +102,7 @@ type program =
     | Branch of branching
     | Block  of block_definition * program
     | Loop   of block_definition
+    | Empty
     [@@deriving show]
 
 (** [branching] is a simple switch on ADT label (integer tag).
