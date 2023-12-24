@@ -53,4 +53,4 @@ let ast = clauses file;;
 
 let _ = List.iter iterator ast;;
 
-let _ = List.map (fun x -> print_endline (IR.ANF.show_function_definition(IR.Conversion.trans_top_clause(context)(x)))) ast;;
+let _ = List.map (fun x -> print_endline (IR.ANF.show_function_definition(IR.Conversion.trans_top_clause([])(x)))) ast;;
