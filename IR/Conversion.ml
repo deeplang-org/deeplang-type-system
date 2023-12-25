@@ -9,7 +9,7 @@ type var_data =
     { 
       (* mut  : mutability
     ; typ  : typ *)
-    name : int
+    name : ANF.variable
     (* ; id   : NodeId.expr *)
     }
     ;;
@@ -19,15 +19,50 @@ type var_table = (string * var_data) list;;
 let var_to_value ~src (var : ANF.variable) : ANF.value =
   LVal { lv_var = var; lv_path = []; lv_src = src }
 
+
+(* To convert AST to ANF, we use continuation-passing-style during the conversion.
+   Translation of every AST node receives an extra "continuation" parameter,
+   which reperest what remains to be done after translating current AST node.
+   For example, when translating the following expression:
+
+      x + 2
+
+   The continuation of [x] is [_ + 2], where [_] represents a hole to plug values in.
+
+   In most cases, translation of AST node simply feed its result to the continuation,
+   obtaining the remaining part of the whole program,
+   and prepend codes of the AST node itself to the remaining part of the program.
+
+   But in a few special cases, in particular control flow constructs like [if],
+   the translation may capture the continuation and put it in a ANF block.
+   See the concrete translation code below for more details. *)
+
+
+(* [expr_continuation] is the continuation of an expression.
+   The continuation accepts an value, which is the result of the expression,
+   and produce a complete program.
+
+   [expr_continuation] is conceptually just a function [ANF.value -> ANF.program].
+   However for the special cases where the continuation is [fun value -> Jump(label, value)],
+   we represent it as [Simple label].
+   This is used to simplify the generated ANF when translating control flow constructs. *)
 type expr_continuation =
   | Simple  of ANF.label
   | Complex of (ANF.value -> ANF.program)
 
+(* feed a value to an [expr_continuation] and obtain a complete program *)
 let apply_expr_cont ~span k value : ANF.program =
   match k with
   | Simple label -> Jump(span, label, [ value ])
   | Complex f -> f value
 
+(* [stmt_continuation] is similar to [expr_continuation],
+   except that it is the continuation for statements.
+   Since statements do not have a result value, it does not need an value as argument.
+   However, statements may declare new variables,
+   so [stmt_continuation] is conceptually a function [var_table -> ANF.program].
+   Again, for the special case where the continuation is just [fun _ -> Jump(label, [])],
+   we represent it as [Simple label]. *)
 type stmt_continuation =
   | Simple of ANF.span * ANF.label
   | Complex of (var_table -> ANF.program)
@@ -67,6 +102,7 @@ let rec trans_expr
 
 and trans_stmt
   ~(var_table: var_table)
+  (* [return] is the label of current function *)
   ~(return: ANF.label)
   (stmt: Syntax.ParseTree.stmt)
   (cont: stmt_continuation): ANF.program =
@@ -75,13 +111,19 @@ and trans_stmt
       let cont' =
         match cont with
         | Simple _ -> cont
-        | Complex f -> Complex (fun _ -> f var_table)
+        | Complex f ->
+            (* [StmtSeq] opens a new scope.
+               So after translating [stmt_list],
+               we should discard the new variables declared in [stmt_list]. *)
+            Complex (fun _ -> f var_table)
       in
       trans_stmts ~var_table ~return stmt_list cont'
   | StmtExpr expr ->
-      trans_expr ~var_table expr (Complex (fun _ -> apply_stmt_cont cont ~var_table))
+      trans_expr ~var_table expr (Complex (fun _ ->
+          (* the result of [StmtExpr] is unused, discard it *)
+          apply_stmt_cont cont ~var_table))
   | StmtReturn expr ->
-      (* [StmtReturn] is early return: what's behind it will not get executed.
+      (* [StmtReturn] is early return: what's behind it will never get executed.
          So the continuation is discarded *)
       trans_expr ~var_table expr (Simple return)
   | StmtDecl ({ shape = PatVar vpat;_ }, rhs) ->
@@ -89,6 +131,13 @@ and trans_stmt
       trans_expr ~var_table rhs (Complex (fun rhs_value ->
           match rhs_value with
           | LVal { lv_var; lv_path = []; lv_src = _ } when vpat.vpat_mut = Imm ->
+              (* if [rhs_value] is also a variable,
+                 we can reuse this variable and don't have to generate a new declaration.
+
+                 However, this only applies to immutable variables.
+                 For mutable variables, we must always create a new ANF variable.
+
+                 FIXME: [lv_var] must be immutable too. check for it *)
               let new_var_table = (vpat.vpat_name, { name = lv_var }) :: var_table in
               apply_stmt_cont cont ~var_table:new_var_table
           | _ ->
@@ -112,17 +161,31 @@ and trans_stmt
               br_default = Some alter;
             }
           in
+          (* The continuation [k] in [trans_if] above may be used TWICE,
+             once for translating [conseq] and once for translating [alter].
+             This would result in code in [k] being duplicated, which is bad.
+
+             To solve this problem, we capture [cont] and store it in a block.
+             Now, the two branches of [if] simply jumps to the new block,
+             and the code of [cont] is reused through the new block. *)
           match cont with
-          | Simple _ -> trans_if cont
+          | Simple _ ->
+              (* when the continuation is just a jump,
+                 there's no need to create a new block. *)
+              trans_if cont
           | Complex f ->
               let label = ANF.gen_label () in
               let block : ANF.block_definition =
                 {
                   blk_label = label;
                   blk_params = [];
-                  blk_body = f var_table;
+                  blk_body =
+                    (* continuation captured here *)
+                    f var_table;
                 }
               in
+              (* this time, the continuation passed to [trans_if] is just a simple jump
+                 and there is no code duplication problem anymore *)
               Block(block, trans_if (Simple (stmt.span, label)))))
   | _ -> failwith "TODO3"
 
