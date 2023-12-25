@@ -84,8 +84,6 @@ type statement =
     [@@deriving show]
 
 (** {ul
-        {li [Return(span, expr)] returns the result of [expr] as the result of the whole program.
-            If [expr] is a function application, then this represents a tail-call}
         {li [Jump(span, label, args)] jumps to the block with name [label] with [args]}
         {li [Stmt(span, stmt, body)] first executes [stmt] and then executes [body].
             [span] is the source location of [stmt]}
@@ -96,7 +94,6 @@ type statement =
         and immediately enter the block}
     } *)
 type program =
-    | Return of span * expr
     | Jump   of span * label * value list
     | Stmt   of span * statement * program
     | Branch of branching
@@ -127,7 +124,8 @@ and block_definition =
     ; blk_body   : program }
     [@@deriving show]
 
-(** [func_label] represents the point {e after} the function returns *)
+(** [func_label] represents the point {e after} the function returns.
+    Returning from the function is represented by jumping to [func_label]. *)
 type function_definition =
     { func_src    : span
     ; func_name   : string
