@@ -1,0 +1,8 @@
+fun main() {
+  let x = 1 + 2;
+  let y = x + x * 3;
+  {
+    let x = y + 4;
+  }
+  let z = x - 3;
+}

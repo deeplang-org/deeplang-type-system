@@ -14,8 +14,10 @@ type var_data =
     }
     ;;
 
-type var_table = (Syntax.ParseTree.symbol * var_data) list;;
+type var_table = (string * var_data) list;;
 
+let var_to_value ~src (var : ANF.variable) : ANF.value =
+  LVal { lv_var = var; lv_path = []; lv_src = src }
 
 type expr_continuation =
   | Simple  of ANF.label
@@ -35,18 +37,32 @@ let apply_stmt_cont k ~var_table : ANF.program =
   | Simple (span, label) -> Jump(span, label, [])
   | Complex f -> f var_table
 
+let trans_lit (lit : Syntax.ParseTree.literal) : ANF.value =
+  match lit with
+  | LitUnit       -> Int 0
+  | LitBool true  -> Int 1
+  | LitBool false -> Int 0
+  | LitInt i      -> Int i
+  | LitFloat f    -> Float f
+  | LitChar ch    -> Int ch
+  | LitString str -> String str
+
 let rec trans_expr
-  ~var_table:(_var_table: var_table)
+  ~(var_table: var_table)
   (expr: Syntax.ParseTree.expr)
   (cont: expr_continuation) : ANF.program =
   match expr.shape with
-  | ExpLit(LitUnit) -> apply_expr_cont ~span:expr.span cont (Int 0)
-  | ExpLit(LitBool(true)) -> apply_expr_cont ~span:expr.span cont (Int 1)
-  | ExpLit(LitBool(false)) -> apply_expr_cont ~span:expr.span cont (Int 0)
-  | ExpLit(LitInt(i)) -> apply_expr_cont ~span:expr.span cont (Int i)
-  | ExpLit(LitFloat(f)) -> apply_expr_cont ~span:expr.span cont (Float f)
-  | ExpLit(LitChar(ch)) -> apply_expr_cont ~span:expr.span cont (Int ch)
-  | ExpLit(LitString(str)) -> apply_expr_cont ~span:expr.span cont (String str)
+  | ExpLit lit -> apply_expr_cont ~span:expr.span cont (trans_lit lit)
+  | ExpVar var ->
+      apply_expr_cont ~span:expr.span cont
+        (var_to_value ~src:expr.span (List.assoc var var_table).name)
+  | ExpBinOp (op, lhs, rhs) ->
+      trans_expr ~var_table lhs (Complex (fun lhs_value ->
+          trans_expr ~var_table rhs (Complex (fun rhs_value ->
+              let result_var = ANF.gen_var () in
+              Stmt( expr.span, Decl(result_var, BinOp(op, lhs_value, rhs_value)),
+                apply_expr_cont ~span:expr.span cont
+                  (var_to_value ~src:expr.span result_var))))))
   | _ -> failwith "TODO0"
 
 and trans_stmt
@@ -55,7 +71,13 @@ and trans_stmt
   (stmt: Syntax.ParseTree.stmt)
   (cont: stmt_continuation): ANF.program =
   match stmt.shape with
-  | StmtSeq stmt_list -> trans_stmts ~var_table ~return stmt_list cont
+  | StmtSeq stmt_list ->
+      let cont' =
+        match cont with
+        | Simple _ -> cont
+        | Complex f -> Complex (fun _ -> f var_table)
+      in
+      trans_stmts ~var_table ~return stmt_list cont'
   | StmtExpr expr ->
       trans_expr ~var_table expr (Complex (fun _ -> apply_stmt_cont cont ~var_table))
   | StmtReturn expr ->
@@ -64,11 +86,16 @@ and trans_stmt
       trans_expr ~var_table expr (Simple return)
   | StmtDecl ({ shape = PatVar vpat;_ }, rhs) ->
       (* TODO: handle all patterns *)
-      let anf_var = ANF.gen_var () in
       trans_expr ~var_table rhs (Complex (fun rhs_value ->
-          let new_var_table = (vpat.vpat_symb, { name = anf_var }) :: var_table in
-          Stmt ( stmt.span, Decl (anf_var, Val rhs_value),
-            apply_stmt_cont cont ~var_table:new_var_table)))
+          match rhs_value with
+          | LVal { lv_var; lv_path = []; lv_src = _ } when vpat.vpat_mut = Imm ->
+              let new_var_table = (vpat.vpat_name, { name = lv_var }) :: var_table in
+              apply_stmt_cont cont ~var_table:new_var_table
+          | _ ->
+              let anf_var = ANF.gen_var () in
+              let new_var_table = (vpat.vpat_name, { name = anf_var }) :: var_table in
+              Stmt ( stmt.span, Decl (anf_var, Val rhs_value),
+                apply_stmt_cont cont ~var_table:new_var_table)))
   | StmtIf (cond, conseq, alter) ->
       trans_expr ~var_table cond (Complex (fun cond_value ->
           let[@inline] trans_if (k : stmt_continuation) : ANF.program =
@@ -97,7 +124,6 @@ and trans_stmt
                 }
               in
               Block(block, trans_if (Simple (stmt.span, label)))))
-  (* | StmtExpr(expr) -> Return(expr.span, trans_expr(_context) (expr)) *)
   | _ -> failwith "TODO3"
 
 and trans_stmts

@@ -53,3 +53,54 @@
      ))
   }
 
+{ ANF.func_src = "expr.dp":1,0-8,1; func_name = "main"; func_params = [];
+  func_label = #1;
+  func_body =
+  (ANF.Stmt ("expr.dp":2,10-2,15,
+     (ANF.Decl ($1,
+        (ANF.BinOp ((ParseTree.BinOpCalculate ParseTree.BinOpAdd),
+           (ANF.Int 1), (ANF.Int 2)))
+        )),
+     (ANF.Stmt ("expr.dp":3,14-3,19,
+        (ANF.Decl ($2,
+           (ANF.BinOp ((ParseTree.BinOpCalculate ParseTree.BinOpMul),
+              (ANF.LVal
+                 { ANF.lv_var = $1; lv_path = [];
+                   lv_src = "expr.dp":3,14-3,15 }),
+              (ANF.Int 3)))
+           )),
+        (ANF.Stmt ("expr.dp":3,10-3,19,
+           (ANF.Decl ($3,
+              (ANF.BinOp ((ParseTree.BinOpCalculate ParseTree.BinOpAdd),
+                 (ANF.LVal
+                    { ANF.lv_var = $1; lv_path = [];
+                      lv_src = "expr.dp":3,10-3,11 }),
+                 (ANF.LVal
+                    { ANF.lv_var = $2; lv_path = [];
+                      lv_src = "expr.dp":3,14-3,19 })
+                 ))
+              )),
+           (ANF.Stmt ("expr.dp":5,12-5,17,
+              (ANF.Decl ($4,
+                 (ANF.BinOp ((ParseTree.BinOpCalculate ParseTree.BinOpAdd),
+                    (ANF.LVal
+                       { ANF.lv_var = $3; lv_path = [];
+                         lv_src = "expr.dp":5,12-5,13 }),
+                    (ANF.Int 4)))
+                 )),
+              (ANF.Stmt ("expr.dp":7,10-7,15,
+                 (ANF.Decl ($5,
+                    (ANF.BinOp (
+                       (ParseTree.BinOpCalculate ParseTree.BinOpSub),
+                       (ANF.LVal
+                          { ANF.lv_var = $1; lv_path = [];
+                            lv_src = "expr.dp":7,10-7,11 }),
+                       (ANF.Int 3)))
+                    )),
+                 (ANF.Jump ("expr.dp":1,0-8,1, #1, []))))
+              ))
+           ))
+        ))
+     ))
+  }
+
