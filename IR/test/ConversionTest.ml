@@ -44,13 +44,13 @@ let iterator clause =
           Semantics.SemanticsError.print_error err
       ;;
 
-let _ = Format.printf "1919810\n";;
-
-
-let file = "../examples/basicMain.dp";;
-
-let ast = clauses file;;
-
-let _ = List.iter iterator ast;;
-
-let _ = List.map (fun x -> print_endline (IR.ANF.show_function_definition(IR.Conversion.trans_top_clause([])(x)))) ast;;
+let _ =
+  for i = 1 to Array.length Sys.argv - 1 do
+    let file = Sys.argv.(i) in
+    let ast = clauses file in
+    List.iter iterator ast;
+    ast |> List.iter (fun x ->
+      print_endline
+        (IR.ANF.show_function_definition
+            (IR.Conversion.trans_top_clause [] x)));
+  done

@@ -1,0 +1,17 @@
+(executable
+ (name ConversionTest)
+ (libraries IR)
+ (preprocess (pps ppx_deriving.show))
+ (modules ConversionTest))
+
+(rule
+ (action
+  (with-stdout-to test.output
+   (run ./ConversionTest.exe %{test_sources})))
+ (deps
+  (:test_sources
+   (glob_files *.dp))))
+
+(rule
+ (alias runtest)
+ (action (diff test.expected test.output)))
