@@ -114,7 +114,7 @@ type program =
 and branching =
     { br_src      : span
     ; br_matched  : value
-    ; br_branches : (adt_label * program) list
+    ; br_branches : (int * program) list
     ; br_default  : program option }
     [@@deriving show]
 

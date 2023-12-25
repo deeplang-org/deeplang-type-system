@@ -29,6 +29,8 @@ let process_file file =
     }
   in
 
+  IR.ANF.reset_generator ();
+
   let ast =
     try parse_file file with Syntax.SyntaxError.Error(span, err) ->
       Format.printf "syntax error: %a@ in %a@ "

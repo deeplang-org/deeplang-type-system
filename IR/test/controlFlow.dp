@@ -1,0 +1,19 @@
+fun f() -> I32 {
+  if (true) {
+    0;
+  } else {
+    1;
+  }
+
+  if (true) {
+    return 2;
+  } else {
+    3;
+  }
+
+  if (true) {
+    4;
+  } else {
+    5;
+  }
+}
