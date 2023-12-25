@@ -1,6 +1,9 @@
 
-type variable = int [@@deriving show]
-type label    = int [@@deriving show]
+type variable = int
+let pp_variable fmt var = Format.fprintf fmt "$%d" var
+
+type label = int
+let pp_label fmt lbl = Format.fprintf fmt "#%d" lbl
 
 type func_name = Syntax.ParseTree.func_name [@@deriving show]
 type adt_label = Syntax.ParseTree.adt_label [@@deriving show]

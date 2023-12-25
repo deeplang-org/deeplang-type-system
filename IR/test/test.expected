@@ -1,55 +1,55 @@
 { ANF.func_src = "basic.dp":1,0-3,1; func_name = "main"; func_params = [];
-  func_label = 1;
-  func_body = (ANF.Jump ("basic.dp":2,9-2,10, 1, [(ANF.Int 0)])) }
+  func_label = #1;
+  func_body = (ANF.Jump ("basic.dp":2,9-2,10, #1, [(ANF.Int 0)])) }
 
 { ANF.func_src = "basicMain.dp":1,0-8,1; func_name = "main";
-  func_params = [0]; func_label = 1;
+  func_params = [$0]; func_label = #1;
   func_body =
-  (ANF.Stmt ("basicMain.dp":3,2-3,18, (ANF.Decl (1, (ANF.Val (ANF.Int 1)))),
+  (ANF.Stmt ("basicMain.dp":3,2-3,18, (ANF.Decl ($1, (ANF.Val (ANF.Int 1)))),
      (ANF.Stmt ("basicMain.dp":4,2-4,17,
-        (ANF.Decl (2, (ANF.Val (ANF.Int 2)))),
+        (ANF.Decl ($2, (ANF.Val (ANF.Int 2)))),
         (ANF.Stmt ("basicMain.dp":5,2-5,19,
-           (ANF.Decl (3, (ANF.Val (ANF.Float 3.)))),
-           (ANF.Jump ("basicMain.dp":1,0-8,1, 1, []))))
+           (ANF.Decl ($3, (ANF.Val (ANF.Float 3.)))),
+           (ANF.Jump ("basicMain.dp":1,0-8,1, #1, []))))
         ))
      ))
   }
 
 { ANF.func_src = "controlFlow.dp":1,0-19,1; func_name = "f";
-  func_params = []; func_label = 1;
+  func_params = []; func_label = #1;
   func_body =
   (ANF.Block (
-     { ANF.blk_label = 2; blk_params = [];
+     { ANF.blk_label = #2; blk_params = [];
        blk_body =
        (ANF.Block (
-          { ANF.blk_label = 3; blk_params = [];
+          { ANF.blk_label = #3; blk_params = [];
             blk_body =
             (ANF.Block (
-               { ANF.blk_label = 4; blk_params = [];
-                 blk_body = (ANF.Jump ("controlFlow.dp":1,0-19,1, 1, [])) },
+               { ANF.blk_label = #4; blk_params = [];
+                 blk_body = (ANF.Jump ("controlFlow.dp":1,0-19,1, #1, [])) },
                (ANF.Branch
                   { ANF.br_src = "controlFlow.dp":14,2-18,3;
                     br_matched = (ANF.Int 1);
                     br_branches =
-                    [(1, (ANF.Jump ("controlFlow.dp":14,2-18,3, 4, [])))];
+                    [(1, (ANF.Jump ("controlFlow.dp":14,2-18,3, #4, [])))];
                     br_default =
-                    (Some (ANF.Jump ("controlFlow.dp":14,2-18,3, 4, []))) })
+                    (Some (ANF.Jump ("controlFlow.dp":14,2-18,3, #4, []))) })
                ))
             },
           (ANF.Branch
              { ANF.br_src = "controlFlow.dp":8,2-12,3;
                br_matched = (ANF.Int 1);
                br_branches =
-               [(1, (ANF.Jump ("controlFlow.dp":9,11-9,12, 1, [(ANF.Int 2)])))
-                 ];
+               [(1,
+                 (ANF.Jump ("controlFlow.dp":9,11-9,12, #1, [(ANF.Int 2)])))];
                br_default =
-               (Some (ANF.Jump ("controlFlow.dp":8,2-12,3, 3, []))) })
+               (Some (ANF.Jump ("controlFlow.dp":8,2-12,3, #3, []))) })
           ))
        },
      (ANF.Branch
         { ANF.br_src = "controlFlow.dp":2,2-6,3; br_matched = (ANF.Int 1);
-          br_branches = [(1, (ANF.Jump ("controlFlow.dp":2,2-6,3, 2, [])))];
-          br_default = (Some (ANF.Jump ("controlFlow.dp":2,2-6,3, 2, []))) })
+          br_branches = [(1, (ANF.Jump ("controlFlow.dp":2,2-6,3, #2, [])))];
+          br_default = (Some (ANF.Jump ("controlFlow.dp":2,2-6,3, #2, []))) })
      ))
   }
 
