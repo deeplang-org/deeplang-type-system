@@ -1,3 +1,16 @@
 { ANF.func_src = "basic.dp":1,0-3,1; func_name = "main"; func_params = [];
   func_label = 1;
   func_body = (ANF.Jump ("basic.dp":2,9-2,10, 1, [(ANF.Int 0)])) }
+
+{ ANF.func_src = "basicMain.dp":1,0-8,1; func_name = "main";
+  func_params = [0]; func_label = 2;
+  func_body =
+  (ANF.Stmt ("basicMain.dp":3,2-3,18, (ANF.Decl (1, (ANF.Val (ANF.Int 1)))),
+     (ANF.Stmt ("basicMain.dp":4,2-4,17,
+        (ANF.Decl (2, (ANF.Val (ANF.Int 2)))),
+        (ANF.Stmt ("basicMain.dp":5,2-5,19,
+           (ANF.Decl (3, (ANF.Val (ANF.Float 3.)))), ANF.Empty))
+        ))
+     ))
+  }
+

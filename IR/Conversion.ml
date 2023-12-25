@@ -21,7 +21,7 @@ type expr_continuation =
   | Simple  of ANF.label
   | Complex of (ANF.value -> ANF.program)
 
-type stmt_continuation = ANF.program
+type stmt_continuation = var_table:var_table -> ANF.program
 
 let apply_cont ~span k value : ANF.program =
   match k with
@@ -53,6 +53,12 @@ and trans_stmt
       (* [StmtReturn] is early return: what's behind it will not get executed.
          So the continuation is discarded *)
       trans_expr ~var_table expr (Simple return)
+  | StmtDecl ({ shape = PatVar vpat;_ }, rhs) ->
+      (* TODO: handle all patterns *)
+      let anf_var = ANF.gen_var () in
+      trans_expr ~var_table rhs (Complex (fun rhs_value ->
+          Stmt ( stmt.span, Decl (anf_var, Val rhs_value),
+            cont ~var_table:((vpat.vpat_symb, { name = anf_var }) :: var_table))))
   (* | StmtExpr(expr) -> Return(expr.span, trans_expr(_context) (expr)) *)
   | _ -> failwith "TODO3"
 
@@ -62,8 +68,8 @@ and trans_stmts
   (stmts: Syntax.ParseTree.stmt list)
   (cont: stmt_continuation): ANF.program =
   match stmts with
-  | []    -> cont
-  | s::ss -> trans_stmt ~var_table ~return s (trans_stmts ~var_table ~return ss cont)
+  | []    -> cont ~var_table
+  | s::ss -> trans_stmt ~var_table ~return s (trans_stmts ~return ss cont)
 
 let trans_func_impl ~(var_table: var_table) (func_impl:func_impl): ANF.function_definition =
   let get_arg_symbol (func_arg:func_arg) =
@@ -76,7 +82,7 @@ let trans_func_impl ~(var_table: var_table) (func_impl:func_impl): ANF.function_
       func_name = func_decl.func_decl_name;
       func_params = List.map get_arg_symbol func_decl.func_decl_args;
       func_label;
-      func_body = trans_stmt ~var_table ~return:func_label stmt Empty;
+      func_body = trans_stmt ~var_table ~return:func_label stmt (fun ~var_table:_ -> Empty);
     };;
 
 let trans_top_clause (var_table:var_table) (top_clause:top_clause) : ANF.function_definition = match top_clause.shape with
