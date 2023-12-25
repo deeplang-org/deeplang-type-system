@@ -152,7 +152,7 @@ and trans_stmt
             let alter =
               match alter with
               | Some alter -> trans_stmt ~var_table ~return alter k
-              | None -> Empty
+              | None -> apply_stmt_cont k ~var_table
             in
             Branch {
               br_src = stmt.span;
@@ -187,6 +187,31 @@ and trans_stmt
               (* this time, the continuation passed to [trans_if] is just a simple jump
                  and there is no code duplication problem anymore *)
               Block(block, trans_if (Simple (stmt.span, label)))))
+  | StmtWhile (cond, body) ->
+      (* while cond { body }; rest
+
+         ==>
+
+         loop #loop {
+           if cond {
+             body;
+             jump #loop;
+           } else {
+             rest
+           }
+         } *)
+      let label = ANF.gen_label () in
+      let loop_body =
+        trans_expr ~var_table cond (Complex (fun cond_value ->
+            Branch {
+              br_src = stmt.span;
+              br_matched = cond_value;
+              br_branches =
+                [ (1, trans_stmt ~var_table ~return body (Simple (stmt.span, label))) ];
+              br_default = Some (apply_stmt_cont cont ~var_table);
+            }))
+      in
+      Loop { blk_label = label; blk_params = []; blk_body = loop_body }
   | _ -> failwith "TODO3"
 
 and trans_stmts
