@@ -4,7 +4,13 @@ type src_span =
     { span_start : Lexing.position
     ; span_end   : Lexing.position }
 
-let pp_src_span(_1:Format.formatter)(_2:src_span): unit = ()
+let pp_src_span (fmt: Format.formatter) { span_start; span_end } =
+  Format.fprintf fmt "\"%s\":%d,%d-%d,%d"
+    span_start.pos_fname
+    span_start.pos_lnum
+    (span_start.pos_cnum - span_start.pos_bol)
+    span_end.pos_lnum
+    (span_end.pos_cnum - span_end.pos_bol)
 
 (* Tokens are string literals in the input, while labels are the name of a
    collection of tokens. For example, ";" is a token while type is a label that
