@@ -230,7 +230,7 @@ type interface_decl =
     ; intf_decl_methods : func_decl list }
     [@@deriving show]
 
-    type methods_impl =
+type methods_impl =
     { impl_intf : intf_name option
     ; impl_typ  : typ_name (* just type name *)
     ; impl_id   : NodeId.impl (* no need? *)

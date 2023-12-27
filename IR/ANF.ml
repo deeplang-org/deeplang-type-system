@@ -39,7 +39,6 @@ type lvalue =
     { lv_var  : variable
     ; lv_path : path
     ; lv_src  : span }
-    [@@deriving show]
 
 and path = path_node list
     [@@deriving show]
@@ -57,7 +56,6 @@ and path_node =
     | Deref
     | AsTag  of int
     | Method of string
-    [@@deriving show]
 
 (** A [value] in the ANF IR is something immediately available without needing
     any computation. *)
@@ -66,7 +64,6 @@ type value =
     | Int   of int
     | Float of float
     | String of string
-    [@@deriving show]
 
 type expr =
     | Val    of value
@@ -77,13 +74,11 @@ type expr =
     | BinOp  of binary_op * value * value
     | MkData of data_kind * value list
     | Fun    of func_name
-    [@@deriving show]
 
 type statement =
     | Decl     of variable * expr
     | Assign   of lvalue * value
     | EndScope of variable list
-    [@@deriving show]
 
 (** {ul
         {li [Jump(span, label, args)] jumps to the block with name [label] with [args]}
@@ -103,7 +98,6 @@ type program =
     | Loop   of block_definition
     | Empty
     | Abort
-    [@@deriving show]
 
 (** [branching] is a simple switch on ADT label (integer tag).
     Each ADT label has an associated branch in [br_branches],
@@ -119,13 +113,11 @@ and branching =
     ; br_matched  : value
     ; br_branches : (int * program) list
     ; br_default  : program option }
-    [@@deriving show]
 
 and block_definition =
     { blk_label  : label
     ; blk_params : variable list
     ; blk_body   : program }
-    [@@deriving show]
 
 (** [func_label] represents the point {e after} the function returns.
     Returning from the function is represented by jumping to [func_label]. *)
@@ -135,7 +127,6 @@ type function_definition =
     ; func_params : variable list
     ; func_label  : label
     ; func_body   : program }
-    [@@deriving show]
 
 let (gen_var, gen_label, reset_generator) =
     let var_seed = ref 0 in
@@ -150,3 +141,81 @@ let rec concat_program(p1: program)(p2: program): program =
     | Stmt(span, stmt, body) -> Stmt(span, stmt, concat_program body p2)
     | Block(def, body) -> Block(def, concat_program body p2)
     | _ -> p1 (* In the other cases, the second program is unreachable *)
+
+
+
+(* hand-writter pretty printer for easier debugging*)
+let pp_lvalue fmt lv =
+  Format.fprintf fmt "$%d" lv.lv_var;
+  List.iter
+    (fun node ->
+        match node with
+        | Field k -> Format.fprintf fmt ".%d" k
+        | Deref -> Format.fprintf fmt ".*"
+        | AsTag t -> Format.fprintf fmt ".as(%d)" t
+        | Method m -> Format.fprintf fmt ".%s" m)
+    (List.rev lv.lv_path)
+
+let pp_value fmt value =
+  match value with
+  | LVal lv -> pp_lvalue fmt lv
+  | Int i -> Format.fprintf fmt "%d" i
+  | Float f -> Format.fprintf fmt "%f" f
+  | String s -> Format.fprintf fmt "\"%s\"" s
+
+let pp_values fmt values =
+  Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ", ") pp_value fmt values 
+
+let pp_expr fmt expr =
+  let open Format in
+  match expr with
+  | Val v -> pp_value fmt v
+  | Copy lv -> fprintf fmt "copy(%a)" pp_lvalue lv
+  | Borrow (Imm, lv) -> fprintf fmt "&%a" pp_lvalue lv
+  | Borrow (Mut, lv) -> fprintf fmt "&mut %a" pp_lvalue lv
+  | App(func, args) -> fprintf fmt "%a(%a)" pp_value func pp_values args
+  | UnOp(op, operand) ->
+      fprintf fmt "%a(%a)" Syntax.ParseTree.pp_unary_op op pp_value operand
+  | BinOp(op, lhs, rhs) ->
+      fprintf fmt "%a(%a, %a)" Syntax.ParseTree.pp_binary_op op pp_value lhs pp_value rhs
+  | MkData(dk, values) -> fprintf fmt "mk(%a)(%a)" pp_data_kind dk pp_values values
+  | Fun fname -> fprintf fmt "%s" fname
+
+let pp_vars fmt vars =
+  Format.pp_print_list ~pp_sep:(fun fmt () -> Format.fprintf fmt ", ")
+    (fun fmt var -> Format.fprintf fmt "$%d" var) fmt vars
+
+let pp_statement fmt stmt =
+  match stmt with
+  | Decl(name, rhs) -> Format.fprintf fmt "$%d = %a" name pp_expr rhs
+  | Assign(lv, value) -> Format.fprintf fmt "%a := %a" pp_lvalue lv pp_value value
+  | EndScope vars -> Format.fprintf fmt "endScope(%a)" pp_vars vars
+
+
+let rec pp_program fmt prog =
+  let open Format in
+  match prog with
+  | Jump(span, label, args) ->
+      fprintf fmt "jump #%d (%a) -- %a" label pp_values args pp_span span
+  | Stmt(span, stmt, rest) ->
+      fprintf fmt "%a -- %a@ %a" pp_statement stmt pp_span span pp_program rest
+  | Branch { br_src; br_matched; br_branches; br_default } ->
+      fprintf fmt "match %a -- %a:" pp_value br_matched pp_span br_src;
+      List.iter
+        (fun (tag, action) -> fprintf fmt "@ @[<v2>%d =>@ %a@]" tag pp_program action)
+        br_branches;
+      Option.iter
+        (fun action -> fprintf fmt "@ @[<v2>_ =>@ %a@]" pp_program action)
+        br_default
+  | Block ({ blk_label; blk_params; blk_body }, rest) ->
+      fprintf fmt "@[<v2>block #%d(%a) =@ %a@]@ in@ %a"
+        blk_label pp_vars blk_params pp_program blk_body pp_program rest
+  | Loop { blk_label; blk_params; blk_body } ->
+      fprintf fmt "@[<v2>loop #%d(%a):@ %a@]" blk_label pp_vars blk_params pp_program blk_body
+  | Empty -> fprintf fmt "empty"
+  | Abort -> fprintf fmt "abort!"
+
+let pp_function_definition fmt { func_src; func_name; func_params; func_label; func_body } =
+  let open Format in
+  fprintf fmt "@[<v2>fun %s(%a) -> #%d -- %a =@ %a@]@ "
+    func_name pp_vars func_params func_label pp_span func_src pp_program func_body
