@@ -112,8 +112,10 @@ let pp_adty_data fmt (data:adty_data) =
     Format.fprintf fmt "@[<4>{intf:%a@,meth:%a@,core : %a}@]"
     (fun fmt -> List.iter (Format.fprintf fmt "%s@ ")) data.intf
     pp_fun_table data.meth
-    (fun fmt -> List.iter (fun (label, tys) 
-        -> Format.fprintf fmt "%s%a" label pp_tys tys)) data.core
+    (fun fmt ->
+        List.iter (fun (label, tys) ->
+          Format.fprintf fmt "%s%a" label pp_tys tys))
+    data.core
     ;;
 
 let pp_struct_data fmt (data:struct_data) = 
@@ -145,8 +147,8 @@ let pp_typ_table fmt (table:typ_table) =
     ;;
 
 let pp_adt_entry fmt label (data:adt_data) =
-    Format.fprintf fmt "%s : %a -> %a\n"
-    label pp_tys data.typ pp_ty (named data.sum [])
+    Format.fprintf fmt "%s(#%d) : %a -> %a\n"
+      label data.tag pp_tys data.typ pp_ty (named data.sum [])
     ;;
 
 let pp_adt_table fmt (table:adt_table) =

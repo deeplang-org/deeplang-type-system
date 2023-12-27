@@ -689,7 +689,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
         | None    -> ()
         );
         let branches = def.adt_branches in
-        let walk_iter ((label, typs)) = 
+        let walk_iter index (label, typs) = 
         ( match Hashtbl.find_opt table.adt label with
         | Some(_) -> error_type (Error "The same ADT label")
         | None    -> 
@@ -698,9 +698,10 @@ let walk_top (context:context) (clause:top_clause) : unit =
             Hashtbl.add table.adt label
             { sum = name
             ; typ = typs
+            ; tag = index
             }
         ) in
-        List.iter walk_iter branches;
+        List.iteri walk_iter branches;
         Hashtbl.add table.typ name (ADT_data(
             { intf = []
             ; meth = Hashtbl.create 10
