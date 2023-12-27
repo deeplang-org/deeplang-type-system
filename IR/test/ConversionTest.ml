@@ -43,10 +43,10 @@ let process_file file =
       Format.printf "semantics error: %a@ "
         Semantics.SemanticsError.print_error err);
 
-  ast |> List.iter (fun x ->
-    Format.printf "%a@ "
-      IR.ANF.pp_function_definition
-      (IR.Conversion.trans_top_clause [] x))
+  let program = IR.Conversion.trans_program ~table ast in
+
+  program |> List.iter (fun fd ->
+    Format.printf "%a@ " IR.ANF.pp_function_definition fd)
 
 let _ =
   Format.printf "@[<v>";

@@ -2,4 +2,4 @@
  (name IR)
  (libraries Syntax Semantics)
  (preprocess (pps ppx_deriving.show))
- (modules ANF Conversion))
+ (modules ANF Conversion ConvertMatch))

@@ -55,7 +55,7 @@ and path = path_node list
 and path_node =
     | Field  of int
     | Deref
-    | AsTag  of adt_label
+    | AsTag  of int
     | Method of string
     [@@deriving show]
 
@@ -76,7 +76,6 @@ type expr =
     | UnOp   of unary_op  * value
     | BinOp  of binary_op * value * value
     | MkData of data_kind * value list
-    | TagOf  of value
     | Fun    of func_name
     [@@deriving show]
 
@@ -103,6 +102,7 @@ type program =
     | Block  of block_definition * program
     | Loop   of block_definition
     | Empty
+    | Abort
     [@@deriving show]
 
 (** [branching] is a simple switch on ADT label (integer tag).

@@ -72,6 +72,14 @@ let apply_stmt_cont k ~var_table : ANF.program =
   | Simple (span, label) -> Jump(span, label, [])
   | Complex f -> f var_table
 
+
+let bind (value : ANF.value) (f : ANF.variable -> ANF.program) : ANF.program =
+  match value with
+  | LVal{ lv_var; lv_path = []; lv_src = _ } -> f lv_var
+  | _ ->
+      let var = ANF.gen_var () in
+      Stmt( Syntax.SyntaxError.dummy_span, Decl(var, Val value), f var)
+
 let trans_lit (lit : Syntax.ParseTree.literal) : ANF.value =
   match lit with
   | LitUnit       -> Int 0
@@ -101,6 +109,7 @@ let rec trans_expr
   | _ -> failwith "TODO0"
 
 and trans_stmt
+  ~(table : Semantics.Table.table)
   ~(var_table: var_table)
   (* [return] is the label of current function *)
   ~(return: ANF.label)
@@ -117,7 +126,7 @@ and trans_stmt
                we should discard the new variables declared in [stmt_list]. *)
             Complex (fun _ -> f var_table)
       in
-      trans_stmts ~var_table ~return stmt_list cont'
+      trans_stmts ~table ~var_table ~return stmt_list cont'
   | StmtExpr expr ->
       trans_expr ~var_table expr (Complex (fun _ ->
           (* the result of [StmtExpr] is unused, discard it *)
@@ -148,10 +157,10 @@ and trans_stmt
   | StmtIf (cond, conseq, alter) ->
       trans_expr ~var_table cond (Complex (fun cond_value ->
           let[@inline] trans_if (k : stmt_continuation) : ANF.program =
-            let conseq = trans_stmt ~var_table ~return conseq k in
+            let conseq = trans_stmt ~table ~var_table ~return conseq k in
             let alter =
               match alter with
-              | Some alter -> trans_stmt ~var_table ~return alter k
+              | Some alter -> trans_stmt ~table ~var_table ~return alter k
               | None -> apply_stmt_cont k ~var_table
             in
             Branch {
@@ -207,14 +216,73 @@ and trans_stmt
               br_src = stmt.span;
               br_matched = cond_value;
               br_branches =
-                [ (1, trans_stmt ~var_table ~return body (Simple (stmt.span, label))) ];
+                [ (1, trans_stmt ~table ~var_table ~return body (Simple (stmt.span, label))) ];
               br_default = Some (apply_stmt_cont cont ~var_table);
             }))
       in
       Loop { blk_label = label; blk_params = []; blk_body = loop_body }
+  | StmtMatch (head, arms) ->
+      let trans_match k =
+        let rec bindings_of_pat acc (pat : Syntax.ParseTree.pattern) =
+          match pat.shape with
+          | PatWildcard | PatLit _ -> acc
+          | PatVar vpat -> vpat.vpat_name :: acc
+          | PatAs(pat', vpat) -> bindings_of_pat (vpat.vpat_name :: acc) pat'
+          | PatTuple pats | PatADT(_, pats) ->
+              List.fold_left bindings_of_pat acc pats
+          | PatStruct(_, field_pats) ->
+              List.fold_left (fun acc (_, pat) -> bindings_of_pat acc pat) acc field_pats
+        in
+        let action_blocks =
+          arms |> List.map (fun (pat, (action : Syntax.ParseTree.stmt)) ->
+            let bindings = bindings_of_pat [] pat in
+            let blk_params = List.map (fun _ -> ANF.gen_var ()) bindings in
+            let var_table =
+              List.map2 (fun name var -> (name, { name = var })) bindings blk_params
+              @ var_table
+            in
+            (bindings,
+              ANF.{
+                blk_label = ANF.gen_label ();
+                blk_params;
+                blk_body = trans_stmt ~table ~var_table ~return action k;
+              }))
+        in
+        let trans_arms =
+          List.map2
+            (fun
+              (params, (block : ANF.block_definition))
+              (pat, (action : Syntax.ParseTree.stmt)) ->
+                  (pat,
+                    fun bindings ->
+                      let args =
+                        List.map
+                          (fun param ->
+                              var_to_value ~src:Syntax.SyntaxError.dummy_span
+                                (List.assoc param bindings))
+                          params
+                      in
+                      ANF.Jump(action.span, block.blk_label, args)))
+            action_blocks arms
+        in
+        let body =
+          trans_expr ~var_table head (Complex (fun head_value ->
+              bind head_value (fun head ->
+                ConvertMatch.trans_match ~table head trans_arms)))
+        in
+        List.fold_right (fun (_, block) body -> ANF.Block(block, body)) action_blocks body
+      in
+      begin match cont with
+      | Simple _ -> trans_match cont
+      | Complex f ->
+          let blk_label = ANF.gen_label () in
+          Block({ blk_label; blk_params = []; blk_body = f var_table },
+            trans_match (Simple (stmt.span, blk_label)))
+      end
   | _ -> failwith "TODO3"
 
 and trans_stmts
+  ~(table : Semantics.Table.table)
   ~(var_table: var_table)
   ~(return: ANF.label)
   (stmts: Syntax.ParseTree.stmt list)
@@ -222,23 +290,33 @@ and trans_stmts
   match stmts with
   | []    -> apply_stmt_cont cont ~var_table
   | s::ss ->
-      trans_stmt ~var_table ~return s (Complex (fun var_table ->
-          trans_stmts ~var_table ~return ss cont))
+      trans_stmt ~table ~var_table ~return s (Complex (fun var_table ->
+          trans_stmts ~table ~var_table ~return ss cont))
 
-let trans_func_impl ~(var_table: var_table) (func_impl:func_impl): ANF.function_definition =
-  let get_arg_symbol (func_arg:func_arg) =
-    match func_arg.farg_symb with Symbol symbol -> symbol
-  in
+let trans_func_impl ~(table : Semantics.Table.table)
+    (func_impl:func_impl): ANF.function_definition =
   let func_label = ANF.gen_label () in
   let (func_decl, stmt) = func_impl in
+  let func_params = List.map (fun _ -> ANF.gen_var ()) func_decl.func_decl_args in
+  let var_table =
+    List.map2 (fun farg var -> (farg.Syntax.ParseTree.farg_name, { name = var }))
+      func_decl.func_decl_args func_params
+  in
     {
       func_src = stmt.span;
       func_name = func_decl.func_decl_name;
-      func_params = List.map get_arg_symbol func_decl.func_decl_args;
+      func_params;
       func_label;
-      func_body = trans_stmt ~var_table ~return:func_label stmt (Simple (stmt.span, func_label));
+      func_body =
+        trans_stmt ~table ~var_table ~return:func_label stmt (Simple (stmt.span, func_label));
     };;
 
-let trans_top_clause (var_table:var_table) (top_clause:top_clause) : ANF.function_definition = match top_clause.shape with
-  | FunctionDef func_impl -> trans_func_impl ~var_table func_impl
-  | _ -> failwith "TODO4";;
+let trans_program ~table (program : top_clause list)
+    : ANF.function_definition list =
+  List.filter_map
+    (fun (top_clause : top_clause) ->
+          match top_clause.shape with
+          | FunctionDef func_impl -> Some (trans_func_impl ~table func_impl)
+          | ADTDef _ | StructDef _ -> None
+          | _ -> failwith "TODO4")
+    program

@@ -1,0 +1,42 @@
+
+type MyBool [
+  True,
+  False
+]
+
+type S {
+  x: Bool,
+  y: Bool
+}
+
+fun f1(x: MyBool) -> I32 {
+  match (x) {
+    True => { return 1; }
+    False => { return 2; }
+  }
+  return 0;
+}
+
+fun f2(x: (MyBool, MyBool)) -> I32 {
+  match (x) {
+    (True, _) => { return 1; }
+    (_, True) => { return 2; }
+    (False, False) => { return 3; }
+  }
+  return 4;
+}
+
+type MyADT [
+  A,
+  B(MyBool, MyBool, MyBool)
+]
+
+fun f3(x: MyADT) -> I32 {
+  match (x) {
+    A => { return 1; }
+    B(True, _, False) => { return 2; }
+    B(False, True, _) => { return 3; }
+    B(x, y, True) => { return 4; }
+  }
+  return 5;
+}

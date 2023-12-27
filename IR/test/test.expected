@@ -3,13 +3,13 @@
   func_body = (ANF.Jump ("basic.dp":2,9-2,10, #1, [(ANF.Int 0)])) }
 
 { ANF.func_src = "basicMain.dp":1,0-8,1; func_name = "main";
-  func_params = [$0]; func_label = #1;
+  func_params = [$1]; func_label = #1;
   func_body =
-  (ANF.Stmt ("basicMain.dp":3,2-3,18, (ANF.Decl ($1, (ANF.Val (ANF.Int 1)))),
+  (ANF.Stmt ("basicMain.dp":3,2-3,18, (ANF.Decl ($2, (ANF.Val (ANF.Int 1)))),
      (ANF.Stmt ("basicMain.dp":4,2-4,17,
-        (ANF.Decl ($2, (ANF.Val (ANF.Int 2)))),
+        (ANF.Decl ($3, (ANF.Val (ANF.Int 2)))),
         (ANF.Stmt ("basicMain.dp":5,2-5,19,
-           (ANF.Decl ($3, (ANF.Val (ANF.Float 3.)))),
+           (ANF.Decl ($4, (ANF.Val (ANF.Float 3.)))),
            (ANF.Jump ("basicMain.dp":1,0-8,1, #1, []))))
         ))
      ))
@@ -242,6 +242,245 @@
                        (ANF.Int 3)))
                     )),
                  (ANF.Jump ("expr.dp":1,0-8,1, #1, []))))
+              ))
+           ))
+        ))
+     ))
+  }
+
+{ ANF.func_src = "match.dp":12,0-18,1; func_name = "f1"; func_params = [$1];
+  func_label = #1;
+  func_body =
+  (ANF.Block (
+     { ANF.blk_label = #2; blk_params = [];
+       blk_body = (ANF.Jump ("match.dp":17,9-17,10, #1, [(ANF.Int 0)])) },
+     (ANF.Block (
+        { ANF.blk_label = #3; blk_params = [];
+          blk_body = (ANF.Jump ("match.dp":14,21-14,22, #1, [(ANF.Int 1)])) },
+        (ANF.Block (
+           { ANF.blk_label = #4; blk_params = [];
+             blk_body =
+             (ANF.Jump ("match.dp":15,22-15,23, #1, [(ANF.Int 2)])) },
+           (ANF.Branch
+              { ANF.br_src = _;
+                br_matched =
+                (ANF.LVal { ANF.lv_var = $1; lv_path = []; lv_src = _ });
+                br_branches =
+                [(1, (ANF.Jump ("match.dp":15,13-15,26, #4, [])));
+                  (0, (ANF.Jump ("match.dp":14,12-14,25, #3, [])))];
+                br_default = None })
+           ))
+        ))
+     ))
+  }
+{ ANF.func_src = "match.dp":20,0-27,1; func_name = "f2"; func_params = [$2];
+  func_label = #5;
+  func_body =
+  (ANF.Block (
+     { ANF.blk_label = #6; blk_params = [];
+       blk_body = (ANF.Jump ("match.dp":26,9-26,10, #5, [(ANF.Int 4)])) },
+     (ANF.Block (
+        { ANF.blk_label = #7; blk_params = [];
+          blk_body = (ANF.Jump ("match.dp":22,26-22,27, #5, [(ANF.Int 1)])) },
+        (ANF.Block (
+           { ANF.blk_label = #8; blk_params = [];
+             blk_body =
+             (ANF.Jump ("match.dp":23,26-23,27, #5, [(ANF.Int 2)])) },
+           (ANF.Block (
+              { ANF.blk_label = #9; blk_params = [];
+                blk_body =
+                (ANF.Jump ("match.dp":24,31-24,32, #5, [(ANF.Int 3)])) },
+              (ANF.Stmt (_,
+                 (ANF.Decl ($4,
+                    (ANF.Val
+                       (ANF.LVal
+                          { ANF.lv_var = $2; lv_path = [(ANF.Field 1)];
+                            lv_src = _ }))
+                    )),
+                 (ANF.Stmt (_,
+                    (ANF.Decl ($3,
+                       (ANF.Val
+                          (ANF.LVal
+                             { ANF.lv_var = $2; lv_path = [(ANF.Field 0)];
+                               lv_src = _ }))
+                       )),
+                    (ANF.Branch
+                       { ANF.br_src = _;
+                         br_matched =
+                         (ANF.LVal
+                            { ANF.lv_var = $3; lv_path = []; lv_src = _ });
+                         br_branches =
+                         [(1,
+                           (ANF.Branch
+                              { ANF.br_src = _;
+                                br_matched =
+                                (ANF.LVal
+                                   { ANF.lv_var = $4; lv_path = [];
+                                     lv_src = _ });
+                                br_branches =
+                                [(1,
+                                  (ANF.Jump ("match.dp":24,22-24,35, #9, [])));
+                                  (0,
+                                   (ANF.Jump ("match.dp":23,17-23,30, #8, 
+                                      [])))
+                                  ];
+                                br_default = None }));
+                           (0, (ANF.Jump ("match.dp":22,17-22,30, #7, [])))];
+                         br_default = None })
+                    ))
+                 ))
+              ))
+           ))
+        ))
+     ))
+  }
+{ ANF.func_src = "match.dp":34,0-42,1; func_name = "f3"; func_params = [$5];
+  func_label = #10;
+  func_body =
+  (ANF.Block (
+     { ANF.blk_label = #11; blk_params = [];
+       blk_body = (ANF.Jump ("match.dp":41,9-41,10, #10, [(ANF.Int 5)])) },
+     (ANF.Block (
+        { ANF.blk_label = #12; blk_params = [];
+          blk_body = (ANF.Jump ("match.dp":36,18-36,19, #10, [(ANF.Int 1)]))
+          },
+        (ANF.Block (
+           { ANF.blk_label = #13; blk_params = [];
+             blk_body =
+             (ANF.Jump ("match.dp":37,34-37,35, #10, [(ANF.Int 2)])) },
+           (ANF.Block (
+              { ANF.blk_label = #14; blk_params = [];
+                blk_body =
+                (ANF.Jump ("match.dp":38,34-38,35, #10, [(ANF.Int 3)])) },
+              (ANF.Block (
+                 { ANF.blk_label = #15; blk_params = [$6; $7];
+                   blk_body =
+                   (ANF.Jump ("match.dp":39,30-39,31, #10, [(ANF.Int 4)])) },
+                 (ANF.Branch
+                    { ANF.br_src = _;
+                      br_matched =
+                      (ANF.LVal { ANF.lv_var = $5; lv_path = []; lv_src = _ });
+                      br_branches =
+                      [(0, (ANF.Jump ("match.dp":36,9-36,22, #12, [])));
+                        (1,
+                         (ANF.Stmt (_,
+                            (ANF.Decl ($10,
+                               (ANF.Val
+                                  (ANF.LVal
+                                     { ANF.lv_var = $5;
+                                       lv_path =
+                                       [(ANF.Field 3); (ANF.AsTag 1)];
+                                       lv_src = _ }))
+                               )),
+                            (ANF.Stmt (_,
+                               (ANF.Decl ($9,
+                                  (ANF.Val
+                                     (ANF.LVal
+                                        { ANF.lv_var = $5;
+                                          lv_path =
+                                          [(ANF.Field 2); (ANF.AsTag 1)];
+                                          lv_src = _ }))
+                                  )),
+                               (ANF.Stmt (_,
+                                  (ANF.Decl ($8,
+                                     (ANF.Val
+                                        (ANF.LVal
+                                           { ANF.lv_var = $5;
+                                             lv_path =
+                                             [(ANF.Field 1); (ANF.AsTag 1)];
+                                             lv_src = _ }))
+                                     )),
+                                  (ANF.Branch
+                                     { ANF.br_src = _;
+                                       br_matched =
+                                       (ANF.LVal
+                                          { ANF.lv_var = $8; lv_path = [];
+                                            lv_src = _ });
+                                       br_branches =
+                                       [(1,
+                                         (ANF.Branch
+                                            { ANF.br_src = _;
+                                              br_matched =
+                                              (ANF.LVal
+                                                 { ANF.lv_var = $9;
+                                                   lv_path = []; lv_src = _ });
+                                              br_branches =
+                                              [(0,
+                                                (ANF.Jump (
+                                                   "match.dp":38,25-38,38,
+                                                   #14, [])))
+                                                ];
+                                              br_default =
+                                              (Some (ANF.Branch
+                                                       { ANF.br_src = _;
+                                                         br_matched =
+                                                         (ANF.LVal
+                                                            { ANF.lv_var =
+                                                              $10;
+                                                              lv_path = [];
+                                                              lv_src = _ });
+                                                         br_branches =
+                                                         [(0,
+                                                           (ANF.Jump (
+                                                              "match.dp":39,21-39,34,
+                                                              #15,
+                                                              [(ANF.LVal
+                                                                  { ANF.lv_var =
+                                                                    $9;
+                                                                    lv_path =
+                                                                    [];
+                                                                    lv_src =
+                                                                    _ });
+                                                                (ANF.LVal
+                                                                   { ANF.lv_var =
+                                                                    $8;
+                                                                    lv_path =
+                                                                    [];
+                                                                    lv_src =
+                                                                    _ })
+                                                                ]
+                                                              )))
+                                                           ];
+                                                         br_default =
+                                                         (Some ANF.Abort) }))
+                                              }));
+                                         (0,
+                                          (ANF.Branch
+                                             { ANF.br_src = _;
+                                               br_matched =
+                                               (ANF.LVal
+                                                  { ANF.lv_var = $10;
+                                                    lv_path = []; lv_src = _
+                                                    });
+                                               br_branches =
+                                               [(1,
+                                                 (ANF.Jump (
+                                                    "match.dp":37,25-37,38,
+                                                    #13, [])));
+                                                 (0,
+                                                  (ANF.Jump (
+                                                     "match.dp":39,21-39,34,
+                                                     #15,
+                                                     [(ANF.LVal
+                                                         { ANF.lv_var = $9;
+                                                           lv_path = [];
+                                                           lv_src = _ });
+                                                       (ANF.LVal
+                                                          { ANF.lv_var = $8;
+                                                            lv_path = [];
+                                                            lv_src = _ })
+                                                       ]
+                                                     )))
+                                                 ];
+                                               br_default = None }))
+                                         ];
+                                       br_default = None })
+                                  ))
+                               ))
+                            )))
+                        ];
+                      br_default = None })
+                 ))
               ))
            ))
         ))
