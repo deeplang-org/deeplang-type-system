@@ -668,12 +668,12 @@ let walk_top (context:context) (clause:top_clause) : unit =
         );
         let core = Hashtbl.create 10 in
         let fields = def.struct_fields in
-        let insert (key, typ, attr) = 
+        let insert index (key, typ, attr) = 
             (* check TyNamed existence *)
             let _ = walk_type context typ in
-            Hashtbl.add core key {typ=typ; attr=attr}
+            Hashtbl.add core key { typ; attr; index }
         in
-        List.iter insert fields;
+        List.iteri insert fields;
         Hashtbl.add table.typ name 
             ( Struct_data(
             { intf = []

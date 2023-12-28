@@ -24,6 +24,7 @@ type adty_data =
 type field_data = 
     { typ : typ
     ; attr : struct_def_field_attr
+    ; index : int
     };;
 type struct_data = 
     { mutable intf : intf_name list
