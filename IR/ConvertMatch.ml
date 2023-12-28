@@ -11,7 +11,7 @@ type transl_arm =
 
 type match_kind =
   | ADT of Syntax.ParseTree.adt_label list
-  | Struct of Syntax.ParseTree.struct_field list
+  | Struct of Syntax.ParseTree.typ_name * Syntax.ParseTree.struct_field list
   | Lit
   | Tuple of int
   | Unknown
@@ -26,12 +26,14 @@ let identify_match (arms : transl_arm list) : match_kind =
     | (Unknown | Tuple _), PatTuple pats -> Tuple (List.length pats)
     | Unknown, PatADT (label, _) -> ADT [ label ]
     | ADT labels, PatADT(label, _) -> ADT (add_to_list label labels)
-    | Unknown, PatStruct (_, field_pats) -> Struct (List.map fst field_pats)
-    | Struct fields, PatStruct (_, field_pats) ->
-        Struct
-          (List.fold_left
-              (fun fields (field, _) -> add_to_list field fields)
-              fields field_pats)
+    | Unknown, PatStruct (tname, field_pats) -> Struct (tname, List.map fst field_pats)
+    | Struct (tname, fields), PatStruct (_, field_pats) ->
+        let fields =
+          List.fold_left
+            (fun fields (field, _) -> add_to_list field fields)
+            fields field_pats
+        in
+        Struct (tname, fields)
     | _ -> failwith "impossible"
   in
   List.fold_left
@@ -169,8 +171,39 @@ let rec trans_multi_match ~(table : Semantics.Table.table) (heads : ANF.variable
             ; br_matched = LVal { lv_var = head; lv_path = []; lv_src = dummy_span }
             ; br_branches = branches
             ; br_default = if is_exhausitive then None else Some default }
+      | Struct (type_name, used_fields) ->
+          let new_heads = List.map (fun _ -> ANF.gen_var ()) used_fields in
+          let new_arms =
+            arms |> List.map (fun { bindings; pats; action } ->
+              match pats with
+              | [] -> failwith "impossible"
+              | pat :: pats ->
+                  let pat, bindings = bind_pat bindings head pat in
+                  let new_pats =
+                    match pat.shape with
+                    | PatWildcard | PatVar _ -> List.map (fun _ -> wildcard_pat) new_heads
+                    | PatStruct (_, field_pats) ->
+                        used_fields |> List.map (fun field ->
+                          match List.assoc field field_pats with
+                          | pat -> pat
+                          | exception Not_found -> wildcard_pat)
+                    | _ -> failwith "impossible"
+                  in
+                  { bindings; pats = new_pats @ pats; action })
+          in
+          let[@warning "-partial-match"] (Semantics.Table.Struct_data { core; _ }) =
+            Hashtbl.find table.typ type_name
+          in
+          List.fold_left2
+            (fun body new_head label ->
+                let index = (Hashtbl.find core label).index in
+                let lv: ANF.lvalue =
+                  { lv_var = head; lv_path = [ Field index ]; lv_src = dummy_span }
+                in
+                ANF.Stmt(dummy_span, Decl(new_head, Val(LVal lv)), body))
+            (trans_multi_match ~table (new_heads @ heads) new_arms)
+            new_heads used_fields
       | Lit -> failwith "WIP"
-      | Struct _ -> failwith "WIP"
 
 
 let trans_match ~(table : Semantics.Table.table) (head : ANF.variable)

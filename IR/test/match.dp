@@ -40,3 +40,20 @@ fun f3(x: MyADT) -> I32 {
   }
   return 5;
 }
+
+type MyStruct {
+  x: I32,
+  y: MyADT,
+  z: MyBool,
+  w: I32,
+  v: F64
+}
+
+fun f4(x: MyStruct) -> I32 {
+  match (x) {
+    MyStruct { x: x, y: A, z: True, w: w } => { return x + w; }
+    MyStruct { y:B(True, _, _) } => { return 2; }
+    MyStruct { z: False } => { return 3; } 
+  }
+  return 4;
+}
