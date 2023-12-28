@@ -80,22 +80,12 @@ let bind (value : ANF.value) (f : ANF.variable -> ANF.program) : ANF.program =
       let var = ANF.gen_var () in
       Stmt( Syntax.SyntaxError.dummy_span, Decl(var, Val value), f var)
 
-let trans_lit (lit : Syntax.ParseTree.literal) : ANF.value =
-  match lit with
-  | LitUnit       -> Int 0
-  | LitBool true  -> Int 1
-  | LitBool false -> Int 0
-  | LitInt i      -> Int i
-  | LitFloat f    -> Float f
-  | LitChar ch    -> Int ch
-  | LitString str -> String str
-
 let rec trans_expr
   ~(var_table: var_table)
   (expr: Syntax.ParseTree.expr)
   (cont: expr_continuation) : ANF.program =
   match expr.shape with
-  | ExpLit lit -> apply_expr_cont ~span:expr.span cont (trans_lit lit)
+  | ExpLit lit -> apply_expr_cont ~span:expr.span cont (ConvertMatch.trans_lit lit)
   | ExpVar var ->
       apply_expr_cont ~span:expr.span cont
         (var_to_value ~src:expr.span (List.assoc var var_table).name)

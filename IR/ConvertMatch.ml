@@ -12,7 +12,7 @@ type transl_arm =
 type match_kind =
   | ADT of Syntax.ParseTree.adt_label list
   | Struct of Syntax.ParseTree.typ_name * Syntax.ParseTree.struct_field list
-  | Lit
+  | Lit of Syntax.ParseTree.literal list
   | Tuple of int
   | Unknown
 
@@ -22,7 +22,8 @@ let identify_match (arms : transl_arm list) : match_kind =
     match curr_kind, pat.shape with
     | _, (PatWildcard | PatVar _) -> curr_kind
     | _, PatAs (pat', _) -> update_kind curr_kind pat'
-    | (Unknown | Lit), PatLit _ -> Lit
+    | Unknown, PatLit lit -> Lit [ lit ]
+    | Lit lits, PatLit lit -> Lit (add_to_list lit lits)
     | (Unknown | Tuple _), PatTuple pats -> Tuple (List.length pats)
     | Unknown, PatADT (label, _) -> ADT [ label ]
     | ADT labels, PatADT(label, _) -> ADT (add_to_list label labels)
@@ -39,6 +40,17 @@ let identify_match (arms : transl_arm list) : match_kind =
   List.fold_left
     (fun curr_kind { pats; _ } -> update_kind curr_kind (List.hd pats))
     Unknown arms
+
+
+let trans_lit (lit : Syntax.ParseTree.literal) : ANF.value =
+  match lit with
+  | LitUnit       -> Int 0
+  | LitBool true  -> Int 1
+  | LitBool false -> Int 0
+  | LitInt i      -> Int i
+  | LitFloat f    -> Float f
+  | LitChar ch    -> Int ch
+  | LitString str -> String str
 
 
 let dummy_span = Syntax.SyntaxError.dummy_span
@@ -211,7 +223,55 @@ let rec trans_multi_match ~(table : Semantics.Table.table) (heads : ANF.variable
                 ANF.Stmt(dummy_span, Decl(new_head, Val(LVal lv)), body))
             (trans_multi_match ~table (new_heads @ heads) new_arms)
             new_heads used_fields
-      | Lit -> failwith "WIP"
+      | Lit lits ->
+          let is_exhausitive =
+            match lits with
+            | [ LitBool true; LitBool false ] | [ LitBool false; LitBool true ] -> true
+            | [ LitUnit ] -> true
+            | _ -> false
+          in
+          let arms_of_lit =
+            List.to_seq lits
+            |> Seq.map (fun lit -> (lit, ref []))
+            |> Hashtbl.of_seq
+          in
+          let default_arms = ref [] in
+          let add_to_every_branch bindings (rest : pattern list) action =
+            let new_arm = { bindings; action; pats = rest } in
+            Hashtbl.iter (fun _ arms -> arms := new_arm :: !arms) arms_of_lit;
+            if not is_exhausitive then
+              default_arms := new_arm :: !default_arms
+          in
+          arms |> List.iter (fun { bindings; pats; action } ->
+            match pats with
+            | [] -> failwith "impossible"
+            | pat :: rest ->
+                let pat, bindings = bind_pat bindings head pat in
+                match pat.shape with
+                | PatWildcard | PatVar _ -> add_to_every_branch bindings rest action
+                | PatLit lit ->
+                    let new_arm = { bindings; pats = rest; action } in
+                    let arms = Hashtbl.find arms_of_lit lit in
+                    arms := new_arm :: !arms
+                | _ -> failwith "impossible");
+          let head_value : ANF.value =
+            LVal { lv_var = head; lv_path = []; lv_src = dummy_span }
+          in
+          List.fold_left
+            (fun body lit ->
+                let arms = Hashtbl.find arms_of_lit lit in
+                let result_var = ANF.gen_var () in
+                ANF.Stmt(
+                  dummy_span,
+                  Decl (result_var, BinOp(BinOpCompare BinOpEq, head_value, trans_lit lit)),
+                  Branch
+                    { br_src = dummy_span
+                    ; br_matched =
+                        LVal { lv_var = result_var; lv_path = []; lv_src = dummy_span }
+                    ; br_branches = [ 1, trans_multi_match ~table heads (List.rev !arms) ]
+                    ; br_default = Some body }))
+            (trans_multi_match ~table heads !default_arms)
+            lits
 
 
 let trans_match ~(table : Semantics.Table.table) (head : ANF.variable)

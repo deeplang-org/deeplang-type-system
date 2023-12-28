@@ -172,9 +172,9 @@ fun f3($5) -> #10 -- "match.dp":34,0-42,1 =
       0 =>
         jump #15 ($9, $8) -- "match.dp":39,21-39,34
 
-fun f4($11) -> #16 -- "match.dp":52,0-59,1 =
+fun f4($11) -> #16 -- "match.dp":52,0-60,1 =
   block #17() =
-    jump #16 (4) -- "match.dp":58,9-58,10
+    jump #16 (5) -- "match.dp":59,9-59,10
   in
   block #18($12, $13) =
     $14 = (ParseTree.BinOpCalculate ParseTree.BinOpAdd)($13, $12) -- "match.dp":54,55-54,60
@@ -185,6 +185,9 @@ fun f4($11) -> #16 -- "match.dp":52,0-59,1 =
   in
   block #20() =
     jump #16 (3) -- "match.dp":56,38-56,39
+  in
+  block #21() =
+    jump #16 (4) -- "match.dp":57,44-57,45
   in
   $18 = $11.3 -- _
   $17 = $11.2 -- _
@@ -208,7 +211,48 @@ fun f4($11) -> #16 -- "match.dp":52,0-59,1 =
       match $17 -- _:
       1 =>
         jump #20 () -- "match.dp":56,29-56,42
+      0 =>
+        $22 = (ParseTree.BinOpCompare ParseTree.BinOpEq)($18, 42) -- _
+        match $22 -- _:
+        1 =>
+          jump #21 () -- "match.dp":57,35-57,48
+        _ =>
+          abort!
+
+fun f5($23) -> #22 -- "match.dp":62,0-71,1 =
+  block #23() =
+    jump #22 (3) -- "match.dp":70,9-70,10
+  in
+  block #24() =
+    jump #22 (0) -- "match.dp":64,18-64,19
+  in
+  block #25() =
+    jump #22 (42) -- "match.dp":65,19-65,21
+  in
+  block #26() =
+    jump #22 (43) -- "match.dp":66,19-66,21
+  in
+  block #27() =
+    jump #22 (1) -- "match.dp":67,18-67,19
+  in
+  block #28() =
+    jump #22 (2) -- "match.dp":68,18-68,19
+  in
+  $26 = (ParseTree.BinOpCompare ParseTree.BinOpEq)($23, 0) -- _
+  match $26 -- _:
+  1 =>
+    jump #24 () -- "match.dp":64,9-64,22
+  _ =>
+    $25 = (ParseTree.BinOpCompare ParseTree.BinOpEq)($23, 42) -- _
+    match $25 -- _:
+    1 =>
+      jump #25 () -- "match.dp":65,10-65,24
+    _ =>
+      $24 = (ParseTree.BinOpCompare ParseTree.BinOpEq)($23, 1) -- _
+      match $24 -- _:
+      1 =>
+        jump #27 () -- "match.dp":67,9-67,22
       _ =>
-        abort!
+        jump #28 () -- "match.dp":68,9-68,22
 
 

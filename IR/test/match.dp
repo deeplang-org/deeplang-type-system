@@ -54,6 +54,18 @@ fun f4(x: MyStruct) -> I32 {
     MyStruct { x: x, y: A, z: True, w: w } => { return x + w; }
     MyStruct { y:B(True, _, _) } => { return 2; }
     MyStruct { z: False } => { return 3; } 
+    MyStruct { w: 42, z: True } => { return 4; }
   }
-  return 4;
+  return 5;
+}
+
+fun f5(x: I32) -> I32 {
+  match (x) {
+    0 => { return 0; }
+    42 => { return 42; }
+    42 => { return 43; }
+    1 => { return 1; }
+    _ => { return 2; }
+  }
+  return 3;
 }
