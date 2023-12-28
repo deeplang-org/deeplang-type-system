@@ -52,15 +52,23 @@ let rec bind_pat bindings value (pat : pattern) =
   | PatAs(pat', vpat) -> bind_pat ((vpat.vpat_name, value) :: bindings) value pat'
   | _ -> (pat, bindings)
 
+let rec pat_is_irrefutable (pat : pattern) =
+  match pat.shape with
+  | PatVar _ | PatWildcard -> true
+  | PatAs (pat', _) -> pat_is_irrefutable pat'
+  | _ -> false
+
 let rec trans_multi_match ~(table : Semantics.Table.table) (heads : ANF.variable list)
     (arms : transl_arm list) : ANF.program =
   match heads, arms with
   | _, [] -> Abort
   | [], { bindings; action; _ } :: _ -> action bindings
-  | [ _ ], { pats = [ { shape = PatWildcard; _ } ]; bindings; action } :: _ ->
+  | _, { pats; bindings; action } :: _ when List.for_all pat_is_irrefutable pats ->
+      let bindings =
+        List.fold_left2
+          (fun bindings head pat -> snd (bind_pat bindings head pat)) bindings heads pats
+      in
       action bindings
-  | [ head ], { pats = [ { shape = PatVar vpat; _ } ]; bindings; action } :: _ ->
-      action ((vpat.vpat_name, head) :: bindings)
   | head :: heads, arms ->
       match identify_match arms with
       | Unknown ->
