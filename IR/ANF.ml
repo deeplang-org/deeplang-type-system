@@ -49,12 +49,14 @@ and path = path_node list
         i.e. a tuple, a struct, an ADT or a method dictionary}
         {li [Deref] selects the address a pointer points to}
         {li [AsTag l] selects the data associated with label [l] in an ADT}
+        {li [Tag] selects the tag/label of an ADT value}
         {li [Method m] selects the implementation of method [m] from an interface implementation}
     } *)
 and path_node =
     | Field  of int
     | Deref
     | AsTag  of int
+    | Tag
     | Method of string
 
 (** A [value] in the ANF IR is something immediately available without needing
@@ -153,6 +155,7 @@ let pp_lvalue fmt lv =
         | Field k -> Format.fprintf fmt ".%d" k
         | Deref -> Format.fprintf fmt ".*"
         | AsTag t -> Format.fprintf fmt ".as(%d)" t
+        | Tag -> Format.fprintf fmt ".tag"
         | Method m -> Format.fprintf fmt ".%s" m)
     (List.rev lv.lv_path)
 
