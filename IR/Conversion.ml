@@ -190,13 +190,13 @@ and trans_stmt
       (* while cond { body }; rest
 
         ==>
-        block #cont_break {
+        block #break_loop {
           loop #cont_loop {
             if cond {
               body;
               jump #cont_loop;
             } else {
-              jump #cont_break;
+              jump #break_loop;
             }
           }
         } rest *)
