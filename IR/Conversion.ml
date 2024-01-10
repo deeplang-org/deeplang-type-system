@@ -189,28 +189,34 @@ and trans_stmt
   | StmtWhile (cond, body) ->
       (* while cond { body }; rest
 
-         ==>
-
-         loop #loop {
-           if cond {
-             body;
-             jump #loop;
-           } else {
-             rest
-           }
-         } *)
-      let label = ANF.gen_label () in
+        ==>
+        block #cont_break {
+          loop #cont_loop {
+            if cond {
+              body;
+              jump #cont_loop;
+            } else {
+              jump #cont_break;
+            }
+          }
+        } rest *)
+      let label_break = ANF.gen_label () in
+      let label_cont = ANF.gen_label () in
       let loop_body =
         trans_expr ~var_table cond (Complex (fun cond_value ->
             Branch {
               br_src = stmt.span;
               br_matched = cond_value;
               br_branches =
-                [ (1, trans_stmt ~table ~var_table ~return body (Simple (stmt.span, label))) ];
-              br_default = Some (apply_stmt_cont cont ~var_table);
+                [ (1, trans_stmt ~table ~var_table ~return body (Simple (stmt.span, label_cont))) ];
+              br_default = Some ( Jump(stmt.span, label_break, []));
             }))
       in
-      Loop { blk_label = label; blk_params = []; blk_body = loop_body }
+      Block
+        ( { blk_label = label_break
+          ; blk_params = []
+          ; blk_body = Loop { blk_label = label_cont; blk_params = []; blk_body = loop_body } }
+        , (apply_stmt_cont cont ~var_table))
   | StmtMatch (head, arms) ->
       let trans_match k =
         let rec bindings_of_pat acc (pat : Syntax.ParseTree.pattern) =
@@ -269,6 +275,8 @@ and trans_stmt
           Block({ blk_label; blk_params = []; blk_body = f var_table },
             trans_match (Simple (stmt.span, blk_label)))
       end
+  | StmtBreak -> failwith "TODO Break"
+  | StmtContinue -> Jump(stmt.span, return, [])
   | _ -> failwith "TODO3"
 
 and trans_stmts
