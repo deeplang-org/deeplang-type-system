@@ -193,16 +193,20 @@ and trans_stmt
       (* while cond { body }; rest
 
         ==>
-        block #break_loop {
-          loop #cont_loop {
-            if cond {
-              body;
-              jump #cont_loop;
-            } else {
-              jump #break_loop;
-            }
+
+        loop #cont_loop {
+          block #break_loop {
+            rest;
           }
-        } rest *)
+          in
+          if cond {
+            body;
+            jump #cont_loop;
+          } else {
+            jump #break_loop;
+          }
+        }
+      *)
       let label_break = ANF.gen_label () in
       let label_cont = ANF.gen_label () in
       let loop_body =
