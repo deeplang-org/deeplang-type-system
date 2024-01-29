@@ -10,28 +10,28 @@ fun main($1) -> #1 -- "basicMain.dp":1,0-8,1 =
 
 
 fun useContinue() -> #1 -- "breakContinue.dp":1,0-7,1 =
-  block #2() =
-    loop #3():
-      match 1 -- "breakContinue.dp":2,2-6,3:
-      1 =>
-        $1 = 1 -- "breakContinue.dp":3,4-3,15
-        jump #3 () -- "breakContinue.dp":4,4-4,13
-      _ =>
-        jump #2 () -- "breakContinue.dp":2,2-6,3
-  in
-  jump #1 () -- "breakContinue.dp":1,0-7,1
+  loop #2():
+    block #3() =
+      jump #1 () -- "breakContinue.dp":1,0-7,1
+    in
+    match 1 -- "breakContinue.dp":2,2-6,3:
+    1 =>
+      $1 = 1 -- "breakContinue.dp":3,4-3,15
+      jump #2 () -- "breakContinue.dp":4,4-4,13
+    _ =>
+      jump #3 () -- "breakContinue.dp":2,2-6,3
 
 fun useBreak() -> #4 -- "breakContinue.dp":9,0-15,1 =
-  block #5() =
-    loop #6():
-      match 1 -- "breakContinue.dp":10,2-14,3:
-      1 =>
-        $2 = 1 -- "breakContinue.dp":11,4-11,15
-        jump #5 () -- "breakContinue.dp":12,4-12,10
-      _ =>
-        jump #5 () -- "breakContinue.dp":10,2-14,3
-  in
-  jump #4 () -- "breakContinue.dp":9,0-15,1
+  loop #5():
+    block #6() =
+      jump #4 () -- "breakContinue.dp":9,0-15,1
+    in
+    match 1 -- "breakContinue.dp":10,2-14,3:
+    1 =>
+      $2 = 1 -- "breakContinue.dp":11,4-11,15
+      jump #6 () -- "breakContinue.dp":12,4-12,10
+    _ =>
+      jump #6 () -- "breakContinue.dp":10,2-14,3
 
 
 fun f() -> #1 -- "controlFlow.dp":1,0-19,1 =

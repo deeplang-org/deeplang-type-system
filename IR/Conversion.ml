@@ -207,23 +207,27 @@ and trans_stmt
           }
         }
       *)
-      let label_break = ANF.gen_label () in
       let label_cont = ANF.gen_label () in
+      let label_break = ANF.gen_label () in
       let loop_body =
         trans_expr ~var_table cond (Complex (fun cond_value ->
-            Branch {
-              br_src = stmt.span;
-              br_matched = cond_value;
-              br_branches =
-                [ (1, trans_stmt ~table ~var_table ~labels:(label_break::label_cont::labels) ~return body (Simple (stmt.span, label_cont))) ];
-              br_default = Some ( Jump(stmt.span, label_break, []));
-            }))
+          Branch {
+            br_src = stmt.span;
+            br_matched = cond_value;
+            br_branches =
+              [ (1, trans_stmt ~table ~var_table ~labels:(label_break::label_cont::labels) ~return body (Simple (stmt.span, label_cont))) ];
+            br_default = Some ( Jump(stmt.span, label_break, []));
+          }))
       in
-      Block
-        ( { blk_label = label_break
-          ; blk_params = []
-          ; blk_body = Loop { blk_label = label_cont; blk_params = []; blk_body = loop_body } }
-        , (apply_stmt_cont cont ~var_table))
+      let loop_body_with_break =
+        ANF.Block
+          ( { blk_label = label_break
+            ; blk_params = []
+            ; blk_body = (apply_stmt_cont cont ~var_table) }
+          , loop_body )
+      in
+      Loop { blk_label = label_cont; blk_params = []; blk_body = loop_body_with_break }
+        (* (apply_stmt_cont cont ~var_table) *)
   | StmtMatch (head, arms) ->
       let trans_match k =
         let rec bindings_of_pat acc (pat : Syntax.ParseTree.pattern) =
