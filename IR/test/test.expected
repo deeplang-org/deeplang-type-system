@@ -39,46 +39,55 @@ fun f() -> #1 -- "controlFlow.dp":1,0-19,1 =
     jump #2 () -- "controlFlow.dp":2,2-6,3
 
 fun g() -> #5 -- "controlFlow.dp":21,0-40,1 =
-  loop #6():
-    match 1 -- "controlFlow.dp":22,2-27,3:
-    1 =>
-      block #11() =
-        $8 = 1 -- "controlFlow.dp":26,4-26,15
-        jump #6 () -- "controlFlow.dp":22,2-27,3
-      in
-      match 1 -- "controlFlow.dp":23,4-25,5:
+  block #6() =
+    loop #7():
+      match 1 -- "controlFlow.dp":22,2-27,3:
       1 =>
-        jump #5 (0) -- "controlFlow.dp":24,13-24,14
-      _ =>
-        jump #11 () -- "controlFlow.dp":23,4-25,5
-    _ =>
-      loop #7():
-        match 1 -- "controlFlow.dp":28,2-39,3:
+        block #8() =
+          $6 = 1 -- "controlFlow.dp":26,4-26,15
+          jump #7 () -- "controlFlow.dp":22,2-27,3
+        in
+        match 1 -- "controlFlow.dp":23,4-25,5:
         1 =>
-          $6 = 2 -- "controlFlow.dp":29,4-29,15
-          block #8() =
-            loop #9():
+          jump #5 (0) -- "controlFlow.dp":24,13-24,14
+        _ =>
+          jump #8 () -- "controlFlow.dp":23,4-25,5
+      _ =>
+        jump #6 () -- "controlFlow.dp":22,2-27,3
+  in
+  block #9() =
+    loop #10():
+      match 1 -- "controlFlow.dp":28,2-39,3:
+      1 =>
+        $7 = 2 -- "controlFlow.dp":29,4-29,15
+        block #11() =
+          block #12() =
+            loop #13():
               match 1 -- "controlFlow.dp":33,4-38,5:
               1 =>
-                block #10() =
-                  $7 = 5 -- "controlFlow.dp":37,6-37,17
-                  jump #9 () -- "controlFlow.dp":33,4-38,5
+                block #14() =
+                  $8 = 5 -- "controlFlow.dp":37,6-37,17
+                  jump #13 () -- "controlFlow.dp":33,4-38,5
                 in
                 match 1 -- "controlFlow.dp":34,6-36,7:
                 1 =>
                   jump #5 (4) -- "controlFlow.dp":35,15-35,16
                 _ =>
-                  jump #10 () -- "controlFlow.dp":34,6-36,7
+                  jump #14 () -- "controlFlow.dp":34,6-36,7
               _ =>
-                jump #7 () -- "controlFlow.dp":28,2-39,3
+                jump #12 () -- "controlFlow.dp":33,4-38,5
           in
-          match 1 -- "controlFlow.dp":30,4-32,5:
-          1 =>
-            jump #5 (3) -- "controlFlow.dp":31,13-31,14
-          _ =>
-            jump #8 () -- "controlFlow.dp":30,4-32,5
+          jump #10 () -- "controlFlow.dp":28,2-39,3
+        in
+        match 1 -- "controlFlow.dp":30,4-32,5:
+        1 =>
+          jump #5 (3) -- "controlFlow.dp":31,13-31,14
         _ =>
-          jump #5 () -- "controlFlow.dp":21,0-40,1
+          jump #11 () -- "controlFlow.dp":30,4-32,5
+      _ =>
+        jump #9 () -- "controlFlow.dp":28,2-39,3
+  in
+  jump #5 () -- "controlFlow.dp":21,0-40,1
 
 
 fun main() -> #1 -- "expr.dp":1,0-8,1 =
