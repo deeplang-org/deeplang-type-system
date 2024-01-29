@@ -101,6 +101,9 @@ let rec trans_expr
 and trans_stmt
   ~(table : Semantics.Table.table)
   ~(var_table: var_table)
+  (* [labels] is the list of labels that encapsulates the current scope.
+     For example, new labels are introduced whenever a block/if/loop is encountered *)
+  ~(labels: ANF.label list)
   (* [return] is the label of current function *)
   ~(return: ANF.label)
   (stmt: Syntax.ParseTree.stmt)
@@ -116,7 +119,7 @@ and trans_stmt
                we should discard the new variables declared in [stmt_list]. *)
             Complex (fun _ -> f var_table)
       in
-      trans_stmts ~table ~var_table ~return stmt_list cont'
+      trans_stmts ~table ~var_table ~labels ~return stmt_list cont'
   | StmtExpr expr ->
       trans_expr ~var_table expr (Complex (fun _ ->
           (* the result of [StmtExpr] is unused, discard it *)
@@ -147,10 +150,10 @@ and trans_stmt
   | StmtIf (cond, conseq, alter) ->
       trans_expr ~var_table cond (Complex (fun cond_value ->
           let[@inline] trans_if (k : stmt_continuation) : ANF.program =
-            let conseq = trans_stmt ~table ~var_table ~return conseq k in
+            let conseq = trans_stmt ~table ~var_table ~labels ~return conseq k in
             let alter =
               match alter with
-              | Some alter -> trans_stmt ~table ~var_table ~return alter k
+              | Some alter -> trans_stmt ~table ~var_table ~labels ~return alter k
               | None -> apply_stmt_cont k ~var_table
             in
             Branch {
@@ -208,7 +211,7 @@ and trans_stmt
               br_src = stmt.span;
               br_matched = cond_value;
               br_branches =
-                [ (1, trans_stmt ~table ~var_table ~return body (Simple (stmt.span, label_cont))) ];
+                [ (1, trans_stmt ~table ~var_table ~labels ~return body (Simple (stmt.span, label_cont))) ];
               br_default = Some ( Jump(stmt.span, label_break, []));
             }))
       in
@@ -241,7 +244,7 @@ and trans_stmt
               ANF.{
                 blk_label = ANF.gen_label ();
                 blk_params;
-                blk_body = trans_stmt ~table ~var_table ~return action k;
+                blk_body = trans_stmt ~table ~var_table ~labels ~return action k;
               }))
         in
         let trans_arms =
@@ -282,14 +285,15 @@ and trans_stmt
 and trans_stmts
   ~(table : Semantics.Table.table)
   ~(var_table: var_table)
+  ~(labels: ANF.label list)
   ~(return: ANF.label)
   (stmts: Syntax.ParseTree.stmt list)
   (cont: stmt_continuation): ANF.program =
   match stmts with
   | []    -> apply_stmt_cont cont ~var_table
   | s::ss ->
-      trans_stmt ~table ~var_table ~return s (Complex (fun var_table ->
-          trans_stmts ~table ~var_table ~return ss cont))
+      trans_stmt ~table ~var_table ~labels ~return s (Complex (fun var_table ->
+          trans_stmts ~table ~var_table ~labels ~return ss cont))
 
 let trans_func_impl ~(table : Semantics.Table.table)
     (func_impl:func_impl): ANF.function_definition =
@@ -306,7 +310,7 @@ let trans_func_impl ~(table : Semantics.Table.table)
       func_params;
       func_label;
       func_body =
-        trans_stmt ~table ~var_table ~return:func_label stmt (Simple (stmt.span, func_label));
+        trans_stmt ~table ~var_table ~labels:[] ~return:func_label stmt (Simple (stmt.span, func_label));
     };;
 
 let trans_program ~table (program : top_clause list)
