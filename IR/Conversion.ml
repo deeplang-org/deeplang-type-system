@@ -102,7 +102,7 @@ and trans_stmt
   ~(table : Semantics.Table.table)
   ~(var_table: var_table)
   (* [labels] is the list of labels that encapsulates the current scope.
-     For example, new labels are introduced whenever a block/if/loop is encountered *)
+     For example, new labels are introduced whenever a while loop is encountered *)
   ~(labels: ANF.label list)
   (* [return] is the label of current function *)
   ~(return: ANF.label)
@@ -211,7 +211,7 @@ and trans_stmt
               br_src = stmt.span;
               br_matched = cond_value;
               br_branches =
-                [ (1, trans_stmt ~table ~var_table ~labels ~return body (Simple (stmt.span, label_cont))) ];
+                [ (1, trans_stmt ~table ~var_table ~labels:(label_break::label_cont::labels) ~return body (Simple (stmt.span, label_cont))) ];
               br_default = Some ( Jump(stmt.span, label_break, []));
             }))
       in
@@ -278,8 +278,8 @@ and trans_stmt
           Block({ blk_label; blk_params = []; blk_body = f var_table },
             trans_match (Simple (stmt.span, blk_label)))
       end
-  | StmtBreak -> failwith "TODO Break"
-  | StmtContinue -> Jump(stmt.span, return, [])
+  | StmtBreak -> Jump(stmt.span, List.hd labels, [])
+  | StmtContinue -> Jump(stmt.span, List.hd (List.tl labels), [])
   | _ -> failwith "TODO3"
 
 and trans_stmts
