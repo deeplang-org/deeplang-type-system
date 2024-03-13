@@ -56,6 +56,11 @@ let apply_expr_cont ~span k value : ANF.program =
   | Simple label -> Jump(span, label, [ value ])
   | Complex f -> f value
 
+let apply_expr_list_cont ~span (k : ANF.value list expr_continuation) values : ANF.program =
+  match k with
+  | Simple label -> Jump(span, label, values)
+  | Complex f -> f values
+
 (* [stmt_continuation] is similar to [expr_continuation],
    except that it is the continuation for statements.
    Since statements do not have a result value, it does not need an value as argument.
@@ -80,6 +85,17 @@ let bind (value : ANF.value) (f : ANF.variable -> ANF.program) : ANF.program =
       let var = ANF.gen_var () in
       Stmt( Syntax.SyntaxError.dummy_span, Decl(var, Val value), f var)
 
+let rec traverse_expr
+  ~(trans_worker: Syntax.ParseTree.expr -> ANF.value expr_continuation -> ANF.program)
+  ~span
+  (expr_list: Syntax.ParseTree.expr list)
+  (cont: ANF.value list expr_continuation) : ANF.program = match expr_list with
+    | [] -> apply_expr_list_cont ~span cont []
+    | expr::rest -> trans_worker expr (
+        Complex (fun expr_value -> traverse_expr ~trans_worker ~span rest (
+          Complex (fun rest_values -> apply_expr_list_cont ~span cont (expr_value::rest_values))
+      )))
+
 let rec trans_expr
   ~(var_table: var_table)
   (expr: Syntax.ParseTree.expr)
@@ -102,9 +118,10 @@ let rec trans_expr
           Stmt(expr.span, Decl(result_var, UnOp(op, un_value)), 
               apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)
           )))
-  | ExpTuple (elem, rest) -> 
-      trans_expr ~var_table elem (Complex (fun elem_value -> 
-          ))
+  | ExpTuple elems ->
+    traverse_expr ~trans_worker:(trans_expr ~var_table) ~span:expr.span elems (Complex 
+      (fun value_list -> failwith "TODO"
+    ))
   (* | ExpIf (cond, fwd, els) -> *)
   | _ -> failwith "TODO0"
 
