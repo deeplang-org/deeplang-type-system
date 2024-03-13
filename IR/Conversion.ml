@@ -46,9 +46,9 @@ let var_to_value ~src (var : ANF.variable) : ANF.value =
    However for the special cases where the continuation is [fun value -> Jump(label, value)],
    we represent it as [Simple label].
    This is used to simplify the generated ANF when translating control flow constructs. *)
-type expr_continuation =
+type 'v expr_continuation =
   | Simple  of ANF.label
-  | Complex of (ANF.value -> ANF.program)
+  | Complex of ('v -> ANF.program)
 
 (* feed a value to an [expr_continuation] and obtain a complete program *)
 let apply_expr_cont ~span k value : ANF.program =
@@ -83,7 +83,7 @@ let bind (value : ANF.value) (f : ANF.variable -> ANF.program) : ANF.program =
 let rec trans_expr
   ~(var_table: var_table)
   (expr: Syntax.ParseTree.expr)
-  (cont: expr_continuation) : ANF.program =
+  (cont: ANF.value expr_continuation) : ANF.program =
   match expr.shape with
   | ExpLit lit -> apply_expr_cont ~span:expr.span cont (ConvertMatch.trans_lit lit)
   | ExpVar var ->
@@ -96,6 +96,16 @@ let rec trans_expr
               Stmt( expr.span, Decl(result_var, BinOp(op, lhs_value, rhs_value)),
                 apply_expr_cont ~span:expr.span cont
                   (var_to_value ~src:expr.span result_var))))))
+  | ExpUnOp (op, unval) ->
+      trans_expr ~var_table unval (Complex (fun un_value ->
+          let result_var = ANF.gen_var () in
+          Stmt(expr.span, Decl(result_var, UnOp(op, un_value)), 
+              apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)
+          )))
+  | ExpTuple (elem, rest) -> 
+      trans_expr ~var_table elem (Complex (fun elem_value -> 
+          ))
+  (* | ExpIf (cond, fwd, els) -> *)
   | _ -> failwith "TODO0"
 
 and trans_stmt
