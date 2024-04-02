@@ -93,7 +93,7 @@ let rec traverse_expr
     | [] -> apply_expr_list_cont ~span cont []
     | expr::rest -> trans_worker expr (
         Complex (fun expr_value -> traverse_expr ~trans_worker ~span rest (
-          Complex (fun rest_values -> apply_expr_list_cont ~span cont (expr_value::rest_values))
+          Complex (fun rest_values -> apply_expr_list_cont ~span cont (expr_value::rest_values)) 
       )))
 
 let rec trans_expr
@@ -122,7 +122,7 @@ let rec trans_expr
       traverse_expr ~trans_worker:(trans_expr ~var_table) ~span:expr.span elems (Complex 
       (fun value_list -> 
          let result_var = ANF.gen_var () in
-         Stmt(expr.span, Decl(result_var, MkData(Tuple(), value_list)),
+         Stmt(expr.span, Decl(result_var, MkData(Tuple(List.length(value_list)), value_list)),
          apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
     ))
   (* | ExpIf (cond, fwd, els) ->  *)
