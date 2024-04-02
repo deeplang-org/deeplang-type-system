@@ -119,10 +119,12 @@ let rec trans_expr
               apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)
           )))
   | ExpTuple elems ->
-    traverse_expr ~trans_worker:(trans_expr ~var_table) ~span:expr.span elems (Complex 
-      (fun value_list -> failwith "TODO"
+      traverse_expr ~trans_worker:(trans_expr ~var_table) ~span:expr.span elems (Complex 
+      (fun value_list -> 
+         let result_var = ANF.gen_var () in
+         Stmt(expr.span, Decl(result_var, MkData(Tuple(), )))
     ))
-  (* | ExpIf (cond, fwd, els) -> *)
+  (* | ExpIf (cond, fwd, els) ->  *)
   | _ -> failwith "TODO0"
 
 and trans_stmt
