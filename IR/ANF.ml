@@ -5,6 +5,7 @@ let pp_variable fmt var = Format.fprintf fmt "$%d" var
 type label = int
 let pp_label fmt lbl = Format.fprintf fmt "#%d" lbl
 
+
 type func_name = Syntax.ParseTree.func_name [@@deriving show]
 type adt_label = Syntax.ParseTree.adt_label [@@deriving show]
 type typ_name  = Syntax.ParseTree.typ_name [@@deriving show]
@@ -83,6 +84,8 @@ type statement =
     | EndScope of variable list
 
 (** {ul
+        {li [Return(span, expr)] returns the result of [expr] as the result of the whole program.
+            If [expr] is a function application, then this represents a tail-call}
         {li [Jump(span, label, args)] jumps to the block with name [label] with [args]}
         {li [Stmt(span, stmt, body)] first executes [stmt] and then executes [body].
             [span] is the source location of [stmt]}
