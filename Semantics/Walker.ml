@@ -668,12 +668,12 @@ let walk_top (context:context) (clause:top_clause) : unit =
         );
         let core = Hashtbl.create 10 in
         let fields = def.struct_fields in
-        let insert (key, typ, attr) = 
+        let insert index (key, typ, attr) = 
             (* check TyNamed existence *)
             let _ = walk_type context typ in
-            Hashtbl.add core key {typ=typ; attr=attr}
+            Hashtbl.add core key { typ; attr; index }
         in
-        List.iter insert fields;
+        List.iteri insert fields;
         Hashtbl.add table.typ name 
             ( Struct_data(
             { intf = []
@@ -689,7 +689,7 @@ let walk_top (context:context) (clause:top_clause) : unit =
         | None    -> ()
         );
         let branches = def.adt_branches in
-        let walk_iter ((label, typs)) = 
+        let walk_iter index (label, typs) = 
         ( match Hashtbl.find_opt table.adt label with
         | Some(_) -> error_type (Error "The same ADT label")
         | None    -> 
@@ -698,9 +698,10 @@ let walk_top (context:context) (clause:top_clause) : unit =
             Hashtbl.add table.adt label
             { sum = name
             ; typ = typs
+            ; tag = index
             }
         ) in
-        List.iter walk_iter branches;
+        List.iteri walk_iter branches;
         Hashtbl.add table.typ name (ADT_data(
             { intf = []
             ; meth = Hashtbl.create 10

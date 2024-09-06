@@ -1,0 +1,15 @@
+fun useContinue() -> I32 {
+  while (true) {
+    let x1 = 1;
+    continue;
+    let x2 = 2;
+  }
+}
+
+fun useBreak() -> I32 {
+  while (true) {
+    let x1 = 1;
+    break;
+    let x2 = 2;
+  }
+}

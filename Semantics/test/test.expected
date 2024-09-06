@@ -1,0 +1,281 @@
+type.dp
+
+type/unsupport_type1.dp
+semantics error: [Pattern Error]  declared type doesn't match with the given expr
+in [file "type/unsupport_type1.dp", row 3, col 8 to row 3, col 23]
+
+
+type/unsupport_type2.dp
+syntax error: Expecting type
+in [file "type/unsupport_type2.dp", row 3, col 12 to row 3, col 23]
+
+type/used_var1.dp
+semantics error: [Error] varaible x1 has been declared
+
+
+type/used_var2.dp
+semantics error: [Error] varaible x2 has been declared
+
+
+type/used_var3.dp
+semantics error: [Pattern Error]  declared type doesn't match with the given expr
+in [file "type/used_var3.dp", row 5, col 8 to row 5, col 17]
+
+
+type/used_var4.dp
+semantics error: [Error] varaible x4 has been declared
+
+
+pattern/bad_pattern1.dp
+semantics error: [Expression Error]  arithmetic on different types
+in [file "pattern/bad_pattern1.dp", row 3, col 13 to row 3, col 21]
+
+
+pattern/patVatTypeMismatch1.dp
+syntax error: Expecting declaration specifiers
+in [file "pattern/patVatTypeMismatch1.dp", row 1, col 26 to row 1, col 27]
+
+pattern/patVatTypeMismatch2.dp
+semantics error: [Pattern Error]  declared type doesn't match with the given expr
+in [file "pattern/patVatTypeMismatch2.dp", row 3, col 8 to row 3, col 17]
+
+
+expression/expression1.dp
+semantics error: [Expression Error]  arithmetic on different types
+in [file "expression/expression1.dp", row 7, col 13 to row 7, col 20]
+
+
+expression/expression2.dp
+semantics error: [Pattern Error]  declared type doesn't match with the given expr
+in [file "expression/expression2.dp", row 4, col 8 to row 4, col 16]
+
+
+function/used_func1.dp
+syntax error: Expecting top level clause
+in [file "function/used_func1.dp", row 1, col 15 to row 1, col 16]
+
+expression/negativeNaN.dp
+semantics error: [Error]  apply - to Not a Number 
+
+
+expression/notNaB.dp
+semantics error: [Error]  apply ! to Not a Boolean 
+
+
+expression/errorOrdering.dp
+semantics error: [Expression Error]  ordering values from different types
+in [file "expression/errorOrdering.dp", row 6, col 12 to row 6, col 19]
+
+
+expression/errorEqualing.dp
+semantics error: [Expression Error]  equaling values from different types
+in [file "expression/errorEqualing.dp", row 6, col 12 to row 6, col 20]
+
+
+expression/errorUnequaling.dp
+semantics error: [Expression Error]  equaling values from different types
+in [file "expression/errorUnequaling.dp", row 6, col 12 to row 6, col 20]
+
+
+expression/errorOrderingType.dp
+semantics error: [Expression Error]  ordering values from none of Int, Float, Char 
+in [file "expression/errorOrderingType.dp", row 6, col 12 to row 6, col 19]
+
+
+expression/errorLogicalOpType.dp
+semantics error: [Expression Error]  logical operate non Bool 
+in [file "expression/errorLogicalOpType.dp", row 6, col 12 to row 6, col 20]
+
+
+expression/errorLogicalOpType2.dp
+semantics error: [Expression Error]  bits operate non Int 
+in [file "expression/errorLogicalOpType2.dp", row 6, col 12 to row 6, col 19]
+
+
+expression/shiftNonInt.dp
+semantics error: [Expression Error]  shifting non Int 
+in [file "expression/shiftNonInt.dp", row 5, col 12 to row 5, col 19]
+
+
+expression/shiftNaNbits.dp
+semantics error: [Expression Error]  shifting a NaN bits 
+in [file "expression/shiftNaNbits.dp", row 6, col 12 to row 6, col 20]
+
+
+expression/arithmeticOnErrorType.dp
+semantics error: [Expression Error]  arithmetic on neither Int nor Float 
+in [file "expression/arithmeticOnErrorType.dp", row 6, col 12 to row 6, col 19]
+
+
+expression/modOnErrorType.dp
+semantics error: [Expression Error]  mod on non Int 
+in [file "expression/modOnErrorType.dp", row 6, col 12 to row 6, col 19]
+
+
+expression/modOnDifferentTypes.dp
+semantics error: [Expression Error]  mod on different types
+in [file "expression/modOnDifferentTypes.dp", row 6, col 12 to row 6, col 19]
+
+
+expression/ADThasNoFields.dp
+semantics error: [Error]  ADT has no fields! 
+
+
+expression/structTypeNotFound.dp
+semantics error: [Type Error] Type Named Bird Not Found
+in [file "expression/structTypeNotFound.dp", row 6, col 28 to row 6, col 32]
+
+
+expression/errorIfCondition.dp
+semantics error: [Expression Error]  condition of if-statement is not a boolean
+in [file "expression/errorIfCondition.dp", row 3, col 5 to row 3, col 7]
+
+
+expression/errorMatchStruct.dp
+
+statements/bad_assign1.dp
+semantics error: [Statement Error] varaible w Not Found
+in [file "statements/bad_assign1.dp", row 7, col 4 to row 7, col 16]
+
+
+statements/bad_assign2.dp
+semantics error: [Statement Error]  assign to a immutable variable x1
+in [file "statements/bad_assign2.dp", row 7, col 4 to row 7, col 17]
+
+
+statements/bad_assign3.dp
+semantics error: [Statement Error]  assign a value:T1 to a variable:T2, while T1!=T2
+in [file "statements/bad_assign3.dp", row 8, col 4 to row 8, col 16]
+
+
+statements/bad_assign4.dp
+semantics error: [Statement Error]  assign to a immutable variable x1
+in [file "statements/bad_assign4.dp", row 7, col 4 to row 7, col 17]
+
+
+statements/bad_break1.dp
+semantics error: [Statement Error] break statement not within loop or switch
+in [file "statements/bad_break1.dp", row 5, col 4 to row 5, col 10]
+
+
+statements/bad_break2.dp
+semantics error: [Statement Error] break statement not within loop or switch
+in [file "statements/bad_break2.dp", row 7, col 4 to row 7, col 10]
+
+
+statements/bad_continue1.dp
+semantics error: [Statement Error] continue statement not within loop or switch
+in [file "statements/bad_continue1.dp", row 7, col 4 to row 7, col 13]
+
+
+statements/bad_continue2.dp
+semantics error: [Statement Error] continue statement not within loop or switch
+in [file "statements/bad_continue2.dp", row 7, col 4 to row 7, col 13]
+
+
+statements/bad_return1.dp
+semantics error: [Expression Error]  return different types 
+in [file "statements/bad_return1.dp", row 5, col 11 to row 5, col 15]
+
+
+statements/bad_return2.dp
+semantics error: [Expression Error]  return different types 
+in [file "statements/bad_return2.dp", row 5, col 11 to row 5, col 12]
+
+
+statements/bad_if.dp
+semantics error: [Expression Error]  condition of if-statement is not a boolean
+in [file "statements/bad_if.dp", row 5, col 7 to row 5, col 9]
+
+
+statements/bad_while.dp
+semantics error: [Expression Error]  condition of while-statement is not a boolean
+in [file "statements/bad_while.dp", row 5, col 10 to row 5, col 12]
+
+
+
+{
+x3, 20 : imm I8
+y, 2 : imm I32
+x3, 86 : imm I8
+x2, 51 : imm I64
+x1, 88 : imm Bool
+x5, 7 : imm I32
+x, 83 : mut Bool
+x2, 66 : imm I32
+x1, 63 : imm Bool
+x13, 13 : imm [U8 ; 20]
+x1, 46 : imm I32
+x7, 9 : imm F32
+x9, 11 : imm Char
+x, 0 : imm ()
+x1, 26 : imm I32
+x8, 10 : imm F64
+x, 92 : imm I32
+x2, 85 : imm I8
+x2, 57 : imm Char
+z1, 41 : imm I32
+x1, 93 : imm I32
+x3, 76 : imm I8
+x1, 36 : imm Bool
+x1, 94 : imm I32
+x2, 64 : imm Bool
+x2, 37 : imm I8
+y2, 21 : imm I8
+k, 72 : imm Color
+z3, 24 : imm I32
+some_type, 16 : imm SomeType
+x1, 3 : imm ()
+x, 91 : imm I32
+x1, 70 : imm Color
+x3, 5 : imm I8
+x1, 44 : imm Bool
+l, 73 : imm Color
+x2, 47 : imm I64
+x1, 77 : imm I8
+x1, 65 : imm Bool
+z2, 23 : imm I32
+x2, 81 : imm I8
+x2, 53 : imm [U8 ; 20]
+x2, 28 : imm I32
+x, 1 : mut I32
+x2, 78 : imm I8
+x1, 54 : imm Bool
+x1, 45 : imm I64
+z1, 22 : imm I32
+j, 71 : imm Color
+x1, 48 : imm I32
+x2, 75 : imm I8
+x6, 8 : imm U64
+x1, 74 : imm Bool
+x1, 69 : imm U32
+x1, 84 : imm I8
+x1, 58 : imm Bool
+x10, 12 : imm This
+x1, 87 : imm Bool
+x3, 79 : imm I8
+x1, 61 : imm Bool
+x1, 56 : imm Bool
+x3, 38 : imm I8
+x1, 89 : imm Bool
+x3, 82 : imm I8
+x15, 15 : imm 
+    (I32, Char, [(U8, U8) ; 10], SomeType)
+x4, 6 : imm U16
+x1, 59 : imm I32
+x14, 14 : imm [[U8 ; 20] ; 5]
+x2, 60 : imm Bool
+x2, 62 : imm Bool
+x2, 55 : imm Char
+x2, 4 : imm Bool
+x1, 67 : imm Shape
+x1, 52 : imm [U8 ; 20]
+x2, 49 : imm I64
+x1, 90 : imm Bool
+x1, 80 : imm Bool
+x1, 50 : imm I32
+field, 17 : mut I32
+x4, 32 : imm I32
+x2, 19 : imm I8
+x1, 18 : imm Bool
+}

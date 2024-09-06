@@ -24,6 +24,7 @@ type adty_data =
 type field_data = 
     { typ : typ
     ; attr : struct_def_field_attr
+    ; index : int
     };;
 type struct_data = 
     { mutable intf : intf_name list
@@ -43,6 +44,7 @@ type typ_table = (typ_name, typ_data) Hashtbl.t;; (* T -> impl what intf and wha
 type adt_data = 
     { sum : typ_name (** sum_type's name *)
     ; typ : typ list (** parameters of constructor *)
+    ; tag : int
     }
     ;;
 type adt_table = (adt_label, adt_data) Hashtbl.t;;

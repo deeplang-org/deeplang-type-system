@@ -1,0 +1,22 @@
+
+(executable
+ (name WalkerTest)
+ (libraries Syntax Semantics)
+ (modules WalkerTest))
+
+(rule
+ (action
+  (with-stdout-to test.output
+   (run ./WalkerTest.exe)))
+ (deps
+  (file %{project_root}/examples/basicMain.dp)
+  (glob_files *.dp)
+  (source_tree expression)
+  (source_tree function)
+  (source_tree pattern)
+  (source_tree statements)
+  (source_tree type)))
+
+(rule
+ (alias runtest)
+ (action (diff test.expected test.output)))
