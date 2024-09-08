@@ -2,6 +2,11 @@ fun main() -> #1 -- "basic.dp":1,0-3,1 =
   jump #1 (0) -- "basic.dp":2,9-2,10
 
 
+fun main() -> #1 -- "basicADT.dp":5,0-8,1 =
+  $1 = mk((ANF.ADT ("Foo", "Bar")))(1) -- "basicADT.dp":6,16-6,22
+  jump #1 (0) -- "basicADT.dp":7,9-7,10
+
+
 fun main($1) -> #1 -- "basicMain.dp":1,0-8,1 =
   $2 = 1 -- "basicMain.dp":3,2-3,18
   $3 = 2 -- "basicMain.dp":4,2-4,17

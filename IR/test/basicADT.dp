@@ -1,0 +1,8 @@
+type Foo [
+    Bar(I32)
+]
+
+fun main() -> I32 {
+  let x1: Foo = Bar(1);
+  return 0;
+}
