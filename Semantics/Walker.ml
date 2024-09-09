@@ -280,7 +280,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
                 let map_field_expr ((field, expr)) = 
                     (field, walk_expr context expr)
                 in
-                if List.map map_def_field def_fields = List.map map_field_expr field_exprs then
+                if List.equal (fun (f1, t1) (f2, t2) -> f1 = f2 && Helper.ty_eq t1 t2) (List.map map_def_field def_fields) (List.map map_field_expr field_exprs) then
                     Helper.named name []
                 else
                     error_type (Error (" types doesn't match with fields of Struct " ^ name))
