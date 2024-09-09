@@ -5,7 +5,6 @@ type int_typ_sign = Syntax.ParseTree.int_typ_sign
 
 type variable = ANF.variable
 
-type var_data =
 type var_data = 
     { 
       (* mut  : mutability
@@ -120,10 +119,6 @@ let rec trans_expr
           Stmt(expr.span, Decl(result_var, UnOp(op, un_value)),
               apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)
           )))
-         let result_var = ANF.gen_var () in
-         Stmt(expr.span, Decl(result_var, MkData(Tuple(List.length(value_list)), value_list)),
-         apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
-    ))
   | ExpADT (label, elems) ->
     traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex
       (fun value_list ->
