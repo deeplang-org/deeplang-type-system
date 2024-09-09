@@ -5,8 +5,8 @@ type int_typ_sign = Syntax.ParseTree.int_typ_sign
 
 type variable = ANF.variable
 
-type var_data = 
-    { 
+type var_data =
+    {
       (* mut  : mutability
     (* ; typ  : typ *) *)
     name : ANF.variable
@@ -93,7 +93,7 @@ let rec traverse_expr
     | [] -> apply_expr_list_cont ~span cont []
     | expr::rest -> trans_worker expr (
         Complex (fun expr_value -> traverse_expr ~trans_worker ~span rest (
-          Complex (fun rest_values -> apply_expr_list_cont ~span cont (expr_value::rest_values)) 
+          Complex (fun rest_values -> apply_expr_list_cont ~span cont (expr_value::rest_values))
       )))
 
 let rec trans_expr
@@ -116,25 +116,32 @@ let rec trans_expr
   | ExpUnOp (op, unval) ->
       trans_expr ~table ~var_table unval (Complex (fun un_value ->
           let result_var = ANF.gen_var () in
-          Stmt(expr.span, Decl(result_var, UnOp(op, un_value)), 
+          Stmt(expr.span, Decl(result_var, UnOp(op, un_value)),
               apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)
           )))
   | ExpTuple elems ->
-      traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex 
-      (fun value_list -> 
+      traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex
+      (fun value_list ->
          let result_var = ANF.gen_var () in
          Stmt(expr.span, Decl(result_var, MkData(Tuple(List.length(value_list)), value_list)),
          apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
     ))
   | ExpADT (label, elems) ->
-    traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex 
-      (fun value_list -> 
+    traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex
+      (fun value_list ->
         let result_var = ANF.gen_var () in
         let label_info = Hashtbl.find table.adt label in
         let sum_typ_name = label_info.sum in
         Stmt(expr.span, Decl(result_var, MkData(ADT(sum_typ_name, label), value_list)),
         apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
-        
+    ))
+  | ExpStruct (name, tagged_elems) ->
+    let elems = List.map (fun (_, e) -> e) tagged_elems in
+    traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex
+      (fun value_list ->
+        let result_var = ANF.gen_var () in
+        Stmt(expr.span, Decl(result_var, MkData(Struct(name), value_list)),
+        apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
     ))
   (* | ExpIf (cond, fwd, els) ->  *)
   | _ -> failwith "TODO0"

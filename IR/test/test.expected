@@ -14,6 +14,11 @@ fun main($1) -> #1 -- "basicMain.dp":1,0-8,1 =
   jump #1 () -- "basicMain.dp":1,0-8,1
 
 
+fun main() -> #1 -- "basicStruct.dp":6,0-9,1 =
+  $1 = mk((ANF.Struct "Foo"))(0, 114) -- "basicStruct.dp":7,16-7,37
+  jump #1 (0) -- "basicStruct.dp":8,9-8,10
+
+
 fun useContinue() -> #1 -- "breakContinue.dp":1,0-7,1 =
   loop #2():
     block #3() =
