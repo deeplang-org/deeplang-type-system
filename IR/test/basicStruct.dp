@@ -1,0 +1,9 @@
+type Foo {
+    a: (),
+    b: I32,
+}
+
+fun main() -> I32 {
+  let x1: Foo = Foo { a: (), b: 114 };
+  return 0;
+}

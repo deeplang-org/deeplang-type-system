@@ -93,10 +93,11 @@ let rec traverse_expr
     | [] -> apply_expr_list_cont ~span cont []
     | expr::rest -> trans_worker expr (
         Complex (fun expr_value -> traverse_expr ~trans_worker ~span rest (
-          Complex (fun rest_values -> apply_expr_list_cont ~span cont (expr_value::rest_values)) 
+          Complex (fun rest_values -> apply_expr_list_cont ~span cont (expr_value::rest_values))
       )))
 
 let rec trans_expr
+  ~(table : Semantics.Table.table)
   ~(var_table: var_table)
   (expr: Syntax.ParseTree.expr)
   (cont: ANF.value expr_continuation) : ANF.program =
@@ -106,24 +107,41 @@ let rec trans_expr
       apply_expr_cont ~span:expr.span cont
         (var_to_value ~src:expr.span (List.assoc var var_table).name)
   | ExpBinOp (op, lhs, rhs) ->
-      trans_expr ~var_table lhs (Complex (fun lhs_value ->
-          trans_expr ~var_table rhs (Complex (fun rhs_value ->
+      trans_expr ~table ~var_table lhs (Complex (fun lhs_value ->
+          trans_expr ~table ~var_table rhs (Complex (fun rhs_value ->
               let result_var = ANF.gen_var () in
               Stmt( expr.span, Decl(result_var, BinOp(op, lhs_value, rhs_value)),
                 apply_expr_cont ~span:expr.span cont
                   (var_to_value ~src:expr.span result_var))))))
   | ExpUnOp (op, unval) ->
-      trans_expr ~var_table unval (Complex (fun un_value ->
+      trans_expr ~table ~var_table unval (Complex (fun un_value ->
           let result_var = ANF.gen_var () in
-          Stmt(expr.span, Decl(result_var, UnOp(op, un_value)), 
+          Stmt(expr.span, Decl(result_var, UnOp(op, un_value)),
               apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)
           )))
   | ExpTuple elems ->
-      traverse_expr ~trans_worker:(trans_expr ~var_table) ~span:expr.span elems (Complex 
+    traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex 
       (fun value_list -> 
-         let result_var = ANF.gen_var () in
-         Stmt(expr.span, Decl(result_var, MkData(Tuple(List.length(value_list)), value_list)),
-         apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
+          let result_var = ANF.gen_var () in
+          Stmt(expr.span, Decl(result_var, MkData(Tuple(List.length(value_list)), value_list)),
+          apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
+    ))
+  | ExpADT (label, elems) ->
+    traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex
+      (fun value_list ->
+        let result_var = ANF.gen_var () in
+        let label_info = Hashtbl.find table.adt label in
+        let sum_typ_name = label_info.sum in
+        Stmt(expr.span, Decl(result_var, MkData(ADT(sum_typ_name, label), value_list)),
+        apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
+    ))
+  | ExpStruct (name, tagged_elems) ->
+    let elems = List.map (fun (_, e) -> e) tagged_elems in
+    traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex
+      (fun value_list ->
+        let result_var = ANF.gen_var () in
+        Stmt(expr.span, Decl(result_var, MkData(Struct(name), value_list)),
+        apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
     ))
   (* | ExpIf (cond, fwd, els) ->  *)
   | _ -> failwith "TODO0"
@@ -151,16 +169,16 @@ and trans_stmt
       in
       trans_stmts ~table ~var_table ~labels ~return stmt_list cont'
   | StmtExpr expr ->
-      trans_expr ~var_table expr (Complex (fun _ ->
+      trans_expr ~table ~var_table expr (Complex (fun _ ->
           (* the result of [StmtExpr] is unused, discard it *)
           apply_stmt_cont cont ~var_table))
   | StmtReturn expr ->
       (* [StmtReturn] is early return: what's behind it will never get executed.
          So the continuation is discarded *)
-      trans_expr ~var_table expr (Simple return)
+      trans_expr ~table ~var_table expr (Simple return)
   | StmtDecl ({ shape = PatVar vpat;_ }, rhs) ->
       (* TODO: handle all patterns *)
-      trans_expr ~var_table rhs (Complex (fun rhs_value ->
+      trans_expr ~table ~var_table rhs (Complex (fun rhs_value ->
           match rhs_value with
           | LVal { lv_var; lv_path = []; lv_src = _ } when vpat.vpat_mut = Imm ->
               (* if [rhs_value] is also a variable,
@@ -178,7 +196,7 @@ and trans_stmt
               Stmt ( stmt.span, Decl (anf_var, Val rhs_value),
                 apply_stmt_cont cont ~var_table:new_var_table)))
   | StmtIf (cond, conseq, alter) ->
-      trans_expr ~var_table cond (Complex (fun cond_value ->
+      trans_expr ~table ~var_table cond (Complex (fun cond_value ->
           let[@inline] trans_if (k : stmt_continuation) : ANF.program =
             let conseq = trans_stmt ~table ~var_table ~labels ~return conseq k in
             let alter =
@@ -240,7 +258,7 @@ and trans_stmt
       let label_cont = ANF.gen_label () in
       let label_break = ANF.gen_label () in
       let loop_body =
-        trans_expr ~var_table cond (Complex (fun cond_value ->
+        trans_expr ~table ~var_table cond (Complex (fun cond_value ->
           Branch {
             br_src = stmt.span;
             br_matched = cond_value;
@@ -303,7 +321,7 @@ and trans_stmt
             action_blocks arms
         in
         let body =
-          trans_expr ~var_table head (Complex (fun head_value ->
+          trans_expr ~table ~var_table head (Complex (fun head_value ->
               bind head_value (fun head ->
                 ConvertMatch.trans_match ~table head trans_arms)))
         in
