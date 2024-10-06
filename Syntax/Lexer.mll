@@ -156,6 +156,7 @@ rule token = parse
     | ']'  { TOK_RBRACK     }
     | '{'  { TOK_LBRACE     }
     | '}'  { TOK_RBRACE     }
+    | '?'  { TOK_Q          }
     | ':'  { TOK_COLON      }
     | ','  { TOK_COMMA      }
     | '.'  { TOK_DOT        }

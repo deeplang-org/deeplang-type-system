@@ -63,6 +63,7 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_RBRACK     /* ] */
 %token TOK_LBRACE     /* { */
 %token TOK_RBRACE     /* } */
+%token TOK_Q          /* ? */
 %token TOK_COLON      /* : */
 %token TOK_COMMA      /* , */
 %token TOK_SEMICOLON  /* ; */
@@ -231,6 +232,7 @@ other_token :
     | TOK_RPAREN { Some (Token ")") }
     | TOK_LBRACK { Some (Token "[") }
     | TOK_RBRACK { Some (Token "]") }
+    | TOK_Q      { Some (Token "?") }
     | TOK_COLON { Some (Token ":") }
     | TOK_COMMA { Some (Token ",") }
     | TOK_DOT { Some (Token ".") }
@@ -653,8 +655,12 @@ struct_pattern_field :
 ;
 
 
-
 expr :
+    | mid_expr { $1 }
+    | mid_expr TOK_Q expr TOK_COLON expr { mk_expr @@ ExpIf($1, $3, $5) }
+
+
+mid_expr :
     | small_expr           { $1 }
     | small_expr TOK_LT     expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLt    , $1, $3) }
     | small_expr TOK_LTEQ   expr { mk_expr @@ ExpBinOp(BinOpCompare   BinOpLeq   , $1, $3) }
