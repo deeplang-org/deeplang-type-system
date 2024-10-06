@@ -143,7 +143,15 @@ let rec trans_expr
         Stmt(expr.span, Decl(result_var, MkData(Struct(name), value_list)),
         apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
     ))
-  (* | ExpIf (cond, fwd, els) ->  *)
+  | ExpIf (cond, fwd, els) -> trans_expr ~table ~var_table {
+      shape = ExpBinOp(BinOpCalculate(BinOpLOr), {
+        shape = ExpBinOp(BinOpCalculate(BinOpLAnd), cond, fwd);
+        expr_id = expr.expr_id;
+        span = expr.span;
+      }, els);
+      expr_id = expr.expr_id;
+      span = expr.span;
+      } cont
   | _ -> failwith "TODO0"
 
 and trans_stmt

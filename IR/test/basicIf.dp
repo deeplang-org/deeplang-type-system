@@ -1,0 +1,6 @@
+fun main() -> I32 {
+  let x = true;
+  let y = 1;
+  let z = 2;
+  return x ? y : z;
+}

@@ -7,6 +7,15 @@ fun main() -> #1 -- "basicADT.dp":5,0-8,1 =
   jump #1 (0) -- "basicADT.dp":7,9-7,10
 
 
+fun main() -> #1 -- "basicIf.dp":1,0-6,1 =
+  $1 = 1 -- "basicIf.dp":2,2-2,15
+  $2 = 1 -- "basicIf.dp":3,2-3,12
+  $3 = 2 -- "basicIf.dp":4,2-4,12
+  $4 = (ParseTree.BinOpCalculate ParseTree.BinOpLAnd)($1, $2) -- "basicIf.dp":5,9-5,18
+  $5 = (ParseTree.BinOpCalculate ParseTree.BinOpLOr)($4, $3) -- "basicIf.dp":5,9-5,18
+  jump #1 ($5) -- "basicIf.dp":5,9-5,18
+
+
 fun main($1) -> #1 -- "basicMain.dp":1,0-8,1 =
   $2 = 1 -- "basicMain.dp":3,2-3,18
   $3 = 2 -- "basicMain.dp":4,2-4,17
