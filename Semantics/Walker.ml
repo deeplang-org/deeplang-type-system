@@ -194,7 +194,7 @@ let rec walk_expr (context:context) (expr:expr) : typ =
             | None -> error_type (Error "Impossible, symbol not found, DEBUG needed")
             | Some(data) -> data.typ
             )
-        | None -> error_type (Error ("varaible " ^ name ^ " Not Found"))
+        | None -> error_type (Error ("variable " ^ name ^ " Not Found"))
         )
     | ExpUnOp(op, expr) -> let typ = walk_expr context expr in 
         ( match op with 
