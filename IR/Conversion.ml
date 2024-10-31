@@ -143,6 +143,25 @@ let rec trans_expr
         Stmt(expr.span, Decl(result_var, MkData(Struct(name), value_list)),
         apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
     ))
+  | ExpField (expr, field) ->
+      let find_index f lst =
+        let rec aux idx = function
+          | [] -> None
+          | x :: xs -> if f x then Some idx else aux (idx + 1) xs
+        in
+        aux 0 lst in
+      let expr_ref = Hashtbl.find table.ref expr.expr_id in
+      (match (Hashtbl.find table.var expr_ref.sym).typ.shape with
+        | TyNamed(name, _) -> (match Hashtbl.find table.typ name with
+          | Struct_data(data) -> (match find_index (fun (field', _, _) -> field' = field) data.fields with
+            | Some(index) ->
+                trans_expr ~table ~var_table expr (Complex (fun expr_value ->
+                  let result_var = ANF.gen_var () in
+                  Stmt(expr.span, Decl(result_var, Val(expr_value)),
+                    apply_expr_cont ~span:expr.span cont (LVal { lv_var = result_var; lv_path = [Field(index)]; lv_src = expr.span }))))
+            | None -> failwith "Impossible!")
+          | _ -> failwith "Impossible!")
+        | _ -> failwith "Impossible!")
   | ExpIf (cond, fwd, els) -> trans_expr ~table ~var_table {
       shape = ExpBinOp(BinOpCalculate(BinOpLOr), {
         shape = ExpBinOp(BinOpCalculate(BinOpLAnd), cond, fwd);

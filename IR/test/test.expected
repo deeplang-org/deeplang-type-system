@@ -7,6 +7,14 @@ fun main() -> #1 -- "basicADT.dp":5,0-8,1 =
   jump #1 (0) -- "basicADT.dp":7,9-7,10
 
 
+fun main() -> #1 -- "basicField.dp":6,0-9,1 =
+  $1 = mk((ANF.Struct "Foo"))(514, 114) -- "basicField.dp":7,16-7,38
+  $2 = $1 -- "basicField.dp":8,9-8,11
+  $3 = $1 -- "basicField.dp":8,16-8,18
+  $4 = (ParseTree.BinOpCalculate ParseTree.BinOpAdd)($2.0, $3.1) -- "basicField.dp":8,9-8,20
+  jump #1 ($4) -- "basicField.dp":8,9-8,20
+
+
 fun main() -> #1 -- "basicIf.dp":1,0-6,1 =
   $1 = 1 -- "basicIf.dp":2,2-2,15
   $2 = 1 -- "basicIf.dp":3,2-3,12
