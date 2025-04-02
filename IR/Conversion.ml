@@ -171,6 +171,67 @@ let rec trans_expr
       expr_id = expr.expr_id;
       span = expr.span;
       } cont
+  | ExpMatch (head, arms) ->
+    let trans_match k =
+      let rec bindings_of_pat acc (pat : Syntax.ParseTree.pattern) =
+        match pat.shape with
+        | PatWildcard | PatLit _ -> acc
+        | PatVar vpat -> vpat.vpat_name :: acc
+        | PatAs(pat', vpat) -> bindings_of_pat (vpat.vpat_name :: acc) pat'
+        | PatTuple pats | PatADT(_, pats) ->
+            List.fold_left bindings_of_pat acc pats
+        | PatStruct(_, field_pats) ->
+            List.fold_left (fun acc (_, pat) -> bindings_of_pat acc pat) acc field_pats
+      in
+      let action_blocks =
+        arms |> List.map (fun (pat, (action : Syntax.ParseTree.expr)) ->
+          let bindings = bindings_of_pat [] pat in
+          let blk_params = List.map (fun _ -> ANF.gen_var ()) bindings in
+          let var_table =
+            List.map2 (fun name var -> (name, { name = var })) bindings blk_params
+            @ var_table
+          in
+          (bindings,
+            ANF.{
+              blk_label = ANF.gen_label ();
+              blk_params;
+              blk_body = trans_expr ~table ~var_table action k;
+            }))
+      in
+      let trans_arms =
+        List.map2
+          (fun
+            (params, (block : ANF.block_definition))
+            (pat, (action : Syntax.ParseTree.expr)) ->
+                (pat,
+                  fun bindings ->
+                    let args =
+                      List.map
+                        (fun param ->
+                            var_to_value ~src:Syntax.SyntaxError.dummy_span
+                              (List.assoc param bindings))
+                        params
+                    in
+                    ANF.Jump(action.span, block.blk_label, args)))
+          action_blocks arms
+      in
+      let body =
+        trans_expr ~table ~var_table head (Complex (fun head_value ->
+            bind head_value (fun head ->
+              ConvertMatch.trans_match ~table head trans_arms)))
+      in
+      List.fold_right (fun (_, block) body -> ANF.Block(block, body)) action_blocks body
+    in
+    begin match cont with
+    | Simple _ -> trans_match cont
+    | Complex f ->
+        let result_var = ANF.gen_var () in
+        let blk_label = ANF.gen_label () in
+        (* Stmt(expr.span, Decl(result_var, MkData(Struct(name), value_list)),
+        apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)) *)
+        Block({ blk_label; blk_params = []; blk_body = f (var_to_value ~src:expr.span result_var) },
+          trans_match (Simple blk_label))
+    end
   | _ -> failwith "TODO0"
 
 and trans_stmt
