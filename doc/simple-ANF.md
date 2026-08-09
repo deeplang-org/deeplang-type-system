@@ -350,3 +350,82 @@
 以及borrow checker，更适合在ANF后做，因为ANF的结构更简单
 - 语法糖的翻译一般会在ANF前完成，减少ANF形式中的噪音
 - 诸如类型定义、interface或trait的解析等，可以在ANF前也可以在ANF后完成。
+
+
+## Deeplang 中的 ANF 实现
+
+上述简化的 ANF 变换展示了核心思想。在实际的 Deeplang 编译器中，
+ANF 实现位于 [IR/ANF.ml](../IR/ANF.ml) 和 [IR/Conversion.ml](../IR/Conversion.ml)，
+它在上述基础上做了重要扩展：
+
+### CPS 风格的控制流
+
+简化版使用 `anf_program = decls + result` 来表示一个程序片段。
+但这种方式无法很好地支持 `return`、`break`、`continue` 等跳转语句。
+Deeplang 的 ANF 采用了 **CPS（Continuation Passing Style）** 风格的转换：
+
+```ocaml
+(* IR/ANF.ml *)
+type program =
+    | Jump   of span * label * value list  (* 跳转到指定 label，传递参数 *)
+    | Stmt   of span * statement * program (* 顺序执行 *)
+    | Branch of branching                  (* 条件分支/模式匹配 *)
+    | Block  of block_definition * program (* 定义命名的基本块 *)
+    | Loop   of block_definition           (* 循环块 *)
+    | Empty                                (* 空 *)
+    | Abort                                (* 中止 *)
+```
+
+其中每个 `block` 有名字（label）和参数，`Jump` 通过 label 名称跳转并传递参数值。
+这种设计使得所有控制流（return、break、continue、条件分支）
+都可以统一地用 label + jump 来表示。
+
+### 转换中的 Continuation
+
+与简化版直接返回 `anf_val` 不同，Deeplang 的 ANF 转换使用 continuation 模式：
+```ocaml
+(* IR/Conversion.ml *)
+type 'a expr_continuation =
+    | Simple of ('a -> program)             (* 线性 continuation *)
+    | Complex of (value -> program)         (* 复杂 continuation，可能产生临时变量 *)
+```
+
+`Simple` 和 `Complex` 的区别在于：当子表达式的结果已经是一个 `anf_value` 时，
+用 `Simple` 可以避免创建不必要的临时变量；而 `Complex` 总会通过 `bind` 创建变量。
+
+### FieldByName 延迟解析
+
+在源码中，struct 字段访问写作 `obj.field`。但 ANF 转换时，
+字段名对应的索引（偏移量）可能尚未确定（因为 struct 定义可能在文件后面）。
+因此 ANF 引入了 `FieldByName of string` 作为延迟解析标记：
+
+```ocaml
+(* IR/ANF.ml *)
+and path_node =
+    | Field       of int
+    | FieldByName of string  (* 未解析的字段访问，在代码生成前解析 *)
+    | Deref
+    | AsTag       of int
+    | Tag
+    | Method      of string
+```
+
+在 [WasmGen.ml](../IR/WasmGen.ml) 中，有一个 `resolve_field_names` 预遍历，
+在代码生成前扫描所有 struct 类型，将 `FieldByName` 替换为 `Field(int)`。
+
+### 模式匹配编译
+
+模式匹配的编译由 [ConvertMatch.ml](../IR/ConvertMatch.ml) 负责。
+它实现了一个经典的矩阵匹配算法，将多值多分支的模式匹配
+分解为嵌套的 tag 测试和 switch，最终编译为 ANF 的 `Branch`。
+
+### 与简化版的对比
+
+| 特性 | 简化版 | Deeplang ANF |
+|------|--------|-------------|
+| 程序表示 | `decls list + result value` | CPS: `Jump/Stmt/Branch/Block/Loop` |
+| 变量 | `int` | `int`（同样使用全局计数器） |
+| 转换风格 | 直接递归 + accumulator | Continuation-passing style |
+| 控制流 | 仅 `IfZ` | 统一 label+jump 模型 |
+| 模式匹配 | 不支持 | 矩阵分解算法 |
+| 字段访问 | 无 | FieldByName 延迟解析 |

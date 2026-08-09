@@ -32,43 +32,263 @@ Source (.dp) → Lexer → Parser → Semantic Walker → ANF Conversion → WAT
 - 模式匹配：通配符、变量、struct、ADT、tuple、or 模式
 - ANF 的 FieldByName 延迟解析：字段名在代码生成前通过预遍历解析为字段索引
 
-### Prepare
-- ocaml >= 4.12.0
-- dune >= 2.8
+### 环境准备
+
+**安装 OCaml 开发环境 (推荐使用 opam)：**
+
+```bash
+# 安装 opam (OCaml 包管理器)
+# Linux (x86_64):
+wget https://github.com/ocaml/opam/releases/download/2.5.2/opam-2.5.2-x86_64-linux -O ~/.local/bin/opam
+chmod +x ~/.local/bin/opam
+
+# macOS:
+brew install opam
+
+# 初始化 opam
+opam init --disable-sandboxing
+
+# 创建 OCaml 4.14.1 开发环境
+opam switch create ocaml414 4.14.1
+eval $(opam env)
+
+# 安装依赖
+opam install dune ppx_deriving odoc -y
+```
+
+**版本要求：**
+
+| 工具 | 最低版本 | 当前开发版本 |
+|------|----------|-------------|
+| OCaml | ≥ 4.12.0 | 4.14.1 |
+| dune  | ≥ 2.8   | 3.24.2 |
+| opam  | ≥ 2.1   | 2.5.2 |
 
 ### Building
-To build the project, you need an OCaml compiler and the [dune](https://dune.build/) build system.
-```
+
+```bash
+# 激活 opam 环境（每次新终端都需要）
+eval $(opam env)
+
+# 构建项目
 dune build
-```
-You can also build with Makefile, via:
-```
+
+# 或使用 Makefile
 make build
 ```
 
+**项目模块结构：**
+
+```
+.
+├── Syntax/          # 词法分析 & 语法解析
+│   ├── ParseTree.ml    # AST 定义
+│   ├── Parser.mly      # Menhir/ocamlyacc 语法规则
+│   ├── Lexer.mll       # ocamllex 词法规则
+│   └── SyntaxError.ml  # 语法错误类型
+├── Semantics/       # 语义分析
+│   ├── Table.ml        # 符号表 (变量/函数/类型/ADT表)
+│   ├── Helper.ml       # 类型辅助 (相等、漂亮打印)
+│   ├── Walker.ml       # AST Walker (语义遍历)
+│   └── SemanticsError.ml # 语义错误类型
+├── IR/              # 中间表示 & 代码生成
+│   ├── ANF.ml          # A-Normal Form IR 定义 + CPS block/label/jump
+│   ├── Conversion.ml   # AST → ANF 转换 (CPS-based)
+│   ├── ConvertMatch.ml # 模式匹配 → ANF branching 转换
+│   └── WasmGen.ml      # ANF → WASM Text Format (.wat) 代码生成
+└── doc/             # 文档与设计讨论
+```
+
 ### Testing
-```
+
+```bash
+# 运行所有测试
 dune test
-# 或
 dune build @runtest
+
+# 运行单个测试套件
+dune build @runtest          # 全部测试
+dune exec IR/test/ConversionTest.exe -- IR/test/*.dp  # 仅 ANF 转换测试
+dune exec IR/test/WasmGenTest.exe -- IR/test/*.dp      # 仅 WAT 生成测试
 ```
 
-测试覆盖：
-- **Semantics/test** — 语义分析测试 (WalkerTest)，覆盖表达式、函数、模式匹配、语句、类型
-- **IR/test** — IR 转换测试 (ConversionTest: AST→ANF) 和 WAT 代码生成测试 (WasmGenTest: AST→ANF→WAT)
+### 编译示例
 
-### Documentation
-To build the module document of source files,
-you need to install the [odoc](https://github.com/ocaml/odoc) document generator.
-Once `odoc` is installed, you can build module documents through:
+以下是三个完整的编译示例，展示从 Deeplang 源码到 ANF 中间表示、再到 WAT 的完整转换。
+
+#### 示例 1：简单函数
+
+**Deeplang 代码：**
+```deeplang
+fun main() -> I32 {
+  return 0;
+}
 ```
+
+**ANF 中间表示：**
+```
+fun main() -> #1 =
+  jump #1 (0)
+```
+
+`main` 函数编译为 CPS 风格的块，`jump #1 (0)` 表示跳转到返回标签 `#1` 并传递返回值 `0`。
+
+**WASM S 表达式 (WAT)：**
+```lisp
+(module
+  (memory (export "memory") 1)
+  (global $heap_ptr (mut i32) (i32.const 1024))
+  ;; bump_init, bump_alloc, bump_alloc_zero ...
+  (func $main (result i32)
+    i32.const 0
+    br $l1
+    (block $l1 (nop))))
+```
+
+`jump #1 (0)` 编译为 `i32.const 0` + `br $l1`：常量 `0` 压栈后跳转到函数出口标签。
+
+---
+
+#### 示例 2：Struct 构造
+
+**Deeplang 代码：**
+```deeplang
+type Foo { a: (), b: I32 }
+
+fun main() -> I32 {
+  let x1: Foo = Foo { a: (), b: 114 };
+  return 0;
+}
+```
+
+**ANF 中间表示：**
+```
+fun main() -> #1 =
+  $1 = mk((ANF.Struct "Foo"))(0, 114)
+  jump #1 (0)
+```
+
+`mk((ANF.Struct "Foo"))(0, 114)` 在堆上分配 `Foo` 并用 `(0, 114)` 初始化。
+
+**WASM S 表达式（main 函数）：**
+```lisp
+(func $main (result i32)
+  i32.const 8           ;; Foo 大小 = 2 字段 × 4 字节
+  call $bump_alloc      ;; heap_ptr += 8, 返回原指针
+  i32.const 0           ;; 字段 a: unit
+  i32.const 114         ;; 字段 b: I32
+  ...
+  i32.const 0
+  br $l1
+  (block $l1 (nop)))
+```
+
+结构体内存布局采用 bump allocator 模型：`$bump_alloc` 从堆上线性分配。
+
+---
+
+#### 示例 3：表达式与作用域
+
+**Deeplang 代码：**
+```deeplang
+fun main() {
+  let x = 1 + 2;
+  let y = x + x * 3;
+  let z = x - 3;
+}
+```
+
+**ANF 中间表示：**
+```
+fun main() -> #1 =
+  $1 = (+)(1, 2)         ;; 1 + 2  → $1 = 3
+  $2 = (*)($1, 3)        ;; x * 3  → $2 = 9
+  $3 = (+)($1, $2)       ;; x+x*3  → $3 = 12
+  $4 = (-)($1, 3)        ;; x - 3  → $4 = 0
+  jump #1 ()
+```
+
+所有嵌套表达式被展平（flatten），每个子表达式的结果绑定到临时变量（`$1`, `$2`, …）。
+
+**WASM S 表达式（main 函数）：**
+```lisp
+(func $main (result i32)
+  i32.const 1
+  i32.const 2
+  i32.add                ;; $1 = 1 + 2
+  local.set $v1
+  local.get $v1
+  i32.const 3
+  i32.mul                ;; $2 = $1 * 3
+  local.set $v2
+  local.get $v1
+  local.get $v2
+  i32.add                ;; $3 = $1 + $2
+  local.set $v3
+  local.get $v1
+  i32.const 3
+  i32.sub                ;; $4 = $1 - 3
+  local.set $v4
+  br $l1
+  (block $l1 (nop)))
+```
+
+`(+)(1, 2)` 编译为 WASM `i32.add`，ANF 变量（`$1`）映射为 WASM 局部变量（`$v1`）。
+
+---
+
+**测试覆盖：**
+
+| 测试 | 模块 | 覆盖范围 |
+|------|------|---------|
+| ParserTest | Syntax/test | 语法错误：表达式、模式、语句、类型声明等 50+ 错误用例 |
+| WalkerTest | Semantics/test | 语义分析：表达式、函数、模式匹配、语句、类型声明 |
+| ConversionTest | IR/test | AST→ANF 转换：基础类型、struct、ADT、控制流、match |
+| WasmGenTest | IR/test | 端到端 WAT 生成：.dp → ANF → .wat |
+
+### 生成文档
+
+项目使用 [odoc](https://github.com/ocaml/odoc) 生成 OCaml 模块的 HTML 文档：
+
+```bash
+# 安装 odoc
+opam install odoc -y
+
+# 生成文档
 make doc
-```
-The generated documents of internal modules
-are located in `doc/internal/module_name-xxxxxxxxxx`,
-in HTML format.
 
-### Development Guide
-To add new OCaml modules,
-modify the `dune` build file and add your modules/libraries/executables.
-Dune documentation: [dune.readthedocs.io](https://dune.readthedocs.io/en/stable/overview.html).
+# 或手动执行
+dune build @doc-private
+rm -rf doc/internal/*
+cp -r _build/default/_doc/_html/* doc/internal/
+```
+
+生成的文档位于 `doc/internal/`，按模块组织：
+- `doc/internal/Syntax/` — ParseTree, Parser, Lexer
+- `doc/internal/Semantics/` — Table, Helper, Walker
+- `doc/internal/IR/` — ANF, Conversion, WasmGen
+
+可通过浏览器直接打开 `doc/internal/index.html` 浏览。
+
+`doc/` 目录下还有设计文档与教程：
+
+| 文档 | 内容 |
+|------|------|
+| [Deeplang-spec.md](doc/Deeplang-spec.md) | Deeplang 语言规范 |
+| [simple-ANF.md](doc/simple-ANF.md) | ANF 变换教程，末尾连接至 [IR/ANF.ml](IR/ANF.ml) 的实际实现 |
+| [simple-compiler.md](doc/simple-compiler.md) | 极简编译器教程，末尾连接至 Deeplang 完整流水线 |
+| [walker.md](doc/walker.md) | Walker 模式教程，末尾连接至 [Semantics/Walker.ml](Semantics/Walker.ml) |
+| [WebAssembly.md](doc/WebAssembly.md) | WASM 与 S 表达式简介 |
+| [mm-impl-doc.md](doc/mm-impl-doc.md) | 内存管理（所有权/借用/引用计数）实现方案 |
+| [deeplang_frontend_discuss.md](doc/deeplang_frontend_discuss.md) | 编译器前端设计讨论与符号表方案 |
+
+### 开发指南
+
+本项目使用 [dune](https://dune.build/) 构建系统。
+
+添加新 OCaml 模块时：
+1. 在对应目录创建 `.ml` 文件
+2. 更新同目录的 `dune` 文件，将模块名加入 `(modules ...)` 列表
+3. 如需跨库引用，在 `dune` 的 `(libraries ...)` 中添加依赖
+
+详细的 dune 文档： [dune.readthedocs.io](https://dune.readthedocs.io/en/stable/overview.html)。

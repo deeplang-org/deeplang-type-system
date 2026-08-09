@@ -188,3 +188,99 @@ let compose_mapper (m1 : expr_mapper) (m2 : expr_mapper) : expr_mapper =
 并且出于模块化考虑，它们应当被分开实现
 - 当我们要对一个现有的遍历操作做一些修改，
 得到一个新的遍历操作
+
+
+## Deeplang 中的 Walker 实现
+
+上述简单四则运算的例子展示了 walker/mapper 的核心思想。
+在 Deeplang 编译器中，Walker 模式被广泛应用在语义分析阶段：
+
+### 入口：walk_top
+
+[Walker.ml](../Semantics/Walker.ml) 的入口是 `walk_top`，
+它对顶层声明进行语义遍历：
+
+```ocaml
+val walk_top : context -> top_clause -> unit
+```
+
+`top_clause` 包括函数定义、类型声明、Interface 声明等。
+`walk_top` 将每种声明分发到对应的处理函数。
+
+### context：携带遍历状态
+
+与简单例子中的 `'a expr_walker` 不同，Deeplang 的 Walker
+需要携带丰富的状态信息。这些信息封装在 `context` 记录中：
+
+```ocaml
+(* Semantics/Walker.ml *)
+type context = {
+    table    : Table.table;       (* 符号表：变量、函数、类型 *)
+    nametbl  : (string, ...) Hashtbl.t;  (* 名字解析表 *)
+    scope    : string list;       (* 当前作用域栈 *)
+    this     : typ;               (* 当前方法所属类型 *)
+    rety     : typ;               (* 当前函数返回类型 *)
+    checkloop : int;              (* 循环嵌套层数（0=不在循环中） *)
+}
+```
+
+### 主要 walk 函数
+
+```ocaml
+val walk_expr  : context -> ParseTree.expr -> typ
+val walk_stmt  : context -> ParseTree.stmt -> unit
+val walk_pat   : context -> ParseTree.pattern -> (string * typ) list
+val walk_func  : context -> ParseTree.func_decl -> unit
+```
+
+每个函数对 AST 节点进行自顶向下的遍历：
+- `walk_expr` 对表达式进行类型检查并返回其类型
+- `walk_stmt` 遍历语句体，维护作用域和循环上下文
+- `walk_pat` 分析模式匹配，返回绑定的变量及其类型
+- `walk_func` 检查函数签名并将其注册到符号表
+
+### Interface 继承展开
+
+Walker 中实现了 Interface 的 `extends` 机制。
+当遇到 `interface I extends J { ... }` 时，
+`walk_top` 会将父 interface `J` 的方法表复制到子 interface `I` 中，
+并检测方法名冲突：
+
+```ocaml
+(* Semantics/Walker.ml - walk_top 中 InterfaceDecl 分支 *)
+let copy_from_parent pname =
+  match Hashtbl.find_opt table.typ pname with
+  | Some (Intf_data { meth }) ->
+      Hashtbl.iter (fun mname mdata ->
+        if Hashtbl.mem fun_table mname then
+          error_type (Error ("Method " ^ mname ^ " conflict from extended interface " ^ pname))
+        else Hashtbl.add fun_table mname mdata) meth
+  | _ -> error_type (Error ("Extended interface " ^ pname ^ " not found"))
+in
+List.iter copy_from_parent decl.intf_decl_extends;
+```
+
+### 错误报告
+
+语义错误通过 `SemanticsError` 模块报告：
+
+```ocaml
+(* Semantics/SemanticsError.ml *)
+type error =
+    | Error of string
+    | TypeError of typ * typ
+    | UnboundVar of string
+    | Redefinition of string
+    ...
+```
+
+### 与简化 walker 的对比
+
+| 特性 | 简化 walker | Deeplang Walker |
+|------|------------|----------------|
+| 模式 | mapper (记录类型) | 具名函数 |
+| 状态 | 无（纯函数） | `context` 记录 |
+| 遍历 | `run_walker` 递归 | 函数间相互递归调用 |
+| 副作用 | 无 | 修改符号表、产生错误 |
+| 复合 | `compose_mapper` | 不直接支持（通过 context 传递） |
+| 类型 | 代数数据类型 | 完整的 Deeplang AST |

@@ -447,3 +447,92 @@ let test2 =
  * process test2
  * --> [10] *)
 ```
+
+
+## Deeplang 编译器流水线
+
+上述简化编译器展示了 AST → 类型检查 → 代码生成 的基本流水线。
+Deeplang 的编译器前端遵循类似的架构，但更加完整：
+
+### 流水线总览
+
+```
+源文件 (.dp)
+    │
+    ▼
+[Lexer] ─── ocamllex 词法分析 ─── [Syntax/Lexer.mll]
+    │
+    ▼
+[Parser] ── ocamlyacc 语法解析 ─── [Syntax/Parser.mly]
+    │
+    ▼
+[AST] ───── ParseTree 定义 ──────── [Syntax/ParseTree.ml]
+    │
+    ▼
+[Walker] ── 语义遍历 ────────────── [Semantics/Walker.ml]
+    │  • 符号收集与名字解析
+    │  • 类型检查
+    │  • Interface 继承展开
+    │  • 重定义/冲突检测
+    ▼
+[ANF Conversion] ── AST→ANF ─────── [IR/Conversion.ml]
+    │  • CPS 转换
+    │  • 模式匹配编译 ([IR/ConvertMatch.ml])
+    │  • 控制流 desugaring
+    ▼
+[WasmGen] ── ANF→WAT ───────────── [IR/WasmGen.ml]
+    │  • FieldByName 解析
+    │  • WASM 指令选择
+    │  • Bump allocator 嵌入
+    ▼
+WAT 输出 (.wat)
+```
+
+### 与简化版的关键差异
+
+**1. 带附加数据的 AST**
+
+简化版中，我们讨论了用 `{ shape; loc; extra }` 模式给 AST 附加数据。
+Deeplang 的 [ParseTree.ml](../Syntax/ParseTree.ml) 采用了类似的模式：
+
+```ocaml
+type 'loc expr = { shape : 'loc expr_shape; span : 'loc; ... }
+```
+
+每个 AST 节点都携带了源码位置 `span`，用于错误报告。
+
+**2. 符号表**
+
+简化版中，类型检查使用 `VarMap` 跟踪变量类型。
+Deeplang 使用更完整的符号表 [Table.ml](../Semantics/Table.ml)：
+
+```ocaml
+type table = {
+    var : (string, var_info) Hashtbl.t;   (* 变量 → 类型、scope *)
+    fnc : (string, fnc_info) Hashtbl.t;   (* 函数 → 签名 *)
+    typ : (string, typ_info) Hashtbl.t;   (* 类型 → struct/ADT/interface 信息 *)
+    adt : (string, adt_info) Hashtbl.t;   (* ADT 分支信息 *)
+    ref : (string, ref_info) Hashtbl.t;   (* 引用解析 *)
+}
+```
+
+**3. Walker 而非递归函数**
+
+简化版直接使用递归函数 `type_check`。Deeplang 使用 Walker 模式
+（参见 [walker.md](walker.md)），将遍历与计算分离。
+`Walker.ml` 中的 `walk_top`、`walk_expr`、`walk_stmt` 等函数
+实现了对 AST 的自顶向下遍历。
+
+**4. 中间表示**
+
+简化版直接从带类型的 AST 生成字节码。Deeplang 引入了 ANF
+（参见 [simple-ANF.md](simple-ANF.md)）作为中间表示，
+将高级语言特性（嵌套表达式、模式匹配、非结构控制流）
+统一转化为简单的 block/label/jump 形式。
+
+**5. 目标代码**
+
+简化版生成自定义栈式虚拟机的字节码。
+Deeplang 生成 **WASM Text Format (.wat)**，
+这是一种标准化的、可移植的中间格式，
+可以进一步转换为 `.wasm` 二进制并在任意 WASM 运行时执行。
