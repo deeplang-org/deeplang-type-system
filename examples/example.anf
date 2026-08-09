@@ -1,0 +1,6 @@
+; ============================================================
+; Deeplang compilation errors for: example.dp
+; ============================================================
+; syntax error: Expecting top level clause
+;
+; (The parser does not yet support all syntax in this file)

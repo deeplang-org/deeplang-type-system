@@ -6,4 +6,3 @@ _build
 *.o
 flake.lock
 .claude
-doc/internal/*

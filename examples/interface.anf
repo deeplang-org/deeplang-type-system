@@ -1,0 +1,6 @@
+; ============================================================
+; Deeplang compilation errors for: interface.dp
+; ============================================================
+; syntax error: Constructor cannot take zero arguments.
+;
+; (The parser does not yet support all syntax in this file)

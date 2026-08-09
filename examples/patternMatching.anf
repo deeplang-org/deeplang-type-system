@@ -1,0 +1,6 @@
+; ============================================================
+; Deeplang compilation errors for: patternMatching.dp
+; ============================================================
+; syntax error: Expecting nonempty pattern list
+;
+; (The parser does not yet support all syntax in this file)

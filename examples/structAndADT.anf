@@ -1,0 +1,6 @@
+; ============================================================
+; Deeplang compilation errors for: structAndADT.dp
+; ============================================================
+; syntax error: Expecting type
+;
+; (The parser does not yet support all syntax in this file)
