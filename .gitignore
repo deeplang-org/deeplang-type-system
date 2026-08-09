@@ -5,3 +5,4 @@ _build
 *.bak
 *.o
 flake.lock
+.claude

@@ -708,21 +708,36 @@ let walk_top (context:context) (clause:top_clause) : unit =
             ; core = branches
             }))
 
-    | InterfaceDecl(decl) -> 
+    | InterfaceDecl(decl) ->
         let name = decl.intf_decl_name in
         ( match Hashtbl.find_opt table.typ name with
         | Some(_) -> error_type (Error "The same Interface Name")
         | None -> ()
         );
         let fun_table = Hashtbl.create 10 in
-        let walk_iter (decl:func_decl) = 
-            let args = List.map (fun farg->farg.farg_typ) decl.func_decl_args in
-            let name = List.map (fun farg->farg.farg_name) decl.func_decl_args in
-            Hashtbl.add fun_table decl.func_decl_name
+        (* First, copy methods from extended interfaces *)
+        let copy_from_parent pname =
+          match Hashtbl.find_opt table.typ pname with
+          | Some (Intf_data { meth }) ->
+              Hashtbl.iter (fun mname mdata ->
+                if Hashtbl.mem fun_table mname then
+                  error_type (Error ("Method " ^ mname ^ " conflict from extended interface " ^ pname))
+                else
+                  Hashtbl.add fun_table mname mdata
+              ) meth
+          | Some _ -> error_type (Error (pname ^ " is not an interface"))
+          | None -> error_type (Error ("Extended interface " ^ pname ^ " not found"))
+        in
+        List.iter copy_from_parent decl.intf_decl_extends;
+        (* Then add own methods, checking for conflicts *)
+        let walk_iter (d:func_decl) =
+            let args = List.map (fun farg->farg.farg_typ) d.func_decl_args in
+            let mname = List.map (fun farg->farg.farg_name) d.func_decl_args in
+            Hashtbl.add fun_table d.func_decl_name
             { args = args
-            ; rety = decl.func_decl_rety
-            ; name = name
-            } in 
+            ; rety = d.func_decl_rety
+            ; name = mname
+            } in
         List.iter walk_iter decl.intf_decl_methods;
         Hashtbl.add table.typ name (Intf_data { meth = fun_table })
 

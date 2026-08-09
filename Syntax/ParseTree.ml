@@ -227,6 +227,7 @@ type adt_def =
 
 type interface_decl =
     { intf_decl_name    : intf_name
+    ; intf_decl_extends : intf_name list
     ; intf_decl_methods : func_decl list }
     [@@deriving show]
 

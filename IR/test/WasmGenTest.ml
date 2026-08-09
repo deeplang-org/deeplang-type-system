@@ -1,3 +1,5 @@
+(** End-to-end test: parse .dp file, walk semantics, convert to ANF, generate WAT *)
+
 let normalize_filename file =
   let len = String.length file in
   if len >= 2 && String.sub file 0 2 = "./" then
@@ -11,13 +13,12 @@ let parse_file file : Syntax.ParseTree.top_clause list =
   Lexing.set_filename lexbuf (normalize_filename file);
   let program = Syntax.Parser.program Syntax.Lexer.token lexbuf in
   program
-  ;;
 
 open Semantics.Walker
 open Semantics.Table
 
 let process_file file =
-  let table : table = 
+  let table : table =
     { var=Hashtbl.create 10
     ; fnc=Hashtbl.create 10
     ; typ=Hashtbl.create 10
@@ -26,7 +27,7 @@ let process_file file =
     }
   in
 
-  let context : context = 
+  let context : context =
     { table   = table
     ; nametbl = Hashtbl.create 10
     ; scope   = []
@@ -50,10 +51,19 @@ let process_file file =
       Format.printf "semantics error: %a@ "
         Semantics.SemanticsError.print_error err);
 
+  let fname = normalize_filename file in
+
   let program = IR.Conversion.trans_program ~table ast in
 
+  (* First print ANF (same as ConversionTest) *)
+  Format.printf "=== ANF for %s ===@ " fname;
   program |> List.iter (fun fd ->
-    Format.printf "%a@ " IR.ANF.pp_function_definition fd)
+    Format.printf "%a@ " IR.ANF.pp_function_definition fd);
+
+  (* Then generate and print WAT *)
+  Format.printf "=== WAT for %s ===@ " fname;
+  let wat = IR.WasmGen.generate_wat table program in
+  Format.printf "%s@ " wat
 
 let _ =
   Format.printf "@[<v>";

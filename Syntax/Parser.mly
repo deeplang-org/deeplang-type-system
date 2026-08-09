@@ -271,11 +271,12 @@ top_clause :
             { adt_name = $2; adt_branches = $4 } }
     | TOK_INTERFACE TOK_UpperIdent TOK_LBRACE function_decls TOK_RBRACE
         { mk_top_clause @@ InterfaceDecl
-            { intf_decl_name = $2; intf_decl_methods = $4 } }
+            { intf_decl_name = $2; intf_decl_extends = []; intf_decl_methods = $4 } }
     | TOK_INTERFACE TOK_UpperIdent
         TOK_EXTENDS interface_name_list_nonempty
         TOK_LBRACE function_decls TOK_RBRACE
-        { failwith "unimplemented" }
+        { mk_top_clause @@ InterfaceDecl
+            { intf_decl_name = $2; intf_decl_extends = $4; intf_decl_methods = $6 } }
     | TOK_IMPL TOK_UpperIdent TOK_LBRACE function_impls TOK_RBRACE
         { mk_top_clause @@ MethodsImpl (mk_impl None $2 $4) }
     | TOK_IMPL TOK_UpperIdent

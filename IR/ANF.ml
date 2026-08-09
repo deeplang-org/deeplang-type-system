@@ -54,11 +54,12 @@ and path = path_node list
         {li [Method m] selects the implementation of method [m] from an interface implementation}
     } *)
 and path_node =
-    | Field  of int
+    | Field       of int
+    | FieldByName of string  (** unresolved field access, resolved in later pass *)
     | Deref
-    | AsTag  of int
+    | AsTag       of int
     | Tag
-    | Method of string
+    | Method      of string
 
 (** A [value] in the ANF IR is something immediately available without needing
     any computation. *)
@@ -156,6 +157,7 @@ let pp_lvalue fmt lv =
     (fun node ->
         match node with
         | Field k -> Format.fprintf fmt ".%d" k
+        | FieldByName n -> Format.fprintf fmt ".%s" n
         | Deref -> Format.fprintf fmt ".*"
         | AsTag t -> Format.fprintf fmt ".as(%d)" t
         | Tag -> Format.fprintf fmt ".tag"
