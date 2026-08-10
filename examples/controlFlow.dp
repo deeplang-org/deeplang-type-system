@@ -1,33 +1,55 @@
-fun main(x : Char, y : Bool) {
+fun main() {
   let mut f : Bool;
-  let c : Char = 'c';
   f = true;
 
-  // meaningless if structure
+  // if/else chain
   if (f) {
-    print(1);
+    let dummy1 : I32 = 1;
   } else if (true) {
-    print(f);
+    let dummy2 : I32 = 2;
     if (false) {
-      foo();
-    } else if (bar) {
-      baz();
+      let dummy3 : I32 = 3;
+    } else if (f) {
+      let dummy4 : I32 = 4;
     }
   } else {
-    fooBar();
+    let dummy5 : I32 = 5;
   }
 
-  // meaningless while structure
-  let mut (x, b): I32 = (0, 3);
-  while (1 + x == 3) {
-    return (0, (1.2, 'c'), "Abc");
+  // while loop
+  let mut a : I32 = 0;
+  while (a < 3) {
+    a = a + 1;
   }
 
-  // meaningless for structures
-  for (df: I32 in someThing) {
-    return (0, (1.2, 'c'), "Abc");
+  // C-style for loop
+  for (let mut i : I32 = 0; i < 5; ++i) {
+    let dummy6 : I32 = i;
   }
-  for ((key, value) in someThing) {
-    return (0, (1.2, 'c'), "Abc");
+
+  // while loop with break and continue
+  let mut counter : I32 = 0;
+  while (true) {
+    if (counter > 5) {
+      break;
+    } else {
+      counter = counter + 1;
+      continue;
+    }
+  }
+}
+
+// for-in loop with simple pattern
+fun testForIn(arr : [I32; 3]) {
+  for (item : I32 in arr) {
+    let dummy7 : I32 = item;
+  }
+}
+
+// for-in loop with tuple pattern
+fun testForInTuple(pairs : [(I32, Bool); 2]) {
+  for ((k, v) in pairs) {
+    let dummy8 : I32 = k;
+    let dummy9 : Bool = v;
   }
 }

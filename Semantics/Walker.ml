@@ -374,16 +374,16 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         | None -> error_type (Error (" function " ^ func ^ " not found "))
         | Some(data) -> 
             (* arg : formal, i.e. declared in function , para : actual *)
-            let ty_eq_with_intf (para_t:typ) (arg_t:typ) = 
-                if Helper.ty_eq para_t arg_t then true 
+            let ty_eq_with_intf (para_t:typ) (arg_t:typ) =
+                if Helper.ty_eq para_t arg_t then true
                 else match arg_t.shape with (* para_t = Type <: Intf = arg_t *)
-                | TyNamed(intf_name, tys) -> 
+                | TyNamed(intf_name, tys) ->
                     unsupport_generics tys;
                     ( match Hashtbl.find_opt table.typ intf_name with
                     | None -> error_type (Error "Impossible, DEBUG please")
-                    (* arg_t is a interface *)
+                    (* arg_t is an interface *)
                     | Some(Intf_data(_)) -> ( match para_t.shape with
-                        | TyNamed(type_name, tys) -> 
+                        | TyNamed(type_name, tys) ->
                             unsupport_generics tys;
                             ( match Hashtbl.find_opt table.typ type_name with
                             | None -> error_type (Error "Impossible, DEBUG please")
@@ -555,7 +555,11 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
     (* REMAIN walk pattern FOR-RANGE *)
     | StmtFor(pattern, expr, body)->
         let typ = walk_expr context expr in
-        walk_pattern context pattern typ;
+        let elem_typ = match typ.shape with
+          | TyArray(elem_ty, _) -> elem_ty
+          | _ -> error_type (ExprError (expr, " for-in loop requires an array expression"))
+        in
+        walk_pattern context pattern elem_typ;
 
         context.checkloop <- context.checkloop + 1;
         walk_stmt context body;
@@ -587,8 +591,10 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
     | StmtMatch(expr, branches) ->
         let typ = walk_expr context expr in
         let walk_iter (pattern,body) = (
+            scope_beg context;
             walk_pattern context pattern typ;
-            walk_stmt context body
+            walk_stmt context body;
+            scope_end context
         ) in List.iter walk_iter branches
     | StmtReturn(expr) ->
         (* process control here *)
@@ -838,7 +844,15 @@ let walk_top (context:context) (clause:top_clause) : unit =
             walk_method_stmt context args rety stmt
         in
         List.iter walk_iter methods;
-        walk_method_intf context intf typ
+        walk_method_intf context intf typ;
+        (* Register the interface on the type for subtyping checks *)
+        (match intf with
+         | Some(intf_name) ->
+             (match Hashtbl.find_opt table.typ typ with
+              | Some(Struct_data(data)) -> data.intf <- intf_name :: data.intf
+              | Some(ADT_data(data)) -> data.intf <- intf_name :: data.intf
+              | _ -> ())
+         | None -> ())
 
     | TopStmt(stmt) ->
         walk_stmt context stmt

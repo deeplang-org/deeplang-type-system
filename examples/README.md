@@ -8,9 +8,9 @@ along with their compiled outputs in ANF (`.anf`) and WASM Text Format (`.wat`).
 | Source | ANF | WASM | Description |
 |--------|-----|------|-------------|
 | [basicMain.dp](basicMain.dp) | [basicMain.anf](basicMain.anf) | [basicMain.wat](basicMain.wat) | Basic variable declarations (`let`) with type annotations |
-| [controlFlow.dp](controlFlow.dp) | [controlFlow.anf](controlFlow.anf) | [controlFlow.wat](controlFlow.wat) | `if`/`else` chains, `while` loops, `for` loops, `return` with tuples |
+| [controlFlow.dp](controlFlow.dp) | [controlFlow.anf](controlFlow.anf) | [controlFlow.wat](controlFlow.wat) | `if`/`else` chains, `while` loops, `for` loops, `for`-`in` loops, `break`/`continue` |
 | [example.dp](example.dp) | [example.anf](example.anf) | [example.wat](example.wat) | Comprehensive example: comments, ADT with methods, interface, impl with delegate, nested expressions |
-| [interface.dp](interface.dp) | [interface.anf](interface.anf) | [interface.wat](interface.wat) | Interface definition, `extends` inheritance, `impl` blocks, trait-based dispatch |
+| [interface.dp](interface.dp) | [interface.anf](interface.anf) | [interface.wat](interface.wat) | Interface definition, `impl` blocks, trait-based dispatch |
 | [patternMatching.dp](patternMatching.dp) | [patternMatching.anf](patternMatching.anf) | [patternMatching.wat](patternMatching.wat) | Pattern matching: wildcard, variable, ADT, tuple, struct, literal patterns |
 | [structAndADT.dp](structAndADT.dp) | [structAndADT.anf](structAndADT.anf) | [structAndADT.wat](structAndADT.wat) | ADT variants, struct with delegate (`as`), struct literal construction |
 
@@ -19,16 +19,15 @@ along with their compiled outputs in ANF (`.anf`) and WASM Text Format (`.wat`).
 | File | Status | Notes |
 |------|--------|-------|
 | `basicMain.dp` | ✅ Compiles | Full pipeline: `.dp` → ANF → WAT |
-| `controlFlow.dp` | ⚠️ Semantic errors | References undefined functions (`print`, `foo`, etc.) and types |
-| `example.dp` | ⚠️ Semantic errors | References undefined types (`Int`, `String`, `Foo`, etc.) and functions |
-| `interface.dp` | ⚠️ Semantic errors | References undefined interfaces (`Bar`, `Quack`) and types |
-| `patternMatching.dp` | ⚠️ Semantic errors | References undefined variables (`x`) |
-| `structAndADT.dp` | ⚠️ Semantic errors | References undefined types (`Point`, `Circle`) |
+| `controlFlow.dp` | ✅ Compiles | if/else, while, for, for-in, break/continue |
+| `example.dp` | ✅ Compiles | Comprehensive: ADT with methods, interface, impl, pattern matching, expressions |
+| `interface.dp` | ✅ Compiles | Interface definition, `impl` blocks, trait-based dispatch |
+| `patternMatching.dp` | ✅ Compiles | ADT, tuple, struct, and literal pattern matching |
+| `structAndADT.dp` | ✅ Compiles | ADT variants, struct with delegate, struct literal construction |
 
-All files now parse successfully. The remaining semantic errors are due to references
-to standard library types and functions not yet defined in the language runtime.
-The `.anf` and `.wat` files contain the actual compiler output including any semantic
-error messages followed by successfully generated code.
+All files now parse and pass semantic analysis successfully. Each example is self-contained
+with all referenced types, functions, and interfaces defined within the file itself.
+The `.anf` and `.wat` files contain the full compiler output.
 
 ## Pipeline
 

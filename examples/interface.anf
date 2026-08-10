@@ -1,14 +1,23 @@
-semantics error: [Error] Extended interface Bar not found
+fun Duck.quack() -> #1 -- "interface.dp":11,2-13,3 =
+  $1 = 1 -- "interface.dp":12,4-12,24
+  jump #1 () -- "interface.dp":11,2-13,3
 
-semantics error: [Error] Foo is not a type but an interface
+fun Bird.quack() -> #2 -- "interface.dp":22,2-24,3 =
+  $2 = 2 -- "interface.dp":23,4-23,24
+  jump #2 () -- "interface.dp":22,2-24,3
 
-semantics error: [Error] no type namedQuack
+fun sound($3) -> #3 -- "interface.dp":27,0-29,1 =
+  $4 = $3.quack -- "interface.dp":28,2-28,16
+  $5 = $4($3) -- "interface.dp":28,2-28,16
+  jump #3 () -- "interface.dp":27,0-29,1
 
-semantics error: [Error] no type namedQuack
+fun main() -> #4 -- "interface.dp":31,0-37,1 =
+  $6 = mk((ANF.ADT ("Duck", "Mallard")))() -- "interface.dp":32,19-32,26
+  $7 = mk((ANF.ADT ("Bird", "Sparrow")))() -- "interface.dp":33,19-33,26
+  $8 = sound -- "interface.dp":35,2-35,13
+  $9 = $8($6) -- "interface.dp":35,2-35,13
+  $10 = sound -- "interface.dp":36,2-36,13
+  $11 = $10($7) -- "interface.dp":36,2-36,13
+  jump #4 () -- "interface.dp":31,0-37,1
 
-semantics error: [Type Error] Type Named Quack Not Found
-in [file "examples/interface.dp", row 32, col 18 to row 32, col 23]
 
-semantics error: [Error]  ADT label Duck Not Found 
-
-Fatal error: exception Not_found

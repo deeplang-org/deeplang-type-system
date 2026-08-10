@@ -1,43 +1,37 @@
-interface Foo {
-  fun foo(x: Int, y: Int) -> ();
-
-  fun bar(x: Int, y: Int) -> Bool;
+interface Quack {
+  fun quack() -> ();
 }
 
-interface Bar extends Foo, Bar {
-  fun foo(x: Int, y: Int);
-  fun bar(x: Int, y: Int) -> Bool;
-}
+type Duck [
+  Mallard,
+  RubberDuck
+]
 
-impl Foo for Baz {
-  fun foo(x: Int, y: Int) {
-    print("bla");
+impl Quack for Duck {
+  fun quack() -> () {
+    let dummy : I32 = 1;
   }
 }
 
-type Duck [ BaseDuck ]
-  impl Quack for Duck {
-      fun quack() -> () {
-          print("quaaaack");
-      }
-  }
-  
-type Bird [ BaseBird ]
+type Bird [
+  Sparrow,
+  Penguin
+]
+
 impl Quack for Bird {
-    fun quack() -> () {
-        print("bird quaaaack");
-    }
+  fun quack() -> () {
+    let dummy : I32 = 2;
+  }
 }
 
 fun sound(animal: Quack) -> () {
-    animal.quack();
+  animal.quack();
 }
 
 fun main() -> () {
-    let duck: Duck = Duck();
-    let bird: Bird = Bird();
+  let duck: Duck = Mallard;
+  let bird: Bird = Sparrow;
 
-    // type checking pass
-    sound(duck); // quaaaak
-    sound(bird); // bird quaaaak
+  sound(duck);
+  sound(bird);
 }

@@ -1,89 +1,142 @@
-/*   Comment   */
-// This is a single line comment
 /*
-    this is a block comment
+   Deeplang Comprehensive Example
+   This file demonstrates: comments, ADT with methods, interface,
+   impl blocks, control flow, pattern matching, and nested expressions.
 */
-/*   Comment   */
-/* Declaration */
-let i1 : Int;
-let s1 : String;
-fun foo ( ){};
-fun bar (str : String)-> Int {};
+
+// Variable declarations with primitive types
+let i1 : I32;
+let f1: F64 = 3.14;
 let mut flag : Bool;
-/* Declaration */
-/*  Statement  */
-if (flag)
-{
-    foo( );
-}
-else
-{
-    bar( );
-};
-for({let mut i : Int = 0};i<10;++i) // must mutable
-{
-    foo( );
-};
-/*  Statement  */
-/* Definition  */
-fun main( ) 
-{
-    let foo : Foo = new Foo ( );
-    foo.fib(10);
-};
 let mut b : I32;
-fun foo( a : U32 )->In{ };
-type Show {
-    show : This->String
+
+// Function definitions
+fun noop () {};
+
+fun add(a: I32, b: I32) -> I32 {
+  return a + b * 2;
 };
 
-fun bar( a: U32)->String{
-    let mut str : String;
-};
+// ADT type definition
+type Shape [
+  Rectangle(width: I32, height: I32),
+  Circle(radius: I32)
+]
 
-type Shape [
-	Rectangle(width: I32, height: I32),
-	Circle(radius: I32)
-]{};
-type Shape [
-	Rectangle(width: I32, height: I32),
-	Circle(radius: I32)
+// ADT with methods (including pattern matching)
+type Animal [
+  Dog(name: I32),
+  Cat(name: I32)
 ] {
-	fun area(this: This) -> I32 {
-		match(this) {
-			Rectangle(width, height) => {
-				;
-			}
-			Circle(radius) => {
-				;
-			}
-		};
-        return "daw";
-	}
-};
-// Interface
-type Show {
-    show: This -> String
-};
-
-// Implement
-type Sigma(string : String, as an :An) impl Show
-{
-    fun show(this:This) -> String
-    {
-        return string;
+  fun sound(this: This) -> I32 {
+    match(this) {
+      Dog(name) => {
+        return name;
+      }
+      Cat(name) => {
+        return name;
+      }
     }
+  }
 };
 
-// Delegate
-type Animal (weight: I32) {};
-type Person (
-    age: I32, name: String,
-    as animal: Animal // delegate
-){};
+// Struct type
+type Point {
+  x : I32,
+  y : I32
+}
 
-// expression
-let a : Int = times((--b<<2) +3*1, 6*7) == 3 && true;
+// Struct with delegate
+type ColoredPoint {
+  as position : Point,
+  color : I32
+}
 
-// operator. operator()
-main.test( ); // 需要额外地打空格，这里不是很能理解，可能是分开的lexer"(" ")"
+// Interface definition
+interface Show {
+  fun show() -> I32;
+}
+
+// Implement interface for a type
+type Greeter [
+  Hello,
+  Goodbye
+]
+
+impl Show for Greeter {
+  fun show() -> I32 {
+    let result : I32 = 42;
+    return result;
+  }
+}
+
+// Control flow: if/else, while, for, C-style for
+fun controlFlow() -> I32 {
+  let mut x : I32 = 0;
+
+  if (true) {
+    x = 1;
+  } else {
+    x = 2;
+  };
+
+  let mut counter : I32 = 0;
+  while (counter < 10) {
+    counter = counter + 1;
+    if (counter > 5) {
+      break;
+    } else {
+      continue;
+    }
+  };
+
+  for (let mut i : I32 = 0; i < 5; ++i) {
+    x = x + i;
+  };
+
+  return x;
+}
+
+// For-in loop with tuple patterns
+fun testForIn(arr: [I32; 3]) {
+  for (item : I32 in arr) {
+    let dummy : I32 = item;
+  }
+}
+
+// Pattern matching on ADT
+fun testMatch(shape: Shape) -> I32 {
+  match(shape) {
+    Rectangle(width, height) => {
+      return width;
+    }
+    Circle(radius) => {
+      return radius;
+    }
+  }
+}
+
+// Pattern matching with struct and literal patterns
+fun testStructMatch(pt: Point) {
+  match(pt) {
+    Point { x : _, y : _ } => { return (); }
+    Point { x : 7, y : _ } => { return (); }
+    _ => { return (); }
+  }
+}
+
+// Main function
+fun main() -> () {
+  let shape: Shape = Rectangle(3, 4);
+  let area : I32 = testMatch(shape);
+
+  let pt: Point = Point { x : 1, y : 2 };
+  testStructMatch(pt);
+
+  let greet: Greeter = Hello;
+  let val : I32 = greet.show();
+
+  let result : I32 = controlFlow();
+
+  let z : I32 = add(1, 2);
+}

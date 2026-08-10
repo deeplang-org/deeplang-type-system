@@ -305,7 +305,7 @@ top_clause :
     | TOK_IMPL TOK_UpperIdent
         TOK_FOR TOK_UpperIdent
         TOK_LBRACE function_impls TOK_RBRACE
-        { mk_top_clause @@ MethodsImpl (mk_impl (Some $4) $2 $6) }
+        { mk_top_clause @@ MethodsImpl (mk_impl (Some $2) $4 $6) }
     | function_impl
         { mk_top_clause @@ FunctionDef $1 }
     | function_impl TOK_SEMICOLON
