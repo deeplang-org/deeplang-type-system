@@ -27,6 +27,7 @@ semantics error: [Error]  function times not found
 
 semantics error: [Error] varaible main Not Found
 
+=== ANF for examples/example.dp ===
 fun foo() -> #1 -- "examples/example.dp":10,0-10,13 =
   jump #1 () -- "examples/example.dp":10,0-10,13
 
@@ -46,4 +47,5 @@ fun bar($6) -> #5 -- "examples/example.dp":40,0-42,1 =
   $7 = 0 -- "examples/example.dp":41,4-41,25
   jump #5 () -- "examples/example.dp":40,0-42,1
 
-
+=== WAT for examples/example.dp ===
+Fatal error: exception Failure("struct Foo not found")

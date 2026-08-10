@@ -1,6 +1,39 @@
-; ============================================================
-; Deeplang compilation errors for: patternMatching.dp
-; ============================================================
-; syntax error: Expecting nonempty pattern list
-;
-; (The parser does not yet support all syntax in this file)
+semantics error: [Error] varaible x Not Found
+
+fun main() -> #1 -- "examples/patternMatching.dp":1,0-14,1 =
+  block #2() =
+    jump #1 () -- "examples/patternMatching.dp":1,0-14,1
+  in
+  block #3() =
+    jump #1 (0) -- "examples/patternMatching.dp":3,18-3,19
+  in
+  block #4($1) =
+    jump #1 (1) -- "examples/patternMatching.dp":4,25-4,26
+  in
+  block #5() =
+    jump #1 (2) -- "examples/patternMatching.dp":5,26-5,27
+  in
+  block #6($2) =
+    jump #1 (3) -- "examples/patternMatching.dp":6,29-6,30
+  in
+  block #7() =
+    jump #1 (4) -- "examples/patternMatching.dp":7,19-7,20
+  in
+  block #8($3) =
+    jump #1 (5) -- "examples/patternMatching.dp":8,22-8,23
+  in
+  block #9($4, $5, $6, $7, $8) =
+    jump #1 (6) -- "examples/patternMatching.dp":9,77-9,78
+  in
+  block #10() =
+    jump #1 (7) -- "examples/patternMatching.dp":10,18-10,19
+  in
+  block #11() =
+    jump #1 (8) -- "examples/patternMatching.dp":11,60-11,61
+  in
+  block #12($9) =
+    jump #1 (9) -- "examples/patternMatching.dp":12,66-12,67
+  in
+  jump #3 () -- "examples/patternMatching.dp":3,9-3,22
+
+

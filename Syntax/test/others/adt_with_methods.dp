@@ -1,0 +1,6 @@
+type Maybe [
+  Nothing,
+  Just(value: I32)
+] {
+  fun get(this: This) -> I32 {}
+}

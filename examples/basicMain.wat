@@ -1,3 +1,11 @@
+=== ANF for examples/basicMain.dp ===
+fun main($1) -> #1 -- "examples/basicMain.dp":1,0-8,1 =
+  $2 = 1 -- "examples/basicMain.dp":3,2-3,18
+  $3 = 2 -- "examples/basicMain.dp":4,2-4,17
+  $4 = 3.000000 -- "examples/basicMain.dp":5,2-5,19
+  jump #1 () -- "examples/basicMain.dp":1,0-8,1
+
+=== WAT for examples/basicMain.dp ===
 (module
   (memory (export "memory") 1)
   (global $heap_ptr (mut i32) (i32.const 1024))
@@ -70,3 +78,5 @@
       nop))
 
 )
+
+

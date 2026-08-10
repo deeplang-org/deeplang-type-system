@@ -1,32 +1,34 @@
 # Deeplang Examples
 
 This directory contains Deeplang (`.dp`) source files demonstrating various language features,
-along with their compiled outputs in ANF (`.anf`) and WASM Text Format (`.wasm`).
+along with their compiled outputs in ANF (`.anf`) and WASM Text Format (`.wat`).
 
 ## File Index
 
 | Source | ANF | WASM | Description |
 |--------|-----|------|-------------|
-| [basicMain.dp](basicMain.dp) | [basicMain.anf](basicMain.anf) | [basicMain.wasm](basicMain.wasm) | Basic variable declarations (`let`) with type annotations |
-| [controlFlow.dp](controlFlow.dp) | [controlFlow.anf](controlFlow.anf) | [controlFlow.wasm](controlFlow.wasm) | `if`/`else` chains, `while` loops, `for` loops, `return` with tuples |
-| [example.dp](example.dp) | [example.anf](example.anf) | [example.wasm](example.wasm) | Comprehensive example: comments, ADT with methods, interface, impl with delegate, nested expressions |
-| [interface.dp](interface.dp) | [interface.anf](interface.anf) | [interface.wasm](interface.wasm) | Interface definition, `extends` inheritance, `impl` blocks, trait-based dispatch |
-| [patternMatching.dp](patternMatching.dp) | [patternMatching.anf](patternMatching.anf) | [patternMatching.wasm](patternMatching.wasm) | Pattern matching: wildcard, variable, ADT, tuple, struct, literal patterns |
-| [structAndADT.dp](structAndADT.dp) | [structAndADT.anf](structAndADT.anf) | [structAndADT.wasm](structAndADT.wasm) | ADT variants, struct with delegate (`as`), struct literal construction |
+| [basicMain.dp](basicMain.dp) | [basicMain.anf](basicMain.anf) | [basicMain.wat](basicMain.wat) | Basic variable declarations (`let`) with type annotations |
+| [controlFlow.dp](controlFlow.dp) | [controlFlow.anf](controlFlow.anf) | [controlFlow.wat](controlFlow.wat) | `if`/`else` chains, `while` loops, `for` loops, `return` with tuples |
+| [example.dp](example.dp) | [example.anf](example.anf) | [example.wat](example.wat) | Comprehensive example: comments, ADT with methods, interface, impl with delegate, nested expressions |
+| [interface.dp](interface.dp) | [interface.anf](interface.anf) | [interface.wat](interface.wat) | Interface definition, `extends` inheritance, `impl` blocks, trait-based dispatch |
+| [patternMatching.dp](patternMatching.dp) | [patternMatching.anf](patternMatching.anf) | [patternMatching.wat](patternMatching.wat) | Pattern matching: wildcard, variable, ADT, tuple, struct, literal patterns |
+| [structAndADT.dp](structAndADT.dp) | [structAndADT.anf](structAndADT.anf) | [structAndADT.wat](structAndADT.wat) | ADT variants, struct with delegate (`as`), struct literal construction |
 
 ## Compilation Status
 
 | File | Status | Notes |
 |------|--------|-------|
 | `basicMain.dp` | ✅ Compiles | Full pipeline: `.dp` → ANF → WAT |
-| `controlFlow.dp` | ⚠️ Syntax error | `mut` keyword not yet supported by parser |
-| `example.dp` | ⚠️ Syntax error | Top-level clause syntax not fully supported |
-| `interface.dp` | ⚠️ Syntax error | Multi-parent `extends` not yet supported |
-| `patternMatching.dp` | ⚠️ Syntax error | Complex pattern syntax not fully supported |
-| `structAndADT.dp` | ⚠️ Syntax error | Delegate field syntax not yet supported |
+| `controlFlow.dp` | ⚠️ Semantic errors | References undefined functions (`print`, `foo`, etc.) and types |
+| `example.dp` | ⚠️ Semantic errors | References undefined types (`Int`, `String`, `Foo`, etc.) and functions |
+| `interface.dp` | ⚠️ Semantic errors | References undefined interfaces (`Bar`, `Quack`) and types |
+| `patternMatching.dp` | ⚠️ Semantic errors | References undefined variables (`x`) |
+| `structAndADT.dp` | ⚠️ Semantic errors | References undefined types (`Point`, `Circle`) |
 
-For files with syntax errors, the `.anf` file contains the error message as a comment,
-and the `.wasm` file contains only the bump-allocator boilerplate module skeleton.
+All files now parse successfully. The remaining semantic errors are due to references
+to standard library types and functions not yet defined in the language runtime.
+The `.anf` and `.wat` files contain the actual compiler output including any semantic
+error messages followed by successfully generated code.
 
 ## Pipeline
 
@@ -37,7 +39,7 @@ Each `.dp` file is processed through the compiler pipeline:
 ```
 
 - **`.anf`** — A-Normal Form intermediate representation with CPS-style blocks, labels, and jumps
-- **`.wasm`** — WebAssembly Text Format (S-expression), targeting a stack-based VM with a bump allocator
+- **`.wat`** — WebAssembly Text Format (S-expression), targeting a stack-based VM with a bump allocator
 
 ## Compilation Example
 
@@ -59,7 +61,7 @@ fun main($1) -> #1 =
   jump #1 ()
 ```
 
-**WAT** (`basicMain.wasm`):
+**WAT** (`basicMain.wat`):
 ```lisp
 (func $main (param $v1 i32) (result i32)
   i32.const 1

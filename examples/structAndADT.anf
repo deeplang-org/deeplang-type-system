@@ -1,6 +1,11 @@
-; ============================================================
-; Deeplang compilation errors for: structAndADT.dp
-; ============================================================
-; syntax error: Expecting type
-;
-; (The parser does not yet support all syntax in this file)
+semantics error: [Type Error] Type Named Point Not Found
+in [file "examples/structAndADT.dp", row 10, col 18 to row 10, col 23]
+
+semantics error: [Error]  types doesn't match with ADT label Circle
+
+semantics error: [Error]  type ColoredPoint Not Found 
+
+fun main($1) -> #1 -- "examples/structAndADT.dp":14,0-14,20 =
+  jump #1 () -- "examples/structAndADT.dp":14,0-14,20
+
+

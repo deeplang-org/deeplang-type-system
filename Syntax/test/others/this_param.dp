@@ -1,0 +1,3 @@
+interface Foo {
+  fun method(this: This) -> I32
+}

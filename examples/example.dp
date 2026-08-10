@@ -51,10 +51,10 @@ type Shape [
 ] {
 	fun area(this: This) -> I32 {
 		match(this) {
-			Rectangle(width, height) {
+			Rectangle(width, height) => {
 				;
 			}
-			Circle(radius) {
+			Circle(radius) => {
 				;
 			}
 		};

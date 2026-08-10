@@ -20,6 +20,11 @@ let var_to_value ~src (var : ANF.variable) : ANF.value =
 let lookup_var_type (var_table : var_table) (name : string) : Syntax.ParseTree.typ option =
   try (List.assoc name var_table).var_typ with Not_found -> None
 
+(** [lookup_var_name var_table name] safely looks up the ANF name of a variable *)
+let lookup_var_name (var_table : var_table) (name : string) : ANF.variable =
+  try (List.assoc name var_table).name with Not_found ->
+    let v = ANF.gen_var () in v
+
 
 (* To convert AST to ANF, we use continuation-passing-style during the conversion.
    Translation of every AST node receives an extra "continuation" parameter,
@@ -106,7 +111,7 @@ let rec trans_expr
   | ExpLit lit -> apply_expr_cont ~span:expr.span cont (ConvertMatch.trans_lit lit)
   | ExpVar var ->
       apply_expr_cont ~span:expr.span cont
-        (var_to_value ~src:expr.span (List.assoc var var_table).name)
+        (var_to_value ~src:expr.span (lookup_var_name var_table var))
   | ExpBinOp (op, lhs, rhs) ->
       trans_expr ~table ~var_table lhs (Complex (fun lhs_value ->
           trans_expr ~table ~var_table rhs (Complex (fun rhs_value ->
@@ -115,11 +120,26 @@ let rec trans_expr
                 apply_expr_cont ~span:expr.span cont
                   (var_to_value ~src:expr.span result_var))))))
   | ExpUnOp (op, unval) ->
-      trans_expr ~table ~var_table unval (Complex (fun un_value ->
-          let result_var = ANF.gen_var () in
-          Stmt(expr.span, Decl(result_var, UnOp(op, un_value)),
-              apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)
-          )))
+      (match op with
+       | UnOpPreInc | UnOpPreDec ->
+           (* Pre-inc/dec: read, add/sub 1, write back, return new value *)
+           let calc_op = match op with UnOpPreInc -> Syntax.ParseTree.BinOpCalculate Syntax.ParseTree.BinOpAdd | _ -> Syntax.ParseTree.BinOpCalculate Syntax.ParseTree.BinOpSub in
+           let name = match unval.shape with ExpVar n -> n | _ -> failwith "impossible" in
+           let anf_name = lookup_var_name var_table name in
+           let lv : ANF.lvalue = { lv_var = anf_name; lv_path = []; lv_src = expr.span } in
+           let tmp_var = ANF.gen_var () in
+           let result_var = ANF.gen_var () in
+           let one_val = ANF.Int 1 in
+           Stmt(expr.span, Decl(tmp_var, Val (LVal lv)),
+             Stmt(expr.span, Decl(result_var, BinOp(calc_op, var_to_value ~src:expr.span tmp_var, one_val)),
+               Stmt(expr.span, Assign(lv, var_to_value ~src:expr.span result_var),
+                 apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))))
+       | _ ->
+           trans_expr ~table ~var_table unval (Complex (fun un_value ->
+               let result_var = ANF.gen_var () in
+               Stmt(expr.span, Decl(result_var, UnOp(op, un_value)),
+                   apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var)
+               ))))
   | ExpTuple elems ->
     traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex 
       (fun value_list -> 
@@ -136,6 +156,13 @@ let rec trans_expr
         Stmt(expr.span, Decl(result_var, MkData(ADT(sum_typ_name, label), value_list)),
         apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
     ))
+  | ExpNew (name, elems) ->
+    traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex
+      (fun value_list ->
+        let result_var = ANF.gen_var () in
+        Stmt(expr.span, Decl(result_var, MkData(Struct(name), value_list)),
+        apply_expr_cont ~span:expr.span cont (var_to_value ~src:expr.span result_var))
+    ))
   | ExpStruct (name, tagged_elems) ->
     let elems = List.map (fun (_, e) -> e) tagged_elems in
     traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span elems (Complex
@@ -146,7 +173,7 @@ let rec trans_expr
     ))
   | ExpThis ->
       apply_expr_cont ~span:expr.span cont
-        (var_to_value ~src:expr.span (List.assoc "this" var_table).name)
+        (var_to_value ~src:expr.span (lookup_var_name var_table "this"))
   | ExpApp (func, args) ->
       traverse_expr ~trans_worker:(trans_expr ~table ~var_table) ~span:expr.span args (Complex
         (fun arg_values ->
@@ -200,6 +227,8 @@ let rec trans_expr
           | PatWildcard | PatLit _ -> acc
           | PatVar vpat -> vpat.vpat_name :: acc
           | PatAs(pat', vpat) -> bindings_of_pat (vpat.vpat_name :: acc) pat'
+          | PatAnn(pat', _) -> bindings_of_pat acc pat'
+          | PatMut(pat') -> bindings_of_pat acc pat'
           | PatTuple pats | PatADT(_, pats) ->
               List.fold_left bindings_of_pat acc pats
           | PatStruct(_, field_pats) ->
@@ -284,18 +313,18 @@ and trans_stmt
       (* [StmtReturn] is early return: what's behind it will never get executed.
          So the continuation is discarded *)
       trans_expr ~table ~var_table expr (Simple return)
-  | StmtDecl ({ shape = PatVar vpat;_ }, rhs) ->
-      (* TODO: handle all patterns *)
+  | StmtDecl (pat, rhs) when (match pat.shape with PatVar _ | PatMut({shape=PatVar _;_}) | PatAnn({shape=PatVar _;_}, _) -> true | _ -> false) ->
+      (* Handle simple variable declarations, possibly wrapped in PatMut or PatAnn *)
+      let rec unwrap_var (p : Syntax.ParseTree.pattern) : Syntax.ParseTree.var_pattern option =
+        match p.shape with
+        | PatVar vpat -> Some vpat
+        | PatMut(p') | PatAnn(p', _) -> unwrap_var p'
+        | _ -> None
+      in
+      let vpat = match unwrap_var pat with Some v -> v | None -> failwith "impossible" in
       trans_expr ~table ~var_table rhs (Complex (fun rhs_value ->
           match rhs_value with
           | LVal { lv_var; lv_path = []; lv_src = _ } when vpat.vpat_mut = Imm ->
-              (* if [rhs_value] is also a variable,
-                 we can reuse this variable and don't have to generate a new declaration.
-
-                 However, this only applies to immutable variables.
-                 For mutable variables, we must always create a new ANF variable.
-
-                 FIXME: [lv_var] must be immutable too. check for it *)
               let new_var_table = (vpat.vpat_name, { name = lv_var; var_typ = vpat.vpat_typ }) :: var_table in
               apply_stmt_cont cont ~var_table:new_var_table
           | _ ->
@@ -303,6 +332,22 @@ and trans_stmt
               let new_var_table = (vpat.vpat_name, { name = anf_var; var_typ = vpat.vpat_typ }) :: var_table in
               Stmt ( stmt.span, Decl (anf_var, Val rhs_value),
                 apply_stmt_cont cont ~var_table:new_var_table)))
+  | StmtDeclNoInit pat ->
+      (* Declaration without initializer: extract the variable pattern, unwrapping PatMut/PatAnn *)
+      let rec unwrap_var (p : Syntax.ParseTree.pattern) : Syntax.ParseTree.var_pattern option =
+        match p.shape with
+        | PatVar vpat -> Some vpat
+        | PatMut(p') | PatAnn(p', _) -> unwrap_var p'
+        | _ -> None
+      in
+      (match unwrap_var pat with
+       | Some vpat ->
+           let anf_var = ANF.gen_var () in
+           let new_var_table = (vpat.vpat_name, { name = anf_var; var_typ = vpat.vpat_typ }) :: var_table in
+           Stmt (stmt.span, Decl(anf_var, Val(Int 0)),
+             apply_stmt_cont cont ~var_table:new_var_table)
+       | None ->
+           failwith "uninitialized declaration with non-variable pattern not yet supported in ANF")
   | StmtIf (cond, conseq, alter) ->
       trans_expr ~table ~var_table cond (Complex (fun cond_value ->
           let[@inline] trans_if (k : stmt_continuation) : ANF.program =
@@ -391,6 +436,8 @@ and trans_stmt
           | PatWildcard | PatLit _ -> acc
           | PatVar vpat -> vpat.vpat_name :: acc
           | PatAs(pat', vpat) -> bindings_of_pat (vpat.vpat_name :: acc) pat'
+          | PatAnn(pat', _) -> bindings_of_pat acc pat'
+          | PatMut(pat') -> bindings_of_pat acc pat'
           | PatTuple pats | PatADT(_, pats) ->
               List.fold_left bindings_of_pat acc pats
           | PatStruct(_, field_pats) ->
@@ -449,7 +496,7 @@ and trans_stmt
         | ExpVar name -> name
         | _ -> failwith "assignment to non-variable lvalue not yet supported in ANF"
       in
-      let left_anf_var = (List.assoc lvalue_name var_table).name in
+      let left_anf_var = lookup_var_name var_table lvalue_name in
       trans_expr ~table ~var_table right (Complex (fun rhs_value ->
           let lv = { ANF.lv_var = left_anf_var; lv_path = []; lv_src = stmt.span } in
           begin match op with
@@ -492,6 +539,8 @@ and trans_stmt
                     | PatWildcard | PatLit _ -> acc
                     | PatVar vpat -> vpat.vpat_name :: acc
                     | PatAs(p', vpat) -> bindings_of_pat (vpat.vpat_name :: acc) p'
+                    | PatAnn(p', _) -> bindings_of_pat acc p'
+                    | PatMut(p') -> bindings_of_pat acc p'
                     | PatTuple ps | PatADT(_, ps) ->
                         List.fold_left bindings_of_pat acc ps
                     | PatStruct(_, field_ps) ->
@@ -531,6 +580,54 @@ and trans_stmt
               , Jump(stmt.span, label_cont, []) )
           in
           Loop { blk_label = label_cont; blk_params = []; blk_body = loop_body_with_break }))
+
+  | StmtCStyleFor (init_opt, cond_opt, incr_opt, body) ->
+      (* Desugared as: init; while(cond) { body; incr; } *)
+      let build_loop var_table =
+        let label_cont = ANF.gen_label () in
+        let label_break = ANF.gen_label () in
+        (* After executing the body, evaluate incr (if any) then jump to loop condition *)
+        let body_continuation =
+          Complex (fun var_table ->
+            match incr_opt with
+            | Some incr ->
+                trans_expr ~table ~var_table incr (Complex (fun _ ->
+                  ANF.Jump(stmt.span, label_cont, [])))
+            | None -> ANF.Jump(stmt.span, label_cont, []))
+        in
+        let body_prog =
+          trans_stmt ~table ~var_table ~labels:(label_break::label_cont::labels) ~return body body_continuation
+        in
+        (* Condition check: if true, run body; else jump to break *)
+        let loop_check =
+          match cond_opt with
+          | Some cond ->
+              trans_expr ~table ~var_table cond (Complex (fun cond_value ->
+                ANF.Branch {
+                  br_src = stmt.span;
+                  br_matched = cond_value;
+                  br_branches = [ (1, body_prog) ];
+                  br_default = Some (ANF.Jump(stmt.span, label_break, []));
+                }))
+          | None ->
+              body_prog
+        in
+        (* Break block contains the continuation after the for loop *)
+        let loop_body_with_break =
+          ANF.Block
+            ( { blk_label = label_break
+              ; blk_params = []
+              ; blk_body = apply_stmt_cont cont ~var_table }
+            , loop_check )
+        in
+        ANF.Loop { blk_label = label_cont; blk_params = []; blk_body = loop_body_with_break }
+      in
+      (* Run init (if any), then the loop *)
+      (match init_opt with
+       | Some init ->
+           trans_stmt ~table ~var_table ~labels ~return init (Complex (fun var_table ->
+             build_loop var_table))
+       | None -> build_loop var_table)
 
 and trans_stmts
   ~(table : Semantics.Table.table)

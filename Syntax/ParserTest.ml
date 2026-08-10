@@ -29,9 +29,20 @@ let test_invalid path =
 
 let _ =
     Format.printf "@[<v>";
-    if List.for_all Fun.id (List.map test_valid ["test/parser.dp"; "test/types.dp"] 
-        @ List.map test_invalid [ "test/expressions/cons_no_args.dp"
-                                ; "test/expressions/bad_struct_field.dp"
+    if List.for_all Fun.id (List.map test_valid ["test/parser.dp"; "test/types.dp"
+        ; "test/statements/cstyle_for.dp"
+        ; "test/expressions/pre_inc_dec.dp"
+        ; "test/expressions/new_expr.dp"
+        ; "test/expressions/cons_no_args.dp"
+        ; "test/others/func_type.dp"
+        ; "test/others/top_stmt.dp"
+        ; "test/others/empty_stmt.dp"
+        ; "test/others/this_param.dp"
+        ; "test/others/struct_parens.dp"
+        ; "test/others/adt_with_methods.dp"
+        ; "test/statements/let_no_init.dp"
+        ]
+        @ List.map test_invalid [ "test/expressions/bad_struct_field.dp"
                                 ; "test/expressions/bad_struct_field2.dp"
                                 ; "test/expressions/bad_unary_op.dp"
                                 ; "test/expressions/bad_unary_op2.dp"

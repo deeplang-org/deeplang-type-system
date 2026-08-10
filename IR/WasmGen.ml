@@ -284,6 +284,7 @@ let rec size_of_type (table : Semantics.Table.table) (ty : Syntax.ParseTree.typ)
   | TyFloat FSize_32 -> 4
   | TyFloat FSize_64 -> 8
   | TyThis -> 4  (* pointer *)
+  | TyFunc _ -> 4 (* function pointer *)
   | TyVar _ -> 4
   | TyArray (elem_ty, len) -> size_of_type table elem_ty * len
   | TyTuple tys -> List.fold_left (fun acc ty -> acc + size_of_type table ty) 0 tys
@@ -405,6 +406,8 @@ let rec comp_expr (ctx : compile_ctx) (table : Semantics.Table.table) (expr : AN
         | Syntax.ParseTree.UnOpNot ->
             (* logical not: eqz *)
             WI32Eq (* check eq with 0 *)
+        | Syntax.ParseTree.UnOpPreInc | Syntax.ParseTree.UnOpPreDec ->
+            failwith "Pre-inc/dec should be decomposed in conversion, not reachable here"
       in
       begin match op with
       | UnOpNeg ->
@@ -412,6 +415,8 @@ let rec comp_expr (ctx : compile_ctx) (table : Semantics.Table.table) (expr : AN
           (vinstrs @ [neg_one; wasm_op], vty)
       | UnOpNot ->
           (vinstrs @ [WI32Const 0; wasm_op], I32)
+      | UnOpPreInc | UnOpPreDec ->
+          failwith "Pre-inc/dec should be decomposed in conversion, not reachable here"
       end
   | BinOp (op, lhs, rhs) ->
       let (linstrs, lty) = comp_value ctx table lhs in

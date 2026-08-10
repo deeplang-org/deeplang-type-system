@@ -1,0 +1,5 @@
+fun main() {
+  let mut x : I32 = 0;
+  ++x;
+  --x;
+}

@@ -51,6 +51,14 @@ let mk_global_var name typ value =
     ; gvar_value = value
     ; gvar_typ   = typ }
 
+let rec extract_var_pat (p : pattern) : var_pattern =
+  match p.shape with
+  | PatVar vp -> vp
+  | PatMut p' -> { (extract_var_pat p') with vpat_mut = Mut }
+  | PatAnn (p', _) -> extract_var_pat p'
+  | PatAs (_, vp) -> vp
+  | _ -> raise(Error(p.span, Expecting "Top-level let pattern is not a variable pattern"))
+
 let mk_top_clause shape = { shape; span = cur_span () }
 %}
 
@@ -92,6 +100,8 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_RSHIFT /* >> */
 %token TOK_ADD    /* +  */
 /* TOK_MINUS */
+%token TOK_INCR   /* ++ */
+%token TOK_DECR   /* -- */
 %token TOK_MUL    /* *  */
 %token TOK_DIV    /* /  */
 %token TOK_MOD    /* %  */
@@ -127,7 +137,7 @@ let mk_top_clause shape = { shape; span = cur_span () }
 %token TOK_WHILE TOK_FOR TOK_BREAK TOK_CONTINUE
 %token TOK_LET TOK_MUT TOK_IN
 %token TOK_MATCH
-%token TOK_FUN TOK_RETURN
+%token TOK_FUN TOK_RETURN TOK_NEW
 %token TOK_INTERFACE
 %token TOK_IMPL TOK_EXTENDS
 %token TOK_TYPE
@@ -204,6 +214,7 @@ keyword_token :
     | TOK_MATCH { Some (Token "match") }
     | TOK_FUN { Some (Token "fun") }
     | TOK_RETURN { Some (Token "return") }
+    | TOK_NEW { Some (Token "new") }
     | TOK_INTERFACE { Some (Token "interface") }
     | TOK_IMPL { Some (Token "impl") }
     | TOK_EXTENDS { Some (Token "extends") }
@@ -266,7 +277,19 @@ top_clause :
     | TOK_TYPE TOK_UpperIdent TOK_LBRACE struct_fields TOK_RBRACE
         { mk_top_clause @@ StructDef
             { struct_name = $2; struct_fields = $4 } }
+    | TOK_TYPE TOK_UpperIdent TOK_LPAREN struct_fields TOK_RPAREN
+        { mk_top_clause @@ StructDef
+            { struct_name = $2; struct_fields = $4 } }
+    | TOK_TYPE TOK_UpperIdent TOK_LPAREN struct_fields TOK_RPAREN TOK_LBRACE function_impls TOK_RBRACE
+        { mk_top_clause @@ StructDef
+            { struct_name = $2; struct_fields = $4 } }
+    | TOK_TYPE TOK_UpperIdent TOK_LPAREN struct_fields TOK_RPAREN TOK_IMPL TOK_UpperIdent TOK_LBRACE function_impls TOK_RBRACE
+        { mk_top_clause @@ StructDef
+            { struct_name = $2; struct_fields = $4 } }
     | TOK_TYPE TOK_UpperIdent TOK_LBRACK adt_branches TOK_RBRACK
+        { mk_top_clause @@ ADTDef
+            { adt_name = $2; adt_branches = $4 } }
+    | TOK_TYPE TOK_UpperIdent TOK_LBRACK adt_branches TOK_RBRACK TOK_LBRACE function_impls TOK_RBRACE
         { mk_top_clause @@ ADTDef
             { adt_name = $2; adt_branches = $4 } }
     | TOK_INTERFACE TOK_UpperIdent TOK_LBRACE function_decls TOK_RBRACE
@@ -285,16 +308,25 @@ top_clause :
         { mk_top_clause @@ MethodsImpl (mk_impl (Some $4) $2 $6) }
     | function_impl
         { mk_top_clause @@ FunctionDef $1 }
-    | TOK_LET variable_pattern TOK_EQ expr TOK_SEMICOLON
-        { mk_top_clause @@ GlobalVarDef (mk_global_var ($2.vpat_name) ($2.vpat_typ) $4) }
-    | TOK_LET variable_pattern TOK_EQ expr error
+    | function_impl TOK_SEMICOLON
+        { mk_top_clause @@ FunctionDef $1 }
+    | TOK_LET pattern TOK_EQ expr TOK_SEMICOLON
+        { let vp = extract_var_pat $2 in
+          mk_top_clause @@ GlobalVarDef (mk_global_var vp.vpat_name vp.vpat_typ $4) }
+    | TOK_LET pattern TOK_SEMICOLON
+        { let vp = extract_var_pat $2 in
+          mk_top_clause @@ GlobalVarDef (mk_global_var vp.vpat_name vp.vpat_typ
+            ({ shape = ExpLit LitUnit; expr_id = NodeId.ExprId (-1); span = cur_span () })) }
+    | TOK_LET pattern TOK_EQ expr error
         { error_ 5 5 @@ Basic { unexpected = None
         ; expecting = [Token ";"]
         ; message = None } }
-    | TOK_LET variable_pattern TOK_EQ error assignment_op expr error
-        { error_ 5 5 @@ Basic { unexpected = None
-        ; expecting = [Token ";"]
-        ; message = None } }
+    | expr TOK_SEMICOLON
+        { mk_top_clause @@ TopStmt (mk_stmt @@ StmtExpr $1) }
+    | stmt TOK_SEMICOLON
+        { mk_top_clause @@ TopStmt $1 }
+    | TOK_SEMICOLON
+        { mk_top_clause @@ TopStmt (mk_stmt @@ StmtSeq []) }
     | error
         { error @@ Expecting "top level clause" }
 ;
@@ -321,8 +353,18 @@ adt_branches :
 adt_branch :
     | TOK_UpperIdent                                         { ($1, []) }
     | TOK_UpperIdent TOK_LPAREN typ_list_nonempty TOK_RPAREN { ($1, $3) }
+    | TOK_UpperIdent TOK_LPAREN named_adt_params_nonempty TOK_RPAREN { ($1, $3) }
     | error
-        { error @@ Expecting "interface name starting with a capital letter" }    
+        { error @@ Expecting "interface name starting with a capital letter" }
+;
+
+named_adt_params_nonempty :
+    | named_adt_param                                         { [$1] }
+    | named_adt_param TOK_COMMA named_adt_params_nonempty     { $1 :: $3 }
+;
+
+named_adt_param :
+    | TOK_LowerIdent TOK_COLON typ { $3 }
 ;
 
 
@@ -360,6 +402,7 @@ function_decl_args_nonempty :
 
 function_decl_arg :
     | TOK_LowerIdent TOK_COLON typ { mk_func_arg $1 $3 }
+    | TOK_THIS TOK_COLON typ        { mk_func_arg "this" $3 }
     | error
         { error @@ Expecting "declaration specifiers" }
 ;
@@ -395,6 +438,8 @@ typ :
         { mk_typ @@ TyArray($2, $4) }
     | TOK_LPAREN typ_list_nonempty TOK_RPAREN
         { mk_typ @@ TyTuple $2 }
+    | typ TOK_MINUSGT typ
+        { mk_typ @@ TyFunc($1, $3) }
     | error
         { error @@ Expecting "type" }
         
@@ -418,15 +463,22 @@ stmt :
     | TOK_RETURN expr TOK_SEMICOLON { mk_stmt @@ StmtReturn $2 }
     | TOK_BREAK TOK_SEMICOLON       { mk_stmt @@ StmtBreak }
     | TOK_CONTINUE TOK_SEMICOLON    { mk_stmt @@ StmtContinue }
+    | TOK_SEMICOLON                 { mk_stmt @@ StmtSeq [] }
     | lvalue assignment_op expr TOK_SEMICOLON
         { mk_stmt @@ StmtAssign($2, $1, $3) }
     | TOK_LET pattern TOK_EQ expr TOK_SEMICOLON
         { mk_stmt @@ StmtDecl($2, $4) }
+    | TOK_LET pattern TOK_SEMICOLON
+        { mk_stmt @@ StmtDeclNoInit $2 }
     | TOK_LBRACE stmt_list TOK_RBRACE { mk_stmt @@ StmtSeq $2 }
     | TOK_IF TOK_LPAREN expr TOK_RPAREN stmt
         { mk_stmt @@ StmtIf($3, $5, None) }
     | TOK_IF TOK_LPAREN expr TOK_RPAREN stmt TOK_ELSE stmt
         { mk_stmt @@ StmtIf($3, $5, Some $7) }
+    | TOK_FOR
+        TOK_LPAREN cstyle_for_init TOK_SEMICOLON cstyle_for_opt_expr TOK_SEMICOLON cstyle_for_opt_expr TOK_RPAREN
+        stmt
+        { mk_stmt @@ StmtCStyleFor($3, $5, $7, $9) }
     | TOK_FOR
         TOK_LPAREN pattern TOK_IN expr TOK_RPAREN
         stmt
@@ -570,6 +622,20 @@ match_branch :
 ;
 
 
+cstyle_for_init :
+    | /* empty */                              { None }
+    | TOK_LBRACE TOK_LET pattern TOK_EQ expr TOK_RBRACE
+        { Some (mk_stmt @@ StmtDecl($3, $5)) }
+    | TOK_LBRACE TOK_LET pattern TOK_RBRACE
+        { Some (mk_stmt @@ StmtDeclNoInit $3) }
+    | TOK_LET pattern TOK_EQ expr              { Some (mk_stmt @@ StmtDecl($2, $4)) }
+;
+
+cstyle_for_opt_expr :
+    | /* empty */ { None }
+    | expr        { Some $1 }
+;
+
 literal :
     | TOK_LPAREN TOK_RPAREN { LitUnit }
     | TOK_TRUE              { LitBool true }
@@ -584,9 +650,12 @@ literal :
 pattern :
     | TOK_UNDERSCORE   { mk_pat PatWildcard }   // _ : match anything
     | literal          { mk_pat @@ PatLit $1 }  // (), true, false, specific value
-    | variable_pattern { mk_pat @@ PatVar $1 }  // [mut] variable [: type]
-    | pattern TOK_AS variable_pattern
-        { mk_pat @@ PatAs($1, $3) }
+    | variable_pattern { mk_pat @@ PatVar $1 }  // variable [: type]
+    | TOK_MUT pattern  { mk_pat @@ PatMut $2 }  // mut pattern
+    | pattern TOK_AS pattern
+        { let vp = extract_var_pat $3 in mk_pat @@ PatAs($1, vp) }
+    | pattern TOK_COLON typ
+        { mk_pat @@ PatAnn($1, $3) }
     | TOK_UpperIdent                            // None, ...
         { mk_pat @@ PatADT($1, []) }
     | TOK_UpperIdent TOK_LPAREN pattern_list_nonempty TOK_RPAREN
@@ -598,6 +667,8 @@ pattern :
         
     | pattern TOK_AS error
         { error_ 3 3 @@ Expecting "variable pattern" }
+    | TOK_UpperIdent TOK_LPAREN TOK_RPAREN
+        { mk_pat @@ PatADT($1, []) }
     | TOK_UpperIdent TOK_LPAREN
         { error_ 3 3 @@ Expecting "nonempty pattern list" }
     // | TOK_UpperIdent TOK_LPAREN pattern_list_nonempty error  // shift/reduce conflicts
@@ -630,9 +701,7 @@ pattern :
 
 variable_pattern :
     | TOK_LowerIdent                       { mk_var_pat Imm None $1 }       // x
-    | TOK_MUT TOK_LowerIdent               { mk_var_pat Mut None $2 }       // mut x
     | TOK_LowerIdent TOK_COLON typ         { mk_var_pat Imm (Some $3) $1 }  // x: I8
-    | TOK_MUT TOK_LowerIdent TOK_COLON typ { mk_var_pat Mut (Some $4) $2 }  // mut x: I8
 ;
 
 pattern_list_nonempty :
@@ -706,6 +775,9 @@ small_expr :
     | atom_expr           { $1 }
     | TOK_MINUS atom_expr { mk_expr @@ ExpUnOp(UnOpNeg, $2) }
     | TOK_BANG  atom_expr { mk_expr @@ ExpUnOp(UnOpNot, $2) }
+    | TOK_INCR  atom_expr { mk_expr @@ ExpUnOp(UnOpPreInc, $2) }
+    | TOK_DECR  atom_expr { mk_expr @@ ExpUnOp(UnOpPreDec, $2) }
+    | TOK_MUT   atom_expr { $2 }
     | bi_op_token { error @@ Basic { unexpected = $1
                                    ; expecting = [Label "unary operator"]
                                    ; message = None } }
@@ -736,11 +808,9 @@ atom_expr :
     | TOK_UpperIdent
         { mk_expr @@ ExpADT($1, []) }
     | TOK_UpperIdent TOK_LPAREN expr_list TOK_RPAREN
-        { match $3 with [] ->
-            error @@ Basic { unexpected = None
-                           ; expecting = []
-                           ; message = Some "Constructor cannot take zero arguments." }
-                      | exprs -> mk_expr @@ ExpADT($1, exprs) }
+        { mk_expr @@ ExpADT($1, $3) }
+    | TOK_NEW TOK_UpperIdent TOK_LPAREN expr_list TOK_RPAREN
+        { mk_expr @@ ExpNew($2, $4) }
     | TOK_LowerIdent TOK_LPAREN expr_list TOK_RPAREN
         { mk_expr @@ ExpApp($1, $3) }
     | atom_expr TOK_DOT TOK_LowerIdent

@@ -122,17 +122,36 @@ let rec walk_pattern (context:context) (pattern:pattern) (typ:typ) : unit =
                 error_type (PatternError(pattern, " declared type doesn't match with the given expr"))
         )
     (* TODO Discuss PatAs *)
-    | PatAs(pattern, vpat) -> 
+    | PatAs(pattern, vpat) ->
         (* let type inference *)
         walk_pattern context pattern typ;
         ( match vpat.vpat_typ with
         | None -> add_variable context vpat.vpat_symb vpat.vpat_mut vpat.vpat_name (Some typ)
-        | Some(ty) -> 
-            if ty = typ then 
+        | Some(ty) ->
+            if ty = typ then
                 add_variable context vpat.vpat_symb vpat.vpat_mut vpat.vpat_name vpat.vpat_typ
             else
                 error_type (PatternError(pattern, " declared type doesn't match with the given expr"))
         )
+    | PatAnn(pattern, ann_typ) ->
+        if Helper.ty_eq ann_typ typ then
+            walk_pattern context pattern ann_typ
+        else
+            error_type (PatternError(pattern, " pattern type annotation doesn't match"))
+    | PatMut(pat) ->
+        (* Recursively set vpat_mut = Mut for all variables in the pattern *)
+        let rec make_mut (p : pattern) : pattern =
+          match p.shape with
+          | PatVar vpat -> { p with shape = PatVar { vpat with vpat_mut = Mut } }
+          | PatAs(p', vpat) -> { p with shape = PatAs(make_mut p', { vpat with vpat_mut = Mut }) }
+          | PatAnn(p', t) -> { p with shape = PatAnn(make_mut p', t) }
+          | PatMut(p') -> { p with shape = PatMut(make_mut p') }
+          | PatTuple ps -> { p with shape = PatTuple (List.map make_mut ps) }
+          | PatADT(l, ps) -> { p with shape = PatADT(l, List.map make_mut ps) }
+          | PatStruct(n, fps) -> { p with shape = PatStruct(n, List.map (fun (f, pt) -> (f, make_mut pt)) fps) }
+          | _ -> p
+        in
+        walk_pattern context (make_mut pat) typ
     | PatADT(adt_label, patterns) -> ( match Hashtbl.find_opt table.adt adt_label with
         | None -> error_type (PatternError (pattern, "adt_label " ^adt_label ^ " not found"))
         | Some(data) ->  
@@ -207,7 +226,23 @@ let rec walk_expr (context:context) (expr:expr) : typ =
         | UnOpNot -> ( match typ.shape with
             | TyBool -> typ
             | _      -> error_type (Error " apply ! to Not a Boolean ")
-        ))
+        )
+        | UnOpPreInc | UnOpPreDec ->
+            (* Pre-inc/dec: operand must be a mutable variable.
+               The result type is the same as the operand. *)
+            (match expr.shape with
+             | ExpVar name ->
+                 (match find_var_opt context name with
+                  | Some symbol ->
+                      (match Hashtbl.find_opt table.var symbol with
+                       | Some data ->
+                           if data.mut = Mut then typ
+                           else error_type (ExprError (expr, "Cannot increment/decrement immutable variable " ^ name))
+                       | None -> error_type (Error ("variable " ^ name ^ " Not Found")))
+                  | None -> error_type (Error ("variable " ^ name ^ " Not Found")))
+             | _ -> error_type (ExprError (expr, "Pre-increment/decrement can only be applied to a variable"))
+            )
+        )
     | ExpBinOp(op, left_e, right_e) ->
         let left  = walk_expr context left_e in
         let right = walk_expr context right_e  in
@@ -269,6 +304,12 @@ let rec walk_expr (context:context) (expr:expr) : typ =
             else
                 error_type (Error (" types doesn't match with ADT label "^ label))
         ))
+    | ExpNew(name, exprs) ->
+        (match Hashtbl.find_opt table.typ name with
+         | None -> error_type (Error ("Type " ^ name ^ " Not Found"))
+         | Some _ ->
+             let _ = List.map (fun expr -> walk_expr context expr) exprs in
+             Helper.named name [])
     | ExpStruct(name, field_exprs) -> ( match Hashtbl.find_opt table.typ name with
         | None -> error_type (Error (" type " ^ name ^ " Not Found "))
         | Some(ADT_data(_)) -> error_type (Error (" type " ^ name ^ " is not a Struct but an ADT "))
@@ -483,9 +524,22 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
         let res_ty = walk_expr context right in
         if Helper.ty_eq var_ty res_ty then ()
         else error_type (StmtError (stmt, " assign a value:T1 to a variable:T2, while T1!=T2"))
-    | StmtDecl(pattern, expr) -> 
+    | StmtDecl(pattern, expr) ->
         let typ = walk_expr context expr in
         walk_pattern context pattern typ
+    | StmtDeclNoInit(pattern) ->
+        (* For uninitialized declarations, the type must come from the pattern annotation.
+           Extract the type from the pattern's type annotation. *)
+        let rec get_ann_typ (p : pattern) : typ option =
+          match p.shape with
+          | PatVar vpat -> vpat.vpat_typ
+          | PatAnn(_, t) -> Some t
+          | PatMut(p') -> get_ann_typ p'
+          | _ -> None
+        in
+        (match get_ann_typ pattern with
+         | Some t -> walk_pattern context pattern t
+         | None -> error_type (Error "Type annotation required for uninitialized declaration"))
     | StmtIf(cond, t_stmt, f_stmto) ->
         let ty = walk_expr context cond in
         ( match ty.shape with
@@ -502,10 +556,25 @@ let rec walk_stmt (context:context) (stmt:stmt) : unit =
     | StmtFor(pattern, expr, body)->
         let typ = walk_expr context expr in
         walk_pattern context pattern typ;
-        
+
         context.checkloop <- context.checkloop + 1;
         walk_stmt context body;
         context.checkloop <- context.checkloop - 1;
+    | StmtCStyleFor(init_opt, cond_opt, incr_opt, body) ->
+        scope_beg context;
+        (match init_opt with Some init -> walk_stmt context init | None -> ());
+        (match cond_opt with
+         | Some cond ->
+             let ty = walk_expr context cond in
+             (match ty.shape with
+              | TyBool -> ()
+              | _ -> error_type (ExprError (cond, " condition of for-statement is not a boolean")))
+         | None -> ());
+        (match incr_opt with Some incr -> let _ = walk_expr context incr in () | None -> ());
+        context.checkloop <- context.checkloop + 1;
+        walk_stmt context body;
+        context.checkloop <- context.checkloop - 1;
+        scope_end context;
     | StmtWhile(cond, body) -> 
         let ty = walk_expr context cond in
         ( match ty.shape with
@@ -644,10 +713,14 @@ let walk_top (context:context) (clause:top_clause) : unit =
     let table = context.table in
     let nametbl = context.nametbl in
     match clause.shape with 
-    | GlobalVarDef(gvar) -> 
-        let symbol = gvar.gvar_id in 
-        let name = gvar.gvar_name in 
-        let typ = walk_expr context gvar.gvar_value in
+    | GlobalVarDef(gvar) ->
+        let symbol = gvar.gvar_id in
+        let name = gvar.gvar_name in
+        (* For uninitialized globals (dummy LitUnit value), use the type annotation *)
+        let typ = match gvar.gvar_value.shape, gvar.gvar_typ with
+          | ExpLit LitUnit, Some t -> t
+          | _ -> walk_expr context gvar.gvar_value
+        in
         (* Global -> context.scope = [] *)
         ( match Hashtbl.find_opt nametbl name with
         | Some(_) -> error_type (Error "The same global variable name")
@@ -766,6 +839,9 @@ let walk_top (context:context) (clause:top_clause) : unit =
         in
         List.iter walk_iter methods;
         walk_method_intf context intf typ
+
+    | TopStmt(stmt) ->
+        walk_stmt context stmt
     ;;
 
 (** {1 Usage} *)

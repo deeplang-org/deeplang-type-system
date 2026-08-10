@@ -22,6 +22,7 @@ let keyword_table = Hashtbl.of_seq @@ List.to_seq
     ; ("match"    , TOK_MATCH    )
     ; ("fun"      , TOK_FUN      )
     ; ("return"   , TOK_RETURN   )
+    ; ("new"      , TOK_NEW      )
     ; ("interface", TOK_INTERFACE)
     ; ("impl"     , TOK_IMPL     )
     ; ("extends"  , TOK_EXTENDS  )
@@ -59,6 +60,8 @@ let symbol_table = Hashtbl.of_seq @@ List.to_seq
     ; ("^"  , TOK_BXOR    )
     ; ("<<" , TOK_LSHIFT  )
     ; (">>" , TOK_RSHIFT  )
+    ; ("++" , TOK_INCR    )
+    ; ("--" , TOK_DECR    )
     ; ("+"  , TOK_ADD     )
     ; ("*"  , TOK_MUL     )
     ; ("/"  , TOK_DIV     )
@@ -183,10 +186,12 @@ rule token = parse
         ) }
 
 and comment_line = parse
+    | eof     { TOK_EOF }
     | newline { Lexing.new_line lexbuf; token lexbuf }
     | _       { comment_line lexbuf }
 
 and comment_block = parse
+    | eof     { TOK_EOF }
     | "*/"    { token lexbuf }
     | newline { Lexing.new_line lexbuf; comment_block lexbuf }
     | _       { comment_block lexbuf }

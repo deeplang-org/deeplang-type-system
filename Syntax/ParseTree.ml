@@ -70,6 +70,7 @@ and typ_shape =
     | TyThis
     | TyArray of typ * int
     | TyTuple of typ list
+    | TyFunc  of typ * typ
     (* user-defined types with optional type arguments *)
     | TyNamed of typ_name * typ list
     [@@deriving show]
@@ -106,6 +107,8 @@ and pattern_shape =
     | PatLit    of literal
     | PatVar    of var_pattern
     | PatAs     of pattern * var_pattern
+    | PatAnn    of pattern * typ
+    | PatMut    of pattern
     | PatADT    of adt_label * pattern list
     | PatStruct of typ_name * (struct_field * pattern) list
     | PatTuple  of pattern list
@@ -114,7 +117,7 @@ and pattern_shape =
 (** {1 Expressions} *)
 
 type unary_op =
-    | UnOpNeg | UnOpNot [@@deriving show]
+    | UnOpNeg | UnOpNot | UnOpPreInc | UnOpPreDec [@@deriving show]
 
 type compare_op = 
     | BinOpLt | BinOpLeq | BinOpGt | BinOpGeq
@@ -158,6 +161,7 @@ and expr_shape =
     | ExpThis
     | ExpApp    of func_name * expr list
     | ExpMethod of expr * method_name * expr list
+    | ExpNew    of typ_name * expr list
     | ExpIf     of expr * expr * expr
     | ExpMatch  of expr * (pattern * expr) list
     [@@deriving show]
@@ -174,9 +178,11 @@ and stmt_shape =
     | StmtSeq    of stmt list
     | StmtExpr   of expr
     | StmtDecl   of pattern * expr
+    | StmtDeclNoInit of pattern
     | StmtAssign of calculate_op option * expr * expr (* expr1 op?= expr2, where expr1 = ExpVar ONLY *)
     | StmtIf     of expr * stmt * stmt option
     | StmtFor    of pattern * expr * stmt
+    | StmtCStyleFor of stmt option * expr option * expr option * stmt
     | StmtWhile  of expr * stmt
     | StmtMatch  of expr * (pattern * stmt) list
     | StmtReturn of expr
@@ -250,4 +256,5 @@ and top_clause_shape =
     | MethodsImpl   of methods_impl
     | FunctionDef   of func_impl
     | GlobalVarDef  of global_variable_def
+    | TopStmt       of stmt
     [@@deriving show]

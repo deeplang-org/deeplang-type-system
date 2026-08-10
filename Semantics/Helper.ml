@@ -68,6 +68,7 @@ let rec pp_ty fmt (ty:typ) =
         | [] -> fprintf fmt "%s" name
         | _::_ -> fprintf fmt "%s%a" name pp_tys tys
         ) 
+    | TyFunc(t1, t2) -> fprintf fmt "%a -> %a" pp_ty t1 pp_ty t2
     | TyVar(name) -> fprintf fmt "%s@," name
     )
 and 

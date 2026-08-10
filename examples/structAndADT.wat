@@ -1,10 +1,15 @@
-;; ============================================================
-;; Generated .wasm for: structAndADT.dp
-;; WARNING: Compilation had errors - no user functions emitted
-;;
-;; syntax error: Expecting type
-;; ============================================================
+semantics error: [Type Error] Type Named Point Not Found
+in [file "examples/structAndADT.dp", row 10, col 18 to row 10, col 23]
 
+semantics error: [Error]  types doesn't match with ADT label Circle
+
+semantics error: [Error]  type ColoredPoint Not Found 
+
+=== ANF for examples/structAndADT.dp ===
+fun main($1) -> #1 -- "examples/structAndADT.dp":14,0-14,20 =
+  jump #1 () -- "examples/structAndADT.dp":14,0-14,20
+
+=== WAT for examples/structAndADT.dp ===
 (module
   (memory (export "memory") 1)
   (global $heap_ptr (mut i32) (i32.const 1024))
@@ -62,4 +67,14 @@
       nop)
     local.get $ptr)
 
+  (func $main
+    (param $v1 i32)
+    (result i32)
+    
+    br $l1
+    (block $l1
+      nop))
+
 )
+
+

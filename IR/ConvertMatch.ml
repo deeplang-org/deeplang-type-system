@@ -62,6 +62,8 @@ let identify_match (arms : transl_arm list) : match_kind =
     match curr_kind, pat.shape with
     | _, (PatWildcard | PatVar _) -> curr_kind
     | _, PatAs (pat', _) -> update_kind curr_kind pat'
+    | _, PatAnn (pat', _) -> update_kind curr_kind pat'
+    | _, PatMut (pat') -> update_kind curr_kind pat'
     | Unknown, PatLit lit -> Lit [ lit ]
     | Lit lits, PatLit lit -> Lit (add_to_list lit lits)
     | (Unknown | Tuple _), PatTuple pats -> Tuple (List.length pats)
@@ -106,6 +108,8 @@ let rec bind_pat bindings value (pat : pattern) =
   match pat.shape with
   | PatVar vpat -> (pat, (vpat.vpat_name, value) :: bindings)
   | PatAs(pat', vpat) -> bind_pat ((vpat.vpat_name, value) :: bindings) value pat'
+  | PatAnn(pat', _) -> bind_pat bindings value pat'
+  | PatMut(pat') -> bind_pat bindings value pat'
   | _ -> (pat, bindings)
 
 (* [pat_is_irrefutable pat = true] means [pat] matches any value *)
@@ -113,6 +117,8 @@ let rec pat_is_irrefutable (pat : pattern) =
   match pat.shape with
   | PatVar _ | PatWildcard -> true
   | PatAs (pat', _) -> pat_is_irrefutable pat'
+  | PatAnn (pat', _) -> pat_is_irrefutable pat'
+  | PatMut (pat') -> pat_is_irrefutable pat'
   | _ -> false
 
 (* [trans_multi_match ~table heads arms] translate a match on a list of values [heads],
