@@ -33,7 +33,7 @@ and wasm_instr =
   | WCallIndirect of string  (* type signature *)
   | WBlock     of string option * wasm_instr list
   | WLoop      of string option * wasm_instr list
-  | WIf        of string option * wasm_instr list * wasm_instr list
+  | WIf        of string option * wasm_type option * wasm_instr list * wasm_instr list
   | WBr        of string
   | WBrIf      of string
   | WBrTable   of string list * string
@@ -87,10 +87,16 @@ let rec pp_wasm_instr fmt = function
   | WLoop (label, instrs) ->
       let lbl = match label with Some l -> Format.sprintf " $%s" l | None -> "" in
       Format.fprintf fmt "@[<v2>(loop%s@ %a)@]" lbl pp_instrs instrs
-  | WIf (label, then_instrs, else_instrs) ->
+  | WIf (label, result, then_instrs, else_instrs) ->
       let lbl = match label with Some l -> Format.sprintf " $%s" l | None -> "" in
-      Format.fprintf fmt "@[<v2>(if%s@ @[<v2>(then@ %a)@]@ @[<v2>(else@ %a)@])@]"
-        lbl pp_instrs then_instrs pp_instrs else_instrs
+      let res = match result with
+        | Some ty ->
+            let ty_str = match ty with
+              | I32 -> "i32" | I64 -> "i64" | F32 -> "f32" | F64 -> "f64" in
+            Format.sprintf " (result %s)" ty_str
+        | None -> "" in
+      Format.fprintf fmt "@[<v2>(if%s%s@ @[<v2>(then@ %a)@]@ @[<v2>(else@ %a)@])@]"
+        lbl res pp_instrs then_instrs pp_instrs else_instrs
   | WBr label -> Format.fprintf fmt "br $%s" label
   | WBrIf label -> Format.fprintf fmt "br_if $%s" label
   | WBrTable (labels, default) ->
@@ -203,14 +209,14 @@ let bump_allocator_funcs : wasm_func list =
     ; wf_result = None
     ; wf_locals = []
     ; wf_body = [ Comment "Initialize heap pointer";
-                 WGlobalSet "heap_ptr" ]
+                 WLocalGet "size"; WGlobalSet "heap_ptr" ]
     }
   ; { wf_name = "bump_alloc"
     ; wf_params = ["size", I32]
     ; wf_result = Some I32
     ; wf_locals = ["ptr", I32]
-    ; wf_body = [ Comment "Simple bump allocator";
-                 WLocalGet "ptr"; WLocalGet "heap_ptr"; WLocalSet "ptr";
+    ; wf_body = [ Comment "Simple bump allocator: return old heap pointer, advance by size";
+                 WGlobalGet "heap_ptr"; WLocalSet "ptr";
                  WGlobalGet "heap_ptr"; WLocalGet "size"; WI32Add; WGlobalSet "heap_ptr";
                  WLocalGet "ptr" (* return old ptr *) ]
     }
@@ -221,14 +227,15 @@ let bump_allocator_funcs : wasm_func list =
     ; wf_body = [ WLocalGet "size"; WCall "bump_alloc"; WLocalSet "ptr";
                  (* Zero out the memory: loop over bytes *)
                  WI32Const 0; WLocalSet "i";
-                 WLoop (Some "zero_loop", [
-                   WLocalGet "i"; WLocalGet "size"; WI32Ge_s;
-                   WIf (None, [WBr "zero_end"], [WNop]);
-                   WLocalGet "ptr"; WLocalGet "i"; WI32Add; WI32Const 0; I32Store8;
-                   WLocalGet "i"; WI32Const 1; WI32Add; WLocalSet "i";
-                   WBr "zero_loop"
+                 WBlock (Some "zero_end", [
+                   WLoop (Some "zero_loop", [
+                     WLocalGet "i"; WLocalGet "size"; WI32Ge_s;
+                     WIf (None, None, [WBr "zero_end"], [WNop]);
+                     WLocalGet "ptr"; WLocalGet "i"; WI32Add; WI32Const 0; I32Store8;
+                     WLocalGet "i"; WI32Const 1; WI32Add; WLocalSet "i";
+                     WBr "zero_loop"
+                   ])
                  ]);
-                 WBlock (Some "zero_end", [WNop]);
                  WLocalGet "ptr" ]
     }
   ]
@@ -236,18 +243,31 @@ let bump_allocator_funcs : wasm_func list =
 (** {1 ANF to WASM Compilation} *)
 
 (** Compilation context: maps ANF variables to WASM local names *)
+type label_kind =
+  | LoopLabel                        (* jump → br back to loop head (continue) *)
+  | ExitLabel                        (* jump → br out of a loop's exit block (break) *)
+  | BlockLabel of ANF.block_definition (* jump → inline the continuation body *)
+
 type compile_ctx =
-  { blocks    : (label, string) Hashtbl.t  (* ANF label → WASM block name *)
-  ; vars      : (variable, string) Hashtbl.t  (* ANF variable → WASM local name *)
-  ; funcs     : (func_name, string) Hashtbl.t (* func name *)
-  ; heap_ptr  : int ref
+  { blocks      : (label, string) Hashtbl.t  (* ANF label → WASM block name *)
+  ; label_kinds : (label, label_kind) Hashtbl.t
+  ; vars        : (variable, string) Hashtbl.t  (* ANF variable → WASM local name *)
+  ; var_types   : (variable, wasm_type) Hashtbl.t (* ANF variable → WASM type *)
+  ; func_consts : (variable, string) Hashtbl.t (* ANF variable → known function name *)
+  ; funcs       : (func_name, string) Hashtbl.t (* func name *)
+  ; heap_ptr    : int ref
+  ; tmp_counter : int ref
   }
 
 let mk_compile_ctx () =
   { blocks = Hashtbl.create 16
+  ; label_kinds = Hashtbl.create 16
   ; vars   = Hashtbl.create 64
+  ; var_types = Hashtbl.create 64
+  ; func_consts = Hashtbl.create 16
   ; funcs  = Hashtbl.create 16
   ; heap_ptr = ref 0
+  ; tmp_counter = ref 0
   }
 
 let var_wasm_name ctx v =
@@ -258,6 +278,13 @@ let var_wasm_name ctx v =
       Hashtbl.add ctx.vars v name;
       name
 
+let set_var_type ctx v ty = Hashtbl.replace ctx.var_types v ty
+
+let get_var_type ctx v =
+  match Hashtbl.find_opt ctx.var_types v with
+  | Some ty -> ty
+  | None -> I32
+
 let label_wasm_name ctx l =
   match Hashtbl.find_opt ctx.blocks l with
   | Some name -> name
@@ -265,6 +292,11 @@ let label_wasm_name ctx l =
       let name = Printf.sprintf "l%d" l in
       Hashtbl.add ctx.blocks l name;
       name
+
+let fresh_tmp ctx =
+  let n = !(ctx.tmp_counter) in
+  incr ctx.tmp_counter;
+  Printf.sprintf "t%d" n
 
 (** Memory layout helpers.
     All values are stored as i32 (pointers or immediate values).
@@ -318,9 +350,12 @@ let rec comp_value (ctx : compile_ctx) (table : Semantics.Table.table) (value : 
   | Int n -> ([WI32Const n], I32)
   | Float f -> ([WF32Const f], F32)
   | String _s -> ([WI32Const 0], I32) (* Strings not fully supported yet *)
+  | LVal { lv_var; lv_path = []; _ } ->
+      let var_name = var_wasm_name ctx lv_var in
+      ([WLocalGet var_name], get_var_type ctx lv_var)
   | LVal { lv_var; lv_path; _ } ->
       let var_name = var_wasm_name ctx lv_var in
-      let base_instrs, base_ty = [WLocalGet var_name], I32 in
+      let base_instrs, base_ty = [WLocalGet var_name], get_var_type ctx lv_var in
       comp_path ctx table lv_path base_instrs base_ty
 
 and comp_path (ctx : compile_ctx) (table : Semantics.Table.table) (path : path) (acc : wasm_instr list) (acc_ty : wasm_type) : wasm_instr list * wasm_type =
@@ -388,12 +423,16 @@ let rec comp_expr (ctx : compile_ctx) (table : Semantics.Table.table) (expr : AN
       let var_name = var_wasm_name ctx lv.lv_var in
       ([WLocalGet var_name], I32)
   | App (func_val, args) ->
-      let func_name = match func_val with
-        | LVal { lv_path = []; _ } -> var_wasm_name ctx (func_val |> function LVal lv -> lv.lv_var | _ -> failwith "unexpected")
-        | _ -> failwith "indirect calls not yet supported"
-      in
       let arg_instrs, _ = comp_values ctx table args in
-      (arg_instrs @ [WCall func_name], I32) (* Assume all return i32 for now *)
+      let call =
+        match func_val with
+        | LVal { lv_var; lv_path = []; _ } ->
+            (match Hashtbl.find_opt ctx.func_consts lv_var with
+             | Some fname -> [WCall fname]
+             | None -> [WUnreachable] (* indirect/method call not yet supported *))
+        | _ -> [WUnreachable] (* indirect/method call not yet supported *)
+      in
+      (arg_instrs @ call, I32) (* Assume all return i32 for now *)
   | UnOp (op, v) ->
       let (vinstrs, vty) = comp_value ctx table v in
       let wasm_op = match op with
@@ -450,7 +489,7 @@ and comp_binop (op : Syntax.ParseTree.binary_op) (_ty : wasm_type) : wasm_instr 
       end
 
 and comp_mkdata (ctx : compile_ctx) (table : Semantics.Table.table) (kind : data_kind) (values : value list) : wasm_instr list * wasm_type =
-  let val_instrs = List.concat_map (fun v -> fst (comp_value ctx table v)) values in
+  let val_pairs = List.map (fun v -> comp_value ctx table v) values in
   let total_size = match kind with
     | Tuple n -> n * 4
     | Struct name ->
@@ -459,19 +498,41 @@ and comp_mkdata (ctx : compile_ctx) (table : Semantics.Table.table) (kind : data
             List.fold_left (fun acc (_, ty, _) -> acc + size_of_type table ty) 0 data.fields
         | _ -> failwith (Printf.sprintf "struct %s not found" name)
         end
-    | ADT (sum_name, _) ->
-        begin match Hashtbl.find_opt table.typ sum_name with
-        | Some (ADT_data _data) -> 4 + List.length values * 4
-        | _ -> failwith (Printf.sprintf "ADT %s not found" sum_name)
-        end
+    | ADT (_, _) -> 4 + List.length values * 4
     | Impl _ -> 4 (* vtable pointer *)
   in
-  let instrs =
-    [ WI32Const total_size; WCall "bump_alloc" ]
-    @ val_instrs
-    (* Store values at offsets; for now, just return the pointer *)
+  (* [items] = (byte offset, value instructions to store) pairs, in store order. *)
+  let items : (int * wasm_instr list) list =
+    match kind with
+    | Tuple _ ->
+        List.mapi (fun i (vi, _) -> (i * 4, vi)) val_pairs
+    | Struct name ->
+        begin match Hashtbl.find_opt table.typ name with
+        | Some (Struct_data data) ->
+            let rec offsets acc = function
+              | [] -> []
+              | (_, ty, _) :: rest -> acc :: offsets (acc + size_of_type table ty) rest
+            in
+            List.map2 (fun (vi, _) off -> (off, vi)) val_pairs (offsets 0 data.fields)
+        | _ -> failwith (Printf.sprintf "struct %s not found" name)
+        end
+    | ADT (_, label) ->
+        let tag =
+          match Hashtbl.find_opt table.adt label with
+          | Some d -> d.tag
+          | None -> 0
+        in
+        (0, [WI32Const tag]) :: List.mapi (fun i (vi, _) -> (4 + i * 4, vi)) val_pairs
+    | Impl _ ->
+        [(0, [WI32Const 0])]
   in
-  (instrs, I32)
+  let ptr_tmp = fresh_tmp ctx in
+  let alloc_instrs = [WI32Const total_size; WCall "bump_alloc"; WLocalSet ptr_tmp] in
+  let store_instrs =
+    List.concat (List.map (fun (off, vi) ->
+      [WLocalGet ptr_tmp; WI32Const off] @ vi @ [I32Store]) items)
+  in
+  (alloc_instrs @ store_instrs @ [WLocalGet ptr_tmp], I32)
 
 (** Compile an ANF program segment to WASM instructions *)
 let rec comp_program (ctx : compile_ctx) (table : Semantics.Table.table) (prog : ANF.program) : wasm_instr list =
@@ -479,53 +540,91 @@ let rec comp_program (ctx : compile_ctx) (table : Semantics.Table.table) (prog :
   | Empty -> [WNop]
   | Abort -> [WUnreachable]
   | Jump (_, label, values) ->
-      let val_instrs = List.concat_map (fun v -> fst (comp_value ctx table v)) values in
-      let lbl = label_wasm_name ctx label in
-      val_instrs @ [WBr lbl]
+      comp_jump ctx table label values
   | Stmt (_, stmt, rest) ->
       let stmt_instrs = comp_statement ctx table stmt in
       stmt_instrs @ comp_program ctx table rest
-  | Branch { br_matched; br_branches; br_default; _ } ->
-      let (cond_instrs, _) = comp_value ctx table br_matched in
-      let default_instrs = match br_default with
-        | Some p -> comp_program ctx table p
-        | None -> [WUnreachable]
-      in
-      (match br_branches with
-        | [(1, then_p); (0, else_p)] | [(0, else_p); (1, then_p)] ->
-            let then_instrs = comp_program ctx table then_p in
-            let else_instrs = comp_program ctx table else_p in
-            let sorted_then, sorted_else =
-              if fst (List.hd br_branches) = 1 then (then_instrs, else_instrs)
-              else (else_instrs, then_instrs)
-            in
-            cond_instrs @ [WIf (None, sorted_then, sorted_else)]
-        | _ ->
-            (* Multi-way branch: use nested if/else *)
-            let rec compile_cases = function
-              | [] -> default_instrs
-              | (tag, prog) :: rest ->
-                  let _tag_test = [WI32Const tag; WI32Eq] in
-                  let true_body = comp_program ctx table prog in
-                  let false_body = compile_cases rest in
-                  [WIf (None, true_body, false_body)]
-            in
-            cond_instrs @ cond_instrs @ compile_cases br_branches)
+  | Branch br ->
+      comp_branch ctx table br
   | Block (def, rest) ->
-      let blk_name = label_wasm_name ctx def.blk_label in
-      let blk_body = comp_program ctx table def.blk_body in
-      let rest_body = comp_program ctx table rest in
-      [WBlock (Some blk_name, blk_body)] @ rest_body
+      (* A linear continuation: [rest] runs first and tail-calls [def] via Jump.
+         We register [def] as a BlockLabel so each Jump site inlines its body,
+         and here we only compile [rest]. *)
+      Hashtbl.replace ctx.label_kinds def.blk_label (BlockLabel def);
+      comp_program ctx table rest
   | Loop def ->
-      let loop_name = label_wasm_name ctx def.blk_label in
-      let loop_body = comp_program ctx table def.blk_body in
-      [WLoop (Some loop_name, loop_body)]
+      (* A loop in this CPS is shaped as [Loop { Block #exit = after in rest }]:
+         [rest] is the loop condition/body, which either [jump #loop] (continue)
+         or [jump #exit] (break).  We turn the exit continuation into a block
+         label, wrap the loop inside it, and place [after] after the loop. *)
+      (match def.blk_body with
+       | Block (exit_def, rest) ->
+           Hashtbl.replace ctx.label_kinds def.blk_label LoopLabel;
+           Hashtbl.replace ctx.label_kinds exit_def.blk_label ExitLabel;
+           let loop_name = label_wasm_name ctx def.blk_label in
+           let exit_name = label_wasm_name ctx exit_def.blk_label in
+           let rest_instrs = comp_program ctx table rest in
+           let after_instrs = comp_program ctx table exit_def.blk_body in
+           [ WBlock (Some exit_name, [ WLoop (Some loop_name, rest_instrs) ]) ]
+           @ after_instrs
+       | _ ->
+           Hashtbl.replace ctx.label_kinds def.blk_label LoopLabel;
+           let loop_name = label_wasm_name ctx def.blk_label in
+           let loop_body = comp_program ctx table def.blk_body in
+           [ WLoop (Some loop_name, loop_body) ])
+
+and comp_jump (ctx : compile_ctx) (table : Semantics.Table.table) (label : label) (values : value list) : wasm_instr list =
+  let lbl = label_wasm_name ctx label in
+  match Hashtbl.find_opt ctx.label_kinds label with
+  | Some LoopLabel | Some ExitLabel ->
+      (* continue / break: branch to the loop head or out of the loop's exit block *)
+      let val_instrs = List.concat_map (fun v -> fst (comp_value ctx table v)) values in
+      val_instrs @ [WBr lbl]
+  | Some (BlockLabel def) ->
+      (* call a linear continuation: bind its parameters, then inline its body *)
+      let bind_instrs = comp_bind_params ctx table def.blk_params values in
+      bind_instrs @ comp_program ctx table def.blk_body
+  | None ->
+      (* function return label: return the value (unit → 0) *)
+      let val_instrs = List.concat_map (fun v -> fst (comp_value ctx table v)) values in
+      let val_instrs = if values = [] then [WI32Const 0] else val_instrs in
+      val_instrs @ [WReturn]
+
+and comp_bind_params (ctx : compile_ctx) (table : Semantics.Table.table) (params : variable list) (values : value list) : wasm_instr list =
+  let rec go ps vs =
+    match ps, vs with
+    | [], _ | _, [] -> []
+    | p :: ps', v :: vs' ->
+        let pname = var_wasm_name ctx p in
+        let (vinstrs, vty) = comp_value ctx table v in
+        set_var_type ctx p vty;
+        vinstrs @ [WLocalSet pname] @ go ps' vs'
+  in
+  go params values
+
+and comp_branch (ctx : compile_ctx) (table : Semantics.Table.table) (br : ANF.branching) : wasm_instr list =
+  let matched_instrs, _ = comp_value ctx table br.br_matched in
+  let rec compile_cases = function
+    | [] ->
+        (match br.br_default with
+         | Some p -> comp_program ctx table p
+         | None -> [WUnreachable])
+    | (tag, prog) :: rest ->
+        let case_instrs = comp_program ctx table prog in
+        let rest_instrs = compile_cases rest in
+        matched_instrs @ [WI32Const tag; WI32Eq; WIf (None, None, case_instrs, rest_instrs)]
+  in
+  compile_cases br.br_branches
 
 and comp_statement (ctx : compile_ctx) (table : Semantics.Table.table) (stmt : ANF.statement) : wasm_instr list =
   match stmt with
   | Decl (var, expr) ->
       let var_name = var_wasm_name ctx var in
-      let (expr_instrs, _) = comp_expr ctx table expr in
+      let (expr_instrs, expr_ty) = comp_expr ctx table expr in
+      set_var_type ctx var expr_ty;
+      (match expr with
+       | ANF.Fun fname -> Hashtbl.replace ctx.func_consts var fname
+       | _ -> ());
       expr_instrs @ [WLocalSet var_name]
   | Assign (lv, value) ->
       let (val_instrs, _) = comp_value ctx table value in
@@ -537,15 +636,36 @@ and comp_statement (ctx : compile_ctx) (table : Semantics.Table.table) (stmt : A
 let comp_func (ctx : compile_ctx) (table : Semantics.Table.table) (func_def : ANF.function_definition) : wasm_func =
   Hashtbl.clear ctx.vars;
   Hashtbl.clear ctx.blocks;
+  Hashtbl.clear ctx.var_types;
+  Hashtbl.clear ctx.func_consts;
+  Hashtbl.clear ctx.label_kinds;
+  ctx.tmp_counter := 0;
+
   let param_names = List.map (fun v -> var_wasm_name ctx v) func_def.func_params in
+  List.iter (fun v -> set_var_type ctx v I32) func_def.func_params;
   let params = List.map (fun n -> (n, I32)) param_names in
-  let label_name = label_wasm_name ctx func_def.func_label in
+
   let body = comp_program ctx table func_def.func_body in
+
+  (* Collect non-parameter locals, ordered by their ANF variable number. *)
+  let locals =
+    Hashtbl.fold (fun v name acc ->
+      if List.mem v func_def.func_params then acc
+      else (v, name, get_var_type ctx v) :: acc)
+      ctx.vars []
+    |> List.sort (fun (v1, _, _) (v2, _, _) -> compare v1 v2)
+    |> List.map (fun (_, name, ty) -> (name, ty))
+  in
+  (* Temporary locals used by aggregate construction. *)
+  let tmp_locals =
+    List.init !(ctx.tmp_counter) (fun i -> (Printf.sprintf "t%d" i, I32))
+  in
+
   { wf_name = func_def.func_name
   ; wf_params = params
   ; wf_result = Some I32
-  ; wf_locals = []
-  ; wf_body = body @ [WBlock (Some label_name, [WNop])]
+  ; wf_locals = locals @ tmp_locals
+  ; wf_body = body @ [WUnreachable]
   }
 
 (** {1 FieldByName → Field(index) resolution pass}

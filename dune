@@ -2,3 +2,22 @@
  (name DeeplangType)
  (libraries Syntax Semantics)
  (modules DeeplangType))
+
+(executable
+ (name deepc)
+ (libraries IR Syntax Semantics)
+ (modules deepc))
+
+(rule
+ (target deepc)
+ (enabled_if (<> %{system} win32))
+ (deps deepc.exe)
+ (action
+  (progn
+   (copy deepc.exe deepc)
+   (run chmod +x deepc))))
+
+(alias
+ (name default)
+ (enabled_if (<> %{system} win32))
+ (deps deepc))
