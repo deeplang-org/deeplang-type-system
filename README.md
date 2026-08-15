@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="doc/logo.jpg" alt="Deeplang logo" width="200">
+</p>
+
 <h1 align="center">Deeplang Type System</h1>
 
 <p align="center">
