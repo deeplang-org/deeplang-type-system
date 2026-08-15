@@ -1,9 +1,31 @@
-## Deeplang Type System
+<h1 align="center">Deeplang Type System</h1>
 
-We are learning TAPL and developing some interesting projects as follow:
+<p align="center">
+  <img alt="build" src="https://img.shields.io/badge/build-passing-brightgreen.svg">
+  <img alt="open source" src="https://img.shields.io/badge/project-open-brightgreen.svg">
+  <a href="#license"><img alt="license" src="https://img.shields.io/badge/license-MIT-green.svg"></a>
+  <img alt="version" src="https://img.shields.io/badge/version-v1.0.0-blue.svg">
+  <img alt="OCaml" src="https://img.shields.io/badge/OCaml-4.14.1-orange.svg">
+  <img alt="dune" src="https://img.shields.io/badge/dune-3.24.2-blueviolet.svg">
+  <img alt="WebAssembly" src="https://img.shields.io/badge/WebAssembly-1.0-654ff0.svg">
+</p>
 
-- [untyped-lambda-calculus](http://mepy.net/untyped-lambda-calculus/) based on javascript
-- [Dart-Lambda-Calculus](https://github.com/sorrowfulT-Rex/Dart-Lambda-Calculus) based on Dart
+## deepc 编译前端
+
+`deepc` 是 Deeplang 的编译前端，将源码 `.dp` 完整编译为 WebAssembly 1.0 文本格式（`.wat`），也可选择输出 A-Normal Form 中间表示（`.anf`）。
+
+```bash
+# 编译为 WAT（默认）
+deepc examples/basicMain.dp         # 生成 examples/basicMain.wat
+
+# 输出 ANF 中间表示
+deepc --anf examples/basicMain.dp   # 生成 examples/basicMain.anf
+
+# 查看版本信息
+deepc --version                     # 或 -v
+```
+
+构建后，可执行文件位于 `_build/default/deepc`（Linux）或 `_build/default/deepc.exe`（Windows），也可以用 `dune exec deepc -- <file.dp>` 直接运行。
 
 ### Current Status
 
@@ -292,3 +314,34 @@ cp -r _build/default/_doc/_html/* doc/internal/
 3. 如需跨库引用，在 `dune` 的 `(libraries ...)` 中添加依赖
 
 详细的 dune 文档： [dune.readthedocs.io](https://dune.readthedocs.io/en/stable/overview.html)。
+
+## 有趣的项目
+
+We are learning TAPL and developing some interesting projects as follow:
+
+- [untyped-lambda-calculus](http://mepy.net/untyped-lambda-calculus/) based on javascript
+- [Dart-Lambda-Calculus](https://github.com/sorrowfulT-Rex/Dart-Lambda-Calculus) based on Dart
+
+## License
+
+MIT License
+
+Copyright (c) 2026 Deeplang contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

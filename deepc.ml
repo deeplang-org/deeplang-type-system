@@ -1,4 +1,4 @@
-(* deepc.ml — Deeplang compiler driver.
+(* deepc.ml — Deeplang compiler frontend.
 
    Compiles Deeplang source (.dp) through the full pipeline:
    Source (.dp) → Lexer → Parser → Semantic Walker → ANF Conversion → WAT.
